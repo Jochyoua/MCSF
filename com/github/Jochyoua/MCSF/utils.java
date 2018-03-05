@@ -127,10 +127,14 @@ public class utils {
 		FileConfiguration config = plugin.getConfig();
 		List<String> list = new ArrayList<>();
 		list.add("&e&m----&f&e[&fMCSF HELP&e]&m----");
-		list.add("&e/mcsf help: &fThis command outputs the plugin help");
-		list.add("&e/mcsf toggle: &fThis command toggles the swear filter");
-		list.add("&e/mcsf modify: &fThis command modifies the swear list");
-		list.add("&e/mcsf reload: &fThis command reloads the plugin");
+		list.add("&e&l/mcsf help:");
+		list.add("  &o&7This command outputs the plugin help");
+		list.add("&e&l/mcsf toggle:");
+		list.add("  &o&7This command toggles the swear filter");
+		list.add("&e&l/mcsf modify <add/remove> <word>:");
+		list.add("  &o&7This command modifies the swear list");
+		list.add("&e&l/mcsf reload:");
+		list.add("  &o&7This command reloads the plugin");
 		config.options()
 				.header("\"Do or don't do, that is the question\"\nMCSF(My Christian Swear Filter) by Jochyoua, v"
 						+ plugin.getDescription().getVersion());
