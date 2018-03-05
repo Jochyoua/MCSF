@@ -25,10 +25,9 @@ public class MCSFCommand extends CommandExecute implements CommandExecutor {
 									.replaceAll("%prefix%", plugin.getConfig().getString("prefix"))
 									.replaceAll("%permission%", "MCSF.help")));
 				}
-				sender.sendMessage(ChatColor.GOLD + "/mcsf toggle" + ChatColor.RESET + ": Filter Toggle: /mcsf toggle");
-				sender.sendMessage(ChatColor.GOLD + "/mcsf reload" + ChatColor.RESET + ": Reload plugin: /mcsf reload");
-				sender.sendMessage(ChatColor.GOLD + "/mcsf modify <add/remove> <word>" + ChatColor.RESET
-						+ ": Modify plugin: /mcsf modify");
+				for(String string : plugin.getConfig().getStringList("messages.helpMessages")) {
+					plugin.util.sendMessage(sender, string);
+				}
 				return true;
 			}
 			if (args[0].equalsIgnoreCase("toggle") && sender instanceof Player) {
@@ -66,11 +65,13 @@ public class MCSFCommand extends CommandExecute implements CommandExecutor {
 					}
 					if (args[1].equalsIgnoreCase("add")) {
 						String replacement = (plugin.util.addData(args[2]) ? "successfully" : "unsuccessfully");
+						plugin.reloadConfig();
 						plugin.util.sendMessage(sender, plugin.getConfig().getString("messages.addedMessage")
 								.replaceAll("%value%", replacement).replaceAll("%modified%", args[2]));
 						return true;
 					} else if (args[1].equalsIgnoreCase("remove")) {
 						String replacement = (plugin.util.removeData(args[2]) ? "successfully" : "unsuccessfully");
+						plugin.reloadConfig();
 						plugin.util.sendMessage(sender, plugin.getConfig().getString("messages.removedMessage")
 								.replaceAll("%value%", replacement).replaceAll("%modified%", args[2]));
 						return true;
