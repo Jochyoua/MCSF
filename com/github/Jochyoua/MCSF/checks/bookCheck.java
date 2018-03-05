@@ -34,8 +34,9 @@ public class bookCheck implements Listener {
 				lines.add(org.apache.commons.lang3.StringUtils.stripAccents(plugin.util.filter(string)));
 			}
 			if (containsSwears)
-				player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig()
-						.getString("messages.bookCheckMessage").replaceAll("%prefix%", plugin.getConfig().getString("prefix"))));
+				player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+						plugin.getConfig().getString("messages.bookCheckMessage").replaceAll("%prefix%",
+								plugin.getConfig().getString("prefix"))));
 
 			meta.setDisplayName(org.apache.commons.lang3.StringUtils.stripAccents(plugin.util.filter(meta.getTitle())));
 			meta.setPages(lines);

@@ -1,6 +1,5 @@
 package com.github.Jochyoua.MCSF;
 
-
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.PacketType;

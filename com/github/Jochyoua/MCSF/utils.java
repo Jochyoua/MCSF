@@ -17,14 +17,15 @@ import org.bukkit.entity.Player;
 
 public class utils {
 	Main plugin = null;
-	
+
 	public utils(Main pl) {
 		this.plugin = pl;
 	}
-	public List<String> getSwears(){
+
+	public List<String> getSwears() {
 		return plugin.getConfig().getStringList("swearList");
 	}
-	
+
 	public String filter(String str) {
 		ArrayList<String> badWords = new ArrayList<>();
 		for (int start = 0; start < str.length(); start++) {
@@ -49,13 +50,13 @@ public class utils {
 	public boolean toggle(Player player) {
 		FileConfiguration config = plugin.getConfig();
 		String uuid = player.getUniqueId().toString();
-		if(!config.isSet("data.players."+uuid)){
-			config.set("data.players."+uuid, true);
+		if (!config.isSet("data.players." + uuid)) {
+			config.set("data.players." + uuid, true);
 			plugin.saveConfig();
 			return true;
-		}else {
-			boolean toReturn = (config.getBoolean("data.players."+uuid) ? false : true);
-			config.set("data.players."+uuid, toReturn);
+		} else {
+			boolean toReturn = (config.getBoolean("data.players." + uuid) ? false : true);
+			config.set("data.players." + uuid, toReturn);
 			plugin.saveConfig();
 			return toReturn;
 		}
@@ -65,13 +66,13 @@ public class utils {
 		boolean found = false;
 		FileConfiguration config = plugin.getConfig();
 		List<String> list = config.getStringList("swearList");
-		for(String word : list) {
-			if(word.equalsIgnoreCase(string)) {
+		for (String word : list) {
+			if (word.equalsIgnoreCase(string)) {
 				found = true;
 			}
 		}
 		boolean success = false;
-		if(!found) {
+		if (!found) {
 			list.add(string);
 			config.set("swearList", list);
 			plugin.saveConfig();
@@ -90,55 +91,64 @@ public class utils {
 		return success;
 	}
 
-	public void generateswearList()  {
+	public void generateswearList() {
 		FileConfiguration config = plugin.getConfig();
-		if(config.getStringList("swearList").isEmpty()) {
+		if (config.getStringList("swearList").isEmpty()) {
 			try {
-			URL url = new URL(
-					"https://docs.google.com/spreadsheets/d/1hIEi2YG3ydav1E06Bzf2mQbGZ12kh2fe4ISgLg_UBuM/export?format=csv");
-			String string = IOUtils.toString(url.openStream(), "UTF-8");
-			String[] content = string.split(",");
-			List<String> list = new ArrayList<String>();
-			for(String str : content) {
-				str = str.replaceAll("\\r\\n", "");
-				str = str.replaceAll("\"", "");
-				str = str.replaceAll("'", "");
-				if(Pattern.matches("[a-zA-Z]+", str)) {
-				list.add(str.trim());
+				URL url = new URL(
+						"https://docs.google.com/spreadsheets/d/1hIEi2YG3ydav1E06Bzf2mQbGZ12kh2fe4ISgLg_UBuM/export?format=csv");
+				String string = IOUtils.toString(url.openStream(), "UTF-8");
+				String[] content = string.split(",");
+				List<String> list = new ArrayList<String>();
+				for (String str : content) {
+					str = str.replaceAll("\\r\\n", "");
+					str = str.replaceAll("\"", "");
+					str = str.replaceAll("'", "");
+					if (Pattern.matches("[a-zA-Z]+", str)) {
+						list.add(str.trim());
+					}
 				}
-			}
-			list.sort(String::compareToIgnoreCase);
-			config.set("swearList", list);
-			plugin.saveConfig();
-			}catch(UnknownHostException | MalformedURLException e) {
-			    plugin.getLogger().log(Level.SEVERE, "Could not download sample words:", e);
+				list.sort(String::compareToIgnoreCase);
+				config.set("swearList", list);
+				plugin.saveConfig();
+			} catch (UnknownHostException | MalformedURLException e) {
+				plugin.getLogger().log(Level.SEVERE, "Could not download sample words:", e);
 				this.addData("exampleword");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		plugin.getLogger().log(Level.INFO, "loaded " + config.getStringList("swearList").size() + " words into the swearList.");
-		
+		plugin.getLogger().log(Level.INFO,
+				"loaded " + config.getStringList("swearList").size() + " words into the swearList.");
+
 	}
+
 	public void setupConfig() {
 		FileConfiguration config = plugin.getConfig();
-		config.options().header("\"Do or don't do, that is the question\"\nMCSF(My Christian Swear Filter) by Jochyoua, v" + plugin.getDescription().getVersion());
+		config.options()
+				.header("\"Do or don't do, that is the question\"\nMCSF(My Christian Swear Filter) by Jochyoua, v"
+						+ plugin.getDescription().getVersion());
 		config.addDefault("prefix", "[MCSF]");
 		config.addDefault("messages.toggleMessage", "&e%prefix% &fYour swear filter has been %value%.");
 		config.addDefault("messages.reloadMessage", "&e%prefix% &fThe Plugin has been reloaded");
 		config.addDefault("messages.addedMessage", "&e%prefix% &fThe word `&b%modified%&f` has been %value% added.");
-		config.addDefault("messages.removedMessage", "&e%prefix% &fThe word `&b%modified%&f` has been %value% removed.");
-		config.addDefault("messages.incorrectPermissionMessage", "&e%prefix% &fYou lack the permission `&b%permission%&f`.");
+		config.addDefault("messages.removedMessage",
+				"&e%prefix% &fThe word `&b%modified%&f` has been %value% removed.");
+		config.addDefault("messages.incorrectPermissionMessage",
+				"&e%prefix% &fYou lack the permission `&b%permission%&f`.");
 		config.addDefault("messages.invalidSyntaxMessage", "&e%prefix% &fYou have used an invalid syntax.");
-		config.addDefault("messages.signCheckMessage", "&e%prefix% &fPlease refrain from using swear words in your sign.");
-		config.addDefault("messages.bookCheckMessage", "&e%prefix% &fPlease refrain from using swear words in your book.");
+		config.addDefault("messages.signCheckMessage",
+				"&e%prefix% &fPlease refrain from using swear words in your sign.");
+		config.addDefault("messages.bookCheckMessage",
+				"&e%prefix% &fPlease refrain from using swear words in your book.");
 		config.addDefault("signCheck", true);
 		config.addDefault("bookCheck", true);
 		config.addDefault("swearList", null);
 		config.options().copyDefaults(true);
-	    config.options().copyHeader(true);
-	    plugin.saveConfig();
+		config.options().copyHeader(true);
+		plugin.saveConfig();
 	}
+
 	public void sendMessage(CommandSender player, String message) {
 		message = message.replaceAll("%prefix%", plugin.getConfig().getString("prefix"));
 		message = message.replaceAll("%player%", player.getName());

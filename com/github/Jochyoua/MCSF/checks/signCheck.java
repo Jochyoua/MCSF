@@ -29,8 +29,7 @@ public class signCheck implements Listener {
 			if (plugin.util.getSwears().stream().parallel()
 					.anyMatch(org.apache.commons.lang3.StringUtils.stripAccents(str.toString()).toLowerCase()::contains)
 					&& !checked) {
-				plugin.util.sendMessage(event.getPlayer(), plugin.getConfig()
-						.getString("messages.signCheckMessage"));
+				plugin.util.sendMessage(event.getPlayer(), plugin.getConfig().getString("messages.signCheckMessage"));
 				event.setCancelled(true);
 				event.getBlock().breakNaturally();
 				checked = true;
