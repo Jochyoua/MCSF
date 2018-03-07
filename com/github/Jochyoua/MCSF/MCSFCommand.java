@@ -6,9 +6,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import net.minecraft.server.v1_12_R1.CommandExecute;
 
-public class MCSFCommand extends CommandExecute implements CommandExecutor {
+public class MCSFCommand implements CommandExecutor {
 	Main plugin = null;
 
 	public MCSFCommand(Main pl) {
@@ -65,15 +64,15 @@ public class MCSFCommand extends CommandExecute implements CommandExecutor {
 					}
 					if (args[1].equalsIgnoreCase("add")) {
 						String replacement = (plugin.util.addData(args[2]) ? "successfully" : "unsuccessfully");
-						plugin.reloadConfig();
 						plugin.util.sendMessage(sender, plugin.getConfig().getString("messages.addedMessage")
-								.replaceAll("%value%", replacement).replaceAll("%modified%", args[2]));
+								.replaceAll("%value%", replacement));
+						plugin.reloadConfig();
 						return true;
 					} else if (args[1].equalsIgnoreCase("remove")) {
 						String replacement = (plugin.util.removeData(args[2]) ? "successfully" : "unsuccessfully");
-						plugin.reloadConfig();
 						plugin.util.sendMessage(sender, plugin.getConfig().getString("messages.removedMessage")
-								.replaceAll("%value%", replacement).replaceAll("%modified%", args[2]));
+								.replaceAll("%value%", replacement));
+						plugin.reloadConfig();
 						return true;
 					}
 				}
