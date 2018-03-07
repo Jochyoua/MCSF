@@ -6,4 +6,4 @@ please tell me about it and I will fix it as soon as possible.
 # IMAGES:
 ![](https://i.imgur.com/RoCYlxD.png)
 ![](https://i.imgur.com/qKCos6a.png)
-![](https://i.imgur.com/F8y2Bn6q.png)
+![](https://i.imgur.com/8y2Bn6q.png)
