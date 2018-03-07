@@ -63,6 +63,7 @@ public class utils {
 	}
 
 	public boolean addData(String string) {
+		plugin.reloadConfig();
 		boolean found = false;
 		FileConfiguration config = plugin.getConfig();
 		List<String> list = config.getStringList("swearList");
@@ -118,8 +119,10 @@ public class utils {
 				e.printStackTrace();
 			}
 		}
+		plugin.reloadConfig();
+		int length = plugin.getConfig().getStringList("swearList").size();
 		plugin.getLogger().log(Level.INFO,
-				"loaded " + config.getStringList("swearList").size() + " words into the swearList.");
+				"loaded " + length + " word"+(length != 1 ? 's' : "" )+" into the swear list.");
 
 	}
 
@@ -141,9 +144,9 @@ public class utils {
 		config.addDefault("prefix", "[MCSF]");
 		config.addDefault("messages.toggleMessage", "&e%prefix% &fYour swear filter has been %value%.");
 		config.addDefault("messages.reloadMessage", "&e%prefix% &fThe Plugin has been reloaded");
-		config.addDefault("messages.addedMessage", "&e%prefix% &fThe word `&b%modified%&f` has been %value% added.");
+		config.addDefault("messages.addedMessage", "&e%prefix% &fData has been %value% added.");
 		config.addDefault("messages.removedMessage",
-				"&e%prefix% &fThe word `&b%modified%&f` has been %value% removed.");
+				"&e%prefix% &fData has been %value% removed.");
 		config.addDefault("messages.incorrectPermissionMessage",
 				"&e%prefix% &fYou lack the permission `&b%permission%&f`.");
 		config.addDefault("messages.invalidSyntaxMessage", "&e%prefix% &fYou have used an invalid syntax.");
@@ -154,7 +157,6 @@ public class utils {
 		config.addDefault("messages.helpMessages", list);
 		config.addDefault("signCheck", true);
 		config.addDefault("bookCheck", true);
-		config.addDefault("swearList", null);
 		config.options().copyDefaults(true);
 		config.options().copyHeader(true);
 		plugin.saveConfig();
