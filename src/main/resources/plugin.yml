@@ -1,0 +1,16 @@
+name: MCSF
+main: com.github.Jochyoua.MCSF.Main
+version: 3.0
+description: simple toggleable swear filter
+authors: [Jochyoua]
+depend:
+  - ProtocolLib
+softdepend:
+  - DiscordSRV
+  - MySQL
+api-version: 1.15
+
+commands:
+  mcsf:
+    description: main command for mcsf
+    default: true
