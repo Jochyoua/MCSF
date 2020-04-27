@@ -28,7 +28,6 @@ settings:
   replacement: "&c*&f"
   discordSRV: false #Support for plugin DiscordSRV
   mysql: false
-  bookcheck: true #Book check allows the server to filter out swears inside of Books.
 
 ##### Mysql
 mysql:
