@@ -1,5 +1,6 @@
 # MCSF (MY CHRISTIAN SWEAR FILTER)
 This is my first plugin I've ever made and I'm going to try to keep it updated for as long as possible.
+
 Currently this plugin has been tested with Minecraft Java edition versions 1.8.8 through 1.15.2.
 
 [Download latest version from Spigot](https://www.spigotmc.org/resources/mcsf-my-christian-swear-filter-100-customizable.54115/)
