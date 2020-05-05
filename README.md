@@ -45,4 +45,3 @@ If you are either installing [DiscordSRV](https://www.spigotmc.org/resources/dis
 ![](https://oof.ddns.net/u/05.31.01-05.05.20.png)
 ![](https://oof.ddns.net/u/05.29.04-05.05.20.png)
 ![](https://oof.ddns.net/u/05.28.55-05.05.20.png)
-![](https://oof.ddns.net/u/05.29.04-05.05.20.png)
