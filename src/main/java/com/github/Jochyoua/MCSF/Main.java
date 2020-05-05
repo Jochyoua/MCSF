@@ -232,7 +232,6 @@ public class Main extends JavaPlugin {
                             break;
                         case "add":
                         case "remove":
-                            //case "whitelist":
                             if (sender.hasPermission("MCSF.modify")) {
                                 if (args.size() != 2) {
                                     send(sender, getConfig().getString("variables.incorrectargs"));
@@ -244,7 +243,6 @@ public class Main extends JavaPlugin {
                                     break;
                                 }
                                 List<String> swears = getConfig().getStringList("swears");
-                                //List<String> whitelist = getConfig().getStringList("whitelist");
                                 switch (args.get(0)) {
                                     case "add":
                                         if (getConfig().getBoolean("settings.mysql")) {
@@ -286,33 +284,11 @@ public class Main extends JavaPlugin {
                                             }
                                         }
                                         break;
-                                    /*case "whitelist":
-                                        if (getConfig().getBoolean("settings.mysql")) {
-                                            if (SQL.exists("word", word, "whitelist")) {
-                                                SQL.deleteData("word", "=", word, "whitelist");
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", args.get(1) + " has been removed from the whitelist."));
-                                                whitelist.remove(word);
-                                            } else {
-                                                SQL.insertData("word", "'" + word + "'", "whitelist");
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", args.get(1) + " has been added to the whitelist."));
-                                                whitelist.add(word);
-                                            }
-                                        } else {
-                                            if (whitelist.contains(word)) {
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", args.get(1) + " has been added to the whitelist."));
-                                                whitelist.add(word);
-                                            } else {
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", args.get(1) + " has been removed from the whitelist."));
-                                                whitelist.remove(word);
-                                            }
-                                        }
-                                        break;*/
                                     default:
                                         send(sender, getConfig().getString("variables.incorrectargs"));
                                         break;
                                 }
                                 getConfig().set("swears", swears);
-                                //getConfig().set("whitelist", whitelist);
                                 saveConfig();
                                 reloadConfig();
                             } else {
@@ -371,7 +347,7 @@ public class Main extends JavaPlugin {
                 Config.setDatabase(getConfig().getString("mysql.database"));
                 Config.setPort(getConfig().getString("mysql.port"));
                 MySQL.connect();
-                if (!SQL.tableExists("swears") || !SQL.tableExists("users") || !SQL.tableExists("whitelist")) {
+                if (!SQL.tableExists("swears") || !SQL.tableExists("users")) {
                     createTable(false);
                 }
                 reload();
@@ -388,176 +364,6 @@ public class Main extends JavaPlugin {
             final Metrics metrics = new Metrics(this);
             send(Bukkit.getConsoleSender(), "%prefix% Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
         }
-        /*Objects.requireNonNull(getCommand("mcsf")).setExecutor((sender, command, s, args) -> {
-            if (args.length != 0) {
-                switch (args[0].toLowerCase()) {
-                    case "help":
-                    default:
-                        showHelp(sender);
-                        break;
-                    case "toggle":
-                        boolean value;
-                        if (args.length == 1) {
-                            if (!(sender instanceof Player)) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                        sender.getName() + " is not a valid player"));
-                                break;
-                            }
-                            if (sender.hasPermission("MCSF.bypass")) {
-                                value = toggle(((Player) sender).getUniqueId());
-                                if (getConfig().getBoolean("settings.log"))
-                                    send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                            .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.toggle"))
-                                        .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
-
-                                break;
-                            }
-                            if (getConfig().getBoolean("settings.force")) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
-                                break;
-                            }
-                            value = toggle(((Player) sender).getUniqueId());
-                            send(sender, Objects.requireNonNull(getConfig().getString("variables.toggle"))
-                                    .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
-                            if (getConfig().getBoolean("settings.log"))
-                                send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                        .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
-                        } else {
-                            if (!sender.hasPermission("MCSF.modify")) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
-                                break;
-                            } else if (sender.hasPermission("MCSF.bypass")) {
-                                UUID targetid = null;
-                                for (final String key : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
-                                    if (Objects.requireNonNull(getConfig().getString("users." + key + ".playername")).equalsIgnoreCase(args[1])) {
-                                        targetid = UUID.fromString(key);
-                                    }
-                                }
-                                value = toggle(targetid);
-                                if (getConfig().getBoolean("settings.log"))
-                                    send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                            .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", args[1]));
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target%", args[1]).replace("%value%", (value ? "enabled" : "disabled")));
-
-                                break;
-                            }
-                            if (getConfig().getBoolean("settings.force")) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
-                                break;
-                            }
-                            UUID targetid = null;
-                            for (final String key : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
-                                if (Objects.requireNonNull(getConfig().getString("users." + key + ".playername")).equalsIgnoreCase(args[1])) {
-                                    targetid = UUID.fromString(key);
-                                }
-                            }
-                            if (targetid == null) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                        args[1] + " is not a valid player"));
-                                break;
-                            } else {
-                                getConfig().set("users." + targetid + "enabled", !getConfig().getBoolean("users." + targetid + ".enabled"));
-                                saveConfig();
-                                if (getConfig().getBoolean("settings.log"))
-                                    send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                            .replaceAll("%value%", getConfig().getBoolean("users." + targetid + ".enabled") ? "enabled" : "disabled").replaceAll("%target%", args[1]));
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target", args[1]).replace("%value%", (getConfig().getBoolean("users." + targetid + ".enabled") ? "enabled" : "disabled")));
-                            }
-                        }
-                        break;
-                    case "reload":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            send(sender, getConfig().getString("variables.noperm"));
-                            break;
-                        }
-                        reload();
-                        send(sender, Objects.requireNonNull(getConfig().getString("variables.success")).replace("%message%", "Plugin successfully reloaded"));
-                        break;
-                    case "status":
-                        if (args.length == 1) {
-                            if (!(sender instanceof Player)) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                        sender.getName() + " is not a valid player"));
-                                break;
-                            }
-                            if (getConfig().getBoolean("settings.force")) {
-                                value = true;
-                            } else {
-                                value = status(((Player) sender).getUniqueId());
-                            }
-                            send(sender, Objects.requireNonNull(getConfig().getString("variables.status")).replace("%target%", sender.getName()).replace("%value%", (value ? "enabled" : "disabled")));
-                            break;
-                        } else {
-                            if (!sender.hasPermission("MCSF.status")) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
-                                break;
-                            }
-                            UUID targetid = null;
-                            for (final String key : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
-                                if (Objects.requireNonNull(getConfig().getString("users." + key + ".playername")).equalsIgnoreCase(args[1])) {
-                                    targetid = UUID.fromString(key);
-                                }
-                            }
-                            if (targetid == null) {
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                        args[1] + " is not a valid player"));
-                                break;
-                            } else {
-                                if (getConfig().getBoolean("settings.force")) {
-                                    value = true;
-                                } else {
-                                    value = status(targetid);
-                                }
-                                send(sender, Objects.requireNonNull(getConfig().getString("variables.status")).replace("%target%", args[1]).replace("%value%", (value ? "enabled" : "disabled")));
-                            }
-                        }
-                        break;
-                    case "add":
-                    case "remove":
-                        if (sender.hasPermission("MCSF.modify") && getConfig().getBoolean("settings.mysql")) {
-                            if (args.length != 2) {
-                                send(sender, getConfig().getString("variables.failure").replace("%message%", "Incorrect amount of arguments."));
-                                break;
-                            }
-                            String word = args[1].toLowerCase();
-                            if (Pattern.compile("[~#@*+%';(){}<>\\[\\]|\"\\_^]").matcher(word).find()) {
-                                send(sender, getConfig().getString("variables.failure").replace("%message%", "Word contains illegal characters. Please correct this."));
-                                send(Bukkit.getConsoleSender(), "%prefix% " + sender.getName() + " attempted to add/remove an illegal word: " + word);
-                                break;
-                            }
-                            List<String> localList = getConfig().getStringList("swears");
-                            if (args[0].equalsIgnoreCase("add")) {
-                                if (SQL.exists("word", word, "swears")) {
-                                    send(sender, getConfig().getString("variables.failure").replace("%message%", "That word already exists in the database."));
-                                    break;
-                                }
-                                if (!localList.contains(word))
-                                    localList.add(word);
-                                SQL.insertData("word", "'" + word + "'", "swears");
-                                send(sender, getConfig().getString("variables.success").replace("%message%", "Word has been added."));
-                            } else {
-                                if (!SQL.exists("word", word, "swears")) {
-                                    send(sender, getConfig().getString("variables.failure").replace("%message%", "That word doesn't exists in the database."));
-                                    break;
-                                }
-                                localList.remove(word);
-                                SQL.deleteData("word", "=", word, "swears");
-                                send(sender, getConfig().getString("variables.success").replace("%message%", "Word has been removed."));
-                            }
-                            getConfig().set("swears", localList);
-                            saveConfig();
-                            reloadConfig();
-                        } else {
-                            send(sender, getConfig().getString("variables.disabled"));
-                        }
-                        break;
-                }
-            } else {
-                showHelp(sender);
-            }
-            return false;
-        });*/
 
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
             @Override
@@ -619,12 +425,8 @@ public class Main extends JavaPlugin {
             boolean status = getConfig().getBoolean("users." + ID + ".enabled");
             omg2.append("('").append(ID).append("', '").append(playername).append("', '").append(status).append("'),");
         }
-        /*StringBuilder omg3 = new StringBuilder();
-        for (final String str : getConfig().getStringList("whitelist")) {
-            omg3.append("('").append(str.trim()).append("'),");
-        }*/
         if (reset) {
-            MySQL.update("DROP TABLE IF EXISTS swears;DROP TABLE IF EXISTS users;"/*DROP TABLE IF EXISTS whitelist;*/);
+            MySQL.update("DROP TABLE IF EXISTS swears;DROP TABLE IF EXISTS users;");
         }
         if (!SQL.tableExists("swears") || countRows("swears") == 0) {
             MySQL.update("DROP TABLE IF EXISTS swears;");
@@ -637,11 +439,6 @@ public class Main extends JavaPlugin {
             MySQL.update("CREATE TABLE IF NOT EXISTS users (uuid varchar(255) UNIQUE, name varchar(255), status varchar(255))");
             MySQL.update("INSERT INTO users (uuid,name,status) VALUES " + omg2.toString().trim().substring(0, omg2.length() - 1) + ";");
         }
-        /*if (!SQL.tableExists("whitelist") || countRows("whitelist") == 0) {
-            MySQL.update("DROP TABLE IF EXISTS whitelist;");
-            MySQL.update("CREATE TABLE IF NOT EXISTS whitelist (word varchar(255) UNIQUE)");
-            MySQL.update("INSERT INTO whitelist (word) VALUES " + omg3.toString().trim().substring(0, omg3.length() - 1) + ";");
-        }*/
     }
 
     public int countRows(String table) {
@@ -652,7 +449,7 @@ public class Main extends JavaPlugin {
         try {
             while (rs.next())
                 i++;
-        } catch (Exception exception) {
+        } catch (Exception ignored) {
         }
         return i;
     }
