@@ -5,6 +5,7 @@
 
 ##### Variables
 variables:
+  command: "mcsf"
   prefix: "&6[MCSF]&f"
   noperm: "%prefix% You lack permission."
   toggle: "%prefix% The swear filter has been %value%" ## Value (enabled/disabled)
@@ -13,21 +14,34 @@ variables:
   status: "%prefix% %target%'s swear filter is %value%" ## Target (Player's name) / Value (enabled/disabled)
   failure: "%prefix% &cFailure: %message%"
   success: "%prefix% &aSuccess: %message%"
+  added: "Word has been added."
+  removed: "Word has been removed."
+  reloaded: "Plugin successfully reloaded"
   help:
     - "&6-------------------%prefix%&6-------------------------"
     - "&6* Command - Description"
-    - "&6* /mcsf toggle [player] - Toggles the swear filter for yourself or someone else"
-    - "&6* /mcsf status [player] - Views the status of a target's filter status"
-    - "&6* /mcsf reload - Reload the server's configuration files"
+    - "&6* /%command% toggle [player] - Toggles the swear filter for yourself or someone else"
+    - "&6* /%command% status [player] - Views the status of a target's filter status"
+    - "<%PERMISSION=MCSF.modify%>&6* /%command% add/remove [word] - Modifies swearlist"
+    - "<%PERMISSION=MCSF.modify%>&6* /%command% reload - Reload the server's configuration files"
     - "&6------------------------------------------------"
+  error:
+    incorrectargs: "Incorrect amount of arguments."
+    invalidtarget: "%target% is not a valid user."
+    illegalcharacters: "Word contains illegal characters. Please correct this."
+    alreadyexists: "That word already exists."
+    doesntexist: "That word doesn't exist."
 ##### Settings
 settings:
   default: false #Enable filter by default
   force: false #Force filter to enabled state
+  metrics: true #Anonymous metric data
   log: true #Log toggle events for players
   replacement: "&c*&f"
   discordSRV: false #Support for plugin DiscordSRV
   mysql: false
+  bookcheck: true #Book check allows the server to filter out swears inside of Books.
+  experimental_regex: true
 
 ##### Mysql
 mysql:
@@ -42,6 +56,7 @@ users:
   069a79f4-44e9-4726-a5be-fca90e38aaf5:
     enabled: true
     playername: Notch
+
 ##### Swear list
 swears:
   - 2g1c

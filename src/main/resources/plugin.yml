@@ -1,6 +1,6 @@
 name: MCSF
 main: com.github.Jochyoua.MCSF.Main
-version: 3.0
+version: 3.1
 description: simple toggleable swear filter
 authors: [Jochyoua]
 depend:
@@ -9,8 +9,18 @@ softdepend:
   - DiscordSRV
   - MySQL
 api-version: 1.15
-
 commands:
   mcsf:
-    description: main command for mcsf
+    description: Main command for MCSF
+permissions:
+  MCSF.*:
+    description: Gives access to all MCSF commands
+    children:
+      MCSF.modify: true
+      MCSF.toggle: true
+  MCSF.modify:
+    description: Gives the player the ability to modify the blacklist
+    default: false
+  MCSF.toggle:
+    description: Allows the player to enable/disable the swear filter
     default: true
