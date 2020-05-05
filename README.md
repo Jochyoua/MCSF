@@ -42,5 +42,7 @@ Place both these plugins inside of the plugins folder
 If you are either installing [DiscordSRV](https://www.spigotmc.org/resources/discordsrv.18494/) or [MySQL API](https://www.spigotmc.org/resources/mysql-api.23932/) you must first download them and add them to your server and then restart the server.
 
 # IMAGES:
-<img src="https://camo.githubusercontent.com/4d1cef676bb5f1a80e710877f73845b360df3ba6/68747470733a2f2f6f6f662e64646e732e6e65742f752f30352e33312e30312d30352e30352e32302e706e67" alt="" data-canonical-src="https://oof.ddns.net/u/05.31.01-05.05.20.png" style="width:100px;">
-<img src="https://camo.githubusercontent.com/4d1cef676bb5f1a80e710877f73845b360df3ba6/68747470733a2f2f6f6f662e64646e732e6e65742f752f30352e33312e30312d30352e30352e32302e706e67" alt="" data-canonical-src="https://oof.ddns.net/u/05.31.01-05.05.20.png" style="width:100px;"><img src="https://camo.githubusercontent.com/4d1cef676bb5f1a80e710877f73845b360df3ba6/68747470733a2f2f6f6f662e64646e732e6e65742f752f30352e33312e30312d30352e30352e32302e706e67" alt="" data-canonical-src="https://oof.ddns.net/u/05.31.01-05.05.20.png" style="width:100px;">
+![](https://oof.ddns.net/u/05.31.01-05.05.20.png)
+![](https://oof.ddns.net/u/05.29.04-05.05.20.png)
+![](https://oof.ddns.net/u/05.29.04-05.05.20.png)
+![](https://oof.ddns.net/u/05.28.55-05.05.20.png)
