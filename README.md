@@ -9,7 +9,7 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 # FEATURES:
 - 100% customizable, every message can be changed
 - The ability to disable/enable the swear filter per player
-- [DiscordSRV] support
+- [DiscordSRV](https://www.spigotmc.org/resources/discordsrv.18494/) support
 - MySQL support via [MySQL API](https://www.spigotmc.org/resources/mysql-api.23932/)
 
 # REQUIRMENTS:
