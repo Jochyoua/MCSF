@@ -19,10 +19,13 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 # COMMANDS:
 /MCSF toggle <player> (Permission: MCSF.toggle & MCSF.modify is targetting other users)
 This command toggles a users's swear filter.
+  
 /MCSF reload (Permission: MCSF.reload)
 This command reloads the configuration files
+
 /MCSF status <player> (Permission: MCSF.modify if targetting other users)
 This command views the status of a user's swear filter status
+  
 /MCSF add/remove <word> (Permission:MCSF.modify)
 Modifies the blacklist
 
