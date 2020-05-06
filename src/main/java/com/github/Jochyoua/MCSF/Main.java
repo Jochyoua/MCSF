@@ -376,9 +376,17 @@ public class Main extends JavaPlugin {
                     if (getConfig().getBoolean("settings.force") || status(ID)) {
                         saveConfig();
                         reloadConfig();
-                        if (!isclean(component.getJson())) {
-                            component.setJson(clean(component.getJson()));
-                            chatComponents.write(0, component);
+                        if(component != null) {
+                            if (!component.getJson().isEmpty()) {
+                                if (!isclean(component.getJson())) {
+                                    String string = clean(component.getJson());
+                                    if(string == null){
+                                        return;
+                                    }
+                                    component.setJson(string);
+                                    chatComponents.write(0, component);
+                                }
+                            }
                         }
                     }
                 }
@@ -463,37 +471,39 @@ public class Main extends JavaPlugin {
     public String clean(String string) {
         saveConfig();
         reloadConfig();
-        if (getConfig().getBoolean("settings.experimental_regex")) {
-            List<String> regex = new ArrayList<>();
-            for (String str : getConfig().getStringList("swears")) {
-                StringBuilder omg = new StringBuilder();
-                for (String str2 : str.split("")) {
-                    omg.append(str2).append("+\\s*");
+        if(string != null) {
+            if (getConfig().getBoolean("settings.experimental_regex")) {
+                List<String> regex = new ArrayList<>();
+                for (String str : getConfig().getStringList("swears")) {
+                    StringBuilder omg = new StringBuilder();
+                    for (String str2 : str.split("")) {
+                        omg.append(str2).append("+\\s*");
+                    }
+                    regex.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
                 }
-                regex.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
-            }
-            for (String r : regex) {
-                String clean = r.replace("+\\s*", "");
-                clean = clean.substring(0, clean.length() - 1);
-                Pattern pattern = Pattern.compile(r, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-                Matcher matcher = pattern.matcher(string);
-                String replacement = ChatColor.translateAlternateColorCodes('&', clean.replaceAll("(?s).", getConfig().getString("settings.replacement")));
-                string = matcher.replaceAll(replacement);
-            }
+                for (String r : regex) {
+                    String clean = r.replace("+\\s*", "");
+                    clean = clean.substring(0, clean.length() - 1);
+                    Pattern pattern = Pattern.compile(r, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
+                    Matcher matcher = pattern.matcher(string);
+                    String replacement = ChatColor.translateAlternateColorCodes('&', clean.replaceAll("(?s).", getConfig().getString("settings.replacement")));
+                    string = matcher.replaceAll(replacement);
+                }
 
-        } else {
-            final List<String> delete = new ArrayList<>();
-            for (int start = 0; start < string.length(); start++) {
-                for (int offset = 1; offset < (string.length() + 1 - start); offset++) {
-                    final String wordToCheck = string.substring(start, start + offset);
-                    if (getConfig().getStringList("swears").contains(wordToCheck.toLowerCase())) {
-                        delete.add(wordToCheck);
+            } else {
+                final List<String> delete = new ArrayList<>();
+                for (int start = 0; start < string.length(); start++) {
+                    for (int offset = 1; offset < (string.length() + 1 - start); offset++) {
+                        final String wordToCheck = string.substring(start, start + offset);
+                        if (getConfig().getStringList("swears").contains(wordToCheck.toLowerCase())) {
+                            delete.add(wordToCheck);
+                        }
                     }
                 }
-            }
-            for (final String s : delete) {
-                final String replacement = s.replaceAll("(?s).", ChatColor.translateAlternateColorCodes('&', Objects.requireNonNull(getConfig().getString("settings.replacement"))));
-                string = string.replaceAll(String.format("(?i)%s", s), replacement);
+                for (final String s : delete) {
+                    final String replacement = s.replaceAll("(?s).", ChatColor.translateAlternateColorCodes('&', Objects.requireNonNull(getConfig().getString("settings.replacement"))));
+                    string = string.replaceAll(String.format("(?i)%s", s), replacement);
+                }
             }
         }
         return string;
