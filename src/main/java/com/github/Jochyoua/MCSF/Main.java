@@ -27,8 +27,13 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import xyz.upperlevel.spigot.book.BookUtil;
 
+import java.io.IOException;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -36,6 +41,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main extends JavaPlugin {
+    String version;
+    {
+        try {
+            version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
+        } catch (ParseException | IOException ignored) {
+            version = getDescription().getVersion();
+        }
+    }
 
     public void reload() {
         if (getConfig().getBoolean("settings.mysql")) {
@@ -57,15 +70,26 @@ public class Main extends JavaPlugin {
             } catch (Exception ignored) {
             }
             getConfig().set("swears", array);
+            saveConfig();
         }
-        saveConfig();
         reloadConfig();
+    }
+
+    private void debug(String str) {
+        if (getConfig().getBoolean("settings.debug"))
+            send(Bukkit.getConsoleSender(), getConfig().getString("variables.debug").replace("%message%", str));
     }
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        getConfig().options().header(
+                "MCSF (My Christian Swear Filter) v" + getDescription().getVersion() + " by Jochyoua\n"
+                        + "This is a toggleable swear filter for your players\n"
+                        + "Resource: https://www.spigotmc.org/resources/54115/\n"
+                        + "Github: https://www.github.com/Jochyoua/MCSF/\n");
         getConfig().options().copyDefaults(true);
+        saveConfig();
         if (getConfig().getBoolean("settings.discordSRV")) {
             getServer().getPluginManager().registerEvents(new Listener() {
                 @Subscribe
@@ -74,34 +98,35 @@ public class Main extends JavaPlugin {
                     event.setProcessedMessage(clean(event.getProcessedMessage()).replaceAll("\\*", "\\" + "\\*"));
                 }
             }, this);
+            debug("Registered DiscordSRV event");
         }
         getServer().getPluginManager().registerEvents(new Listener() {
             @EventHandler
             public void serverCommand(ServerCommandEvent e) {
                 String command = e.getCommand().split(" ")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
-                if (!command.equalsIgnoreCase(getConfig().isSet("variables.command") ? getConfig().getString("variables.command") : "mcsf"))
-                    return;
-                e.setCancelled(true);
-                CommandSender sender = e.getSender();
-                List<String> args = new LinkedList<>(Arrays.asList(e.getCommand().split(" ")));
-                args.remove(0);
-                registerCommand(sender, args);
+                if (command.equalsIgnoreCase(getConfig().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
+                    e.setCancelled(true);
+                    CommandSender sender = e.getSender();
+                    List<String> args = new LinkedList<>(Arrays.asList(e.getCommand().split(" ")));
+                    args.remove(0);
+                    registerCommand(sender, args);
+                }
             }
 
             @EventHandler
             public void playerCommand(PlayerCommandPreprocessEvent e) {
                 String command = e.getMessage().split(" ")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
-                if (!command.equalsIgnoreCase(getConfig().isSet("variables.command") ? getConfig().getString("variables.command") : "mcsf"))
-                    return;
-
-                e.setCancelled(true);
-                Player sender = e.getPlayer();
-                List<String> args = new LinkedList<>(Arrays.asList(e.getMessage().split(" ")));
-                args.remove(0);
-                registerCommand(sender, args);
+                if (command.equalsIgnoreCase(getConfig().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
+                    e.setCancelled(true);
+                    Player sender = e.getPlayer();
+                    List<String> args = new LinkedList<>(Arrays.asList(e.getMessage().split(" ")));
+                    args.remove(0);
+                    registerCommand(sender, args);
+                }
             }
 
             private void registerCommand(CommandSender sender, List<String> args) {
+                reloadConfig();
                 if (!args.isEmpty()) {
                     switch (args.get(0).toLowerCase()) {
                         case "help":
@@ -111,7 +136,7 @@ public class Main extends JavaPlugin {
                         case "toggle":
                             boolean value;
                             if (args.size() == 1 && (sender instanceof Player)) {
-                                if(!sender.hasPermission("MCSF.toggle")){
+                                if (!sender.hasPermission("MCSF.toggle")) {
                                     send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
                                     break;
                                 }
@@ -138,7 +163,7 @@ public class Main extends JavaPlugin {
                             } else {
                                 if (args.size() != 2) {
                                     send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                            sender.getName() + " is not a valid player"));
+                                            getConfig().getString("variables.error.invalidtarget").replace("%target%", sender.getName())));
                                     break;
                                 }
                                 if (!sender.hasPermission("MCSF.modify")) {
@@ -171,15 +196,14 @@ public class Main extends JavaPlugin {
                                 }
                                 if (targetid == null) {
                                     send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
-                                            args.get(1) + " is not a valid player"));
+                                            getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
                                     break;
                                 } else {
-                                    getConfig().set("users." + targetid + ".enabled", !getConfig().getBoolean("users." + targetid + ".enabled"));
-                                    saveConfig();
+                                    toggle(targetid);
                                     if (getConfig().getBoolean("settings.log"))
                                         send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                                .replaceAll("%value%", getConfig().getBoolean("users." + targetid + ".enabled") ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
-                                    send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target", args.get(1)).replace("%value%", (getConfig().getBoolean("users." + targetid + ".enabled") ? "enabled" : "disabled")));
+                                                .replaceAll("%value%", status(targetid) ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
+                                    send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target", args.get(1)).replace("%value%", (status(targetid) ? "enabled" : "disabled")));
                                 }
                             }
                             break;
@@ -189,7 +213,7 @@ public class Main extends JavaPlugin {
                                 break;
                             }
                             reload();
-                            send(sender, Objects.requireNonNull(getConfig().getString("variables.success")).replace("%message%", getConfig().getString("variables.reloaded")));
+                            send(sender, Objects.requireNonNull(getConfig().getString("variables.success")).replace("%message%", getConfig().getString("variables.successful.reloaded")));
                             break;
                         case "status":
                             if (args.size() == 1 && (sender instanceof Player)) {
@@ -230,16 +254,26 @@ public class Main extends JavaPlugin {
                                 }
                             }
                             break;
+                        case "version":
+                            if (sender.hasPermission("MCSF.version")) {
+                                for (String str : getConfig().getStringList("variables.version")) {
+                                    send(sender, str);
+                                }
+                            }else{
+                                send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
+                            }
+                            break;
                         case "add":
                         case "remove":
                             if (sender.hasPermission("MCSF.modify")) {
                                 if (args.size() != 2) {
-                                    send(sender, getConfig().getString("variables.incorrectargs"));
+                                    send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.incorrectargs")));
                                     break;
                                 }
                                 String word = args.get(1).toLowerCase();
-                                if (Pattern.compile("[`,./';+=\\-\\\\~#@*+%';(){}<>\\[\\]|\"_^]").matcher(word).find() || word.length() == 1) {
+                                if (Pattern.compile("[`,./';+=\\-\\\\~#@*%(){}<>\\[\\]|\"_^]").matcher(word).find() || word.length() == 1) {
                                     send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.illegalcharacters")));
+                                    debug(sender.getName() + " has attempted to add `" + word + "` but it contains illegal characters");
                                     break;
                                 }
                                 List<String> swears = getConfig().getStringList("swears");
@@ -253,16 +287,18 @@ public class Main extends JavaPlugin {
                                             if (!swears.contains(word))
                                                 swears.add(word);
                                             SQL.insertData("word", "'" + word + "'", "swears");
-                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.added")));
+                                            debug(sender.getName() + " has added `" + word + "` to the database");
+                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.added")));
                                         } else {
                                             boolean modified = false;
                                             if (!swears.contains(word))
                                                 modified = true;
                                             if (modified) {
                                                 swears.add(word);
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.added")));
+                                                debug(sender.getName() + " has added `" + word + "` to the config");
+                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.added")));
                                             } else {
-                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.alreadyexist")));
+                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.alreadyexists")));
                                             }
                                         }
                                         break;
@@ -274,23 +310,24 @@ public class Main extends JavaPlugin {
                                             }
                                             swears.remove(word);
                                             SQL.deleteData("word", "=", word, "swears");
-                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.removed")));
+                                            debug(sender.getName() + " has removed `" + word + "` from database");
+                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.removed")));
                                         } else {
                                             boolean modified = swears.remove(word);
                                             if (modified) {
-                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.removed")));
+                                                debug(sender.getName() + " has removed `" + word + "` from config");
+                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.removed")));
                                             } else {
                                                 send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.doesntexists")));
                                             }
                                         }
                                         break;
                                     default:
-                                        send(sender, getConfig().getString("variables.incorrectargs"));
+                                        send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.incorrectargs")));
                                         break;
                                 }
                                 getConfig().set("swears", swears);
                                 saveConfig();
-                                reloadConfig();
                             } else {
                                 send(sender, getConfig().getString("variables.noperm"));
                             }
@@ -310,6 +347,7 @@ public class Main extends JavaPlugin {
                 if (getConfig().getBoolean("settings.mysql")) {
                     MySQL.update("UPDATE users SET name='" + player.getName() + "' WHERE uuid='" + player.getUniqueId() + "';");
                 }
+                debug("Player " + player.getName() + "'s swear filter is " + (status(player.getUniqueId()) ? "enabled" : "disabled"));
                 saveConfig();
             }
 
@@ -351,6 +389,7 @@ public class Main extends JavaPlugin {
                     createTable(false);
                 }
                 reload();
+                debug("MySQL has been enabled & information has been set");
             } else {
                 send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%", "MySQL api is installed but settings.mysql is currently false."));
             }
@@ -359,10 +398,11 @@ public class Main extends JavaPlugin {
         }
         if (getServer().getPluginManager().getPlugin("DiscordSRV") != null) {
             DiscordSRV.api.subscribe(this);
+            debug("DiscordSRV events have been subscribed to");
         }
         if (getConfig().getBoolean("settings.metrics")) {
             final Metrics metrics = new Metrics(this);
-            send(Bukkit.getConsoleSender(), "%prefix% Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
+            debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
         }
 
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
@@ -374,13 +414,12 @@ public class Main extends JavaPlugin {
                 StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                 for (WrappedChatComponent component : chatComponents.getValues()) {
                     if (getConfig().getBoolean("settings.force") || status(ID)) {
-                        saveConfig();
                         reloadConfig();
-                        if(component != null) {
+                        if (component != null) {
                             if (!component.getJson().isEmpty()) {
                                 if (!isclean(component.getJson())) {
                                     String string = clean(component.getJson());
-                                    if(string == null){
+                                    if (string == null) {
                                         return;
                                     }
                                     component.setJson(string);
@@ -394,8 +433,18 @@ public class Main extends JavaPlugin {
 
             }
         });
-        if (getConfig().getBoolean("settings.experimental_regex"))
-            send(Bukkit.getConsoleSender(), "%prefix% Warning: Using experimental regex, there may be issues. Disable in config through settings.experimental_regex");
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            if (getConfig().getBoolean("settings.check_for_updates")) {
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.checking"));
+                if ((Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(version))) {
+                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_available"));
+                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_link"));
+                } else {
+                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.no_new_version"));
+                }
+            }
+
+        }, 0L, 432000L);
     }
 
     public void showHelp(CommandSender sender) {
@@ -417,8 +466,6 @@ public class Main extends JavaPlugin {
     }
 
     public void createTable(boolean reset) {
-        saveConfig();
-        reloadConfig();
         if (getConfig().getStringList("swears").isEmpty()) {
             getConfig().set("swears", new String[]{"fuck", "shit"});
             saveConfig();
@@ -430,7 +477,7 @@ public class Main extends JavaPlugin {
         StringBuilder omg2 = new StringBuilder();
         for (final String ID : getConfig().getConfigurationSection("users").getKeys(false)) {
             String playername = getConfig().getString("users." + ID + ".playername");
-            boolean status = getConfig().getBoolean("users." + ID + ".enabled");
+            boolean status = status(UUID.fromString(ID));
             omg2.append("('").append(ID).append("', '").append(playername).append("', '").append(status).append("'),");
         }
         if (reset) {
@@ -463,15 +510,13 @@ public class Main extends JavaPlugin {
     }
 
     public boolean status(UUID ID) {
-        saveConfig();
         reloadConfig();
         return getConfig().getBoolean("users." + ID + ".enabled");
     }
 
     public String clean(String string) {
-        saveConfig();
         reloadConfig();
-        if(string != null) {
+        if (string != null) {
             if (getConfig().getBoolean("settings.experimental_regex")) {
                 List<String> regex = new ArrayList<>();
                 for (String str : getConfig().getStringList("swears")) {
@@ -510,12 +555,8 @@ public class Main extends JavaPlugin {
     }
 
     public boolean isclean(String str) {
-        saveConfig();
         reloadConfig();
-        if (getConfig().getBoolean("settings.experimental_regex")) {
-            return false;
-        }
-        if (getConfig().getStringList("swears").isEmpty()) {
+        if (getConfig().getBoolean("settings.experimental_regex") || getConfig().getStringList("swears").isEmpty()) {
             return false;
         }
         return getConfig().getStringList("swears").stream().parallel().noneMatch((str).toLowerCase()::contains);
@@ -525,23 +566,18 @@ public class Main extends JavaPlugin {
     public void onDisable() {
         if (getServer().getPluginManager().getPlugin("DiscordSRV") != null)
             DiscordSRV.api.unsubscribe(this);
-        if (getServer().getPluginManager().getPlugin("MySQL") != null) {
-            if (getConfig().getBoolean("settings.mysql") && MySQL.isConnected()) {
-                MySQL.disconnect();
-                send(Bukkit.getConsoleSender(), getConfig().getString("variables.success").replace("%message%", "Successfully disconnected from database."));
-            }
-        }
     }
 
     public void send(CommandSender player, String message) {
         message = message.replaceAll("%prefix%", Objects.requireNonNull(getConfig().getString("variables.prefix")));
         message = message.replaceAll("%command%", getConfig().getString("variables.command"));
         message = message.replaceAll("%player%", player.getName());
+        message = message.replaceAll("%current%", getDescription().getVersion());
+        message = message.replaceAll("%version%", version);
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
     }
 
     public boolean toggle(UUID ID) {
-        saveConfig();
         reloadConfig();
         boolean value;
         if (getConfig().getBoolean("settings.mysql")) {
@@ -553,16 +589,16 @@ public class Main extends JavaPlugin {
                 return value;
             } else {
                 ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + ID + "'");
-                String result = null;
+                boolean result = false;
                 try {
                     while (rs.next()) {
-                        result = rs.getString("status");
+                        result = Boolean.parseBoolean(rs.getString("status"));
                     }
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
-                    result = getConfig().getBoolean("settings.default") + "";
+                    result = getConfig().getBoolean("settings.default");
                 }
-                value = !Boolean.parseBoolean(result);
+                value = !result;
                 MySQL.update("UPDATE users SET status='" + value + "' WHERE uuid='" + ID + "';");
                 getConfig().set("users." + ID + ".enabled", value);
                 saveConfig();

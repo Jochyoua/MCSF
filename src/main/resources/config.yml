@@ -1,55 +1,64 @@
-##########################################
-#####             MCSF               #####
-#####        Author: Jochyoua        #####
-##########################################
-
-##### Variables
 variables:
-  command: "mcsf"
-  prefix: "&6[MCSF]&f"
-  noperm: "%prefix% You lack permission."
+  command: "mcsf" ## Command for the plugin
+  prefix: "&6[MCSF]&f" ## Prefix for all MCSF messages
+  noperm: "%prefix% You lack permission." ## No permission message
   toggle: "%prefix% The swear filter has been %value%" ## Value (enabled/disabled)
   targetToggle: "%prefix% %target%'s swear filter has been %value%" ## Target (Player's name) / Value (enabled/disabled)
-  disabled: "%prefix% An administrator has disabled this function"
+  disabled: "%prefix% An administrator has disabled this function" ## Function is disabled message
   status: "%prefix% %target%'s swear filter is %value%" ## Target (Player's name) / Value (enabled/disabled)
-  failure: "%prefix% &cFailure: %message%"
-  success: "%prefix% &aSuccess: %message%"
-  added: "Word has been added."
-  removed: "Word has been removed."
-  reloaded: "Plugin successfully reloaded"
+  failure: "%prefix% &cFailure: %message%" ## Messages for error handling, messages can be seen under variables.error
+  success: "%prefix% &aSuccess: %message%" ## Messages for successful responses, messages can be seen under variables.successful
+  debug: "%prefix% &dDEBUG: &f%message%"
+  version:
+    - "&dMCSF (My Christian Swear Filter) v%current% by Jochyoua"
+    - "&dResource: &fhttps://www.spigotmc.org/resources/54115/"
+    - "&dGithub: &fhttps://www.github.com/Jochyoua/MCSF/"
+  updatecheck:
+    checking: "%prefix% Checking for updates"
+    no_new_version: "%prefix% No new version available"
+    update_available: "%prefix% A new version (v%version%) is out! You are still running v%current%"
+    update_link: "%prefix% Download the latest version here: https://www.spigotmc.org/resources/54115/" ## Update link for updating the plugin with latest release
   help:
     - "&6-------------------%prefix%&6-------------------------"
     - "&6* Command - Description"
     - "&6* /%command% toggle [player] - Toggles the swear filter for yourself or someone else"
     - "&6* /%command% status [player] - Views the status of a target's filter status"
+    - "<%PERMISSION=MCSF.version%>&6* /%command% version - Shows version of this plugin"
     - "<%PERMISSION=MCSF.modify%>&6* /%command% add/remove [word] - Modifies swearlist"
     - "<%PERMISSION=MCSF.modify%>&6* /%command% reload - Reload the server's configuration files"
     - "&6------------------------------------------------"
+  successful:
+    added: "Word has been added." ## Word has been added message
+    removed: "Word has been removed." ## Word has been removed message
+    reloaded: "Plugin successfully reloaded" ## Plugin has been reloaded
   error:
-    incorrectargs: "Incorrect amount of arguments."
-    invalidtarget: "%target% is not a valid user."
-    illegalcharacters: "Word contains illegal characters. Please correct this."
-    alreadyexists: "That word already exists."
-    doesntexist: "That word doesn't exist."
+    incorrectargs: "Incorrect amount of arguments." ## Incorrect about of arguments given
+    invalidtarget: "%target% is not a valid user." ## Target isn't a valid user or isn't in the database/config
+    illegalcharacters: "Word contains illegal characters. Please correct this." ## Word contains illegal characters and cannot be added to database/config
+    alreadyexists: "That word already exists." ## Word already exists in the database/config
+    doesntexist: "That word doesn't exist." ## Word doesn't exist in the database/config
+    updatecheck: "Couldn't check for an update. See below error for more information:" ## Coudln't check for updates. Followed by a stacktrace of any errors
 ##### Settings
 settings:
   default: false #Enable filter by default
   force: false #Force filter to enabled state
   metrics: true #Anonymous metric data
   log: true #Log toggle events for players
-  replacement: "&c*&f"
+  debug: false
+  check_for_updates: true # Whether to check for updates or not
+  replacement: "&c*&f" # What to replace blacklisted words with E.G: fuck = ****
   discordSRV: false #Support for plugin DiscordSRV
-  mysql: false
+  mysql: false # Whether or not to use mysql
   bookcheck: true #Book check allows the server to filter out swears inside of Books.
-  experimental_regex: true
+  experimental_regex: true # Experimental regex which better identifies blacklisted words
 
 ##### Mysql
 mysql:
-  host: "localhost"
-  username: "root"
-  password: "foobar"
-  database: "default"
-  port: "3306"
+  host: "localhost" # Host name
+  username: "root" # Username
+  password: "foobar" # Password
+  database: "default" # Database
+  port: "3306" # Port
 
 ##### User data
 users:

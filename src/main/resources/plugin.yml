@@ -1,6 +1,6 @@
 name: MCSF
 main: com.github.Jochyoua.MCSF.Main
-version: 3.1
+version: 3.2
 description: simple toggleable swear filter
 authors: [Jochyoua]
 depend:
@@ -23,4 +23,7 @@ permissions:
     default: false
   MCSF.toggle:
     description: Allows the player to enable/disable the swear filter
+    default: true
+  MCSF.version:
+    description: Permission for the version command
     default: true
