@@ -49,9 +49,15 @@ public class Main extends JavaPlugin {
     MySQL MySQL;
     List<UUID> playersOnline = new ArrayList<>();
     private String version;
+    private boolean signSupport = true;
 
     {
-        try {
+        if(
+                getServer().getVersion().contains("1.8") ||
+                getServer().getVersion().contains("1.9")
+        )
+            signSupport = false;
+    try {
             version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
         } catch (ParseException | IOException ignored) {
             version = getDescription().getVersion();
@@ -437,20 +443,6 @@ public class Main extends JavaPlugin {
                 playersOnline.remove(event.getPlayer().getUniqueId());
             }
 
-            @EventHandler
-            public void viewSign(SignViewEvent event) {
-                if (getConfig().getBoolean("settings.signcheck") && status(event.getPlayer().getUniqueId())) {
-                    List<String> lines = new ArrayList<>();
-                    for (String line : event.getLines()) {
-                        if (!isclean(line)) {
-                            line = ChatColor.stripColor(clean(line));
-                        }
-                        lines.add(line);
-                    }
-                    event.setLines(lines.toArray(new String[0]));
-                }
-            }
-
             @SuppressWarnings("deprecation")
             @EventHandler
             public void openBook(PlayerInteractEvent e) {
@@ -490,7 +482,28 @@ public class Main extends JavaPlugin {
                 send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
             }
         }
-        ProtocolLibrary.getProtocolManager().addPacketListener(new SignPacketListener());
+        if(getConfig().getBoolean("settings.signcheck")){
+            if(!signSupport){
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.unsupported")).replace("%feature%", "sign filtering"));
+                return;
+            }
+            getServer().getPluginManager().registerEvents(new Listener(){
+                @EventHandler
+                public void viewSign(SignViewEvent event) {
+                    if (getConfig().getBoolean("settings.signcheck") && status(event.getPlayer().getUniqueId())) {
+                        List<String> lines = new ArrayList<>();
+                        for (String line : event.getLines()) {
+                            if (!isclean(line)) {
+                                line = ChatColor.stripColor(clean(line));
+                            }
+                            lines.add(line);
+                        }
+                        event.setLines(lines.toArray(new String[0]));
+                    }
+                }
+            }, this);
+            ProtocolLibrary.getProtocolManager().addPacketListener(new SignPacketListener());
+        }
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
             @Override
             public void onPacketSending(PacketEvent event) {
@@ -542,7 +555,7 @@ public class Main extends JavaPlugin {
     }
 
     private void signCheck(Player player) {
-        if (!getConfig().getBoolean("settings.signcheck"))
+        if (!getConfig().getBoolean("settings.signcheck") || !signSupport)
             return;
         if (player == null) {
             return;
@@ -698,6 +711,7 @@ public class Main extends JavaPlugin {
         message = message.replaceAll("%player%", player.getName());
         message = message.replaceAll("%current%", getDescription().getVersion());
         message = message.replaceAll("%version%", version);
+        message = message.replace("%serverversion%", getServer().getVersion());
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
     }
 
