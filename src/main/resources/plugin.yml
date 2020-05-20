@@ -7,7 +7,6 @@ depend:
   - ProtocolLib
 softdepend:
   - DiscordSRV
-  - MySQL
 api-version: 1.15
 commands:
   mcsf:

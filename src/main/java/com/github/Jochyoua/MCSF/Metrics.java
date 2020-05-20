@@ -36,7 +36,7 @@ import org.json.simple.JSONObject;
  */
 public class Metrics {
 
-    static {
+    {
         // You can use the property to disable the check in your test environment
         if (System.getProperty("bstats.relocatecheck") == null
                 || !System.getProperty("bstats.relocatecheck").equals("false")) {
@@ -56,25 +56,25 @@ public class Metrics {
     }
 
     // The version of this bStats class
-    public static final int B_STATS_VERSION = 1;
+    public final int B_STATS_VERSION = 1;
 
     // The url to which the data is sent
-    private static final String URL = "https://bStats.org/submitData/bukkit";
+    private final String URL = "https://bStats.org/submitData/bukkit";
 
     // Is bStats enabled on this server?
     private final boolean enabled;
 
     // Should failed requests be logged?
-    private static boolean logFailedRequests;
+    private boolean logFailedRequests;
 
     // Should the sent data be logged?
-    private static boolean logSentData;
+    private boolean logSentData;
 
     // Should the response text be logged?
-    private static boolean logResponseStatusText;
+    private boolean logResponseStatusText;
 
     // The uuid of the server
-    private static String serverUUID;
+    private String serverUUID;
 
     // The plugin
     private final Plugin plugin;
@@ -299,7 +299,7 @@ public class Metrics {
      * @param data   The data to send.
      * @throws Exception If the request failed.
      */
-    private static void sendData(Plugin plugin, JSONObject data) throws Exception {
+    private void sendData(Plugin plugin, JSONObject data) throws Exception {
         if (data == null) {
             throw new IllegalArgumentException("Data cannot be null!");
         }
@@ -351,7 +351,7 @@ public class Metrics {
      * @return The gzipped String.
      * @throws IOException If the compression failed.
      */
-    private static byte[] compress(final String str) throws IOException {
+    private byte[] compress(final String str) throws IOException {
         if (str == null) {
             return null;
         }

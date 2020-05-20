@@ -9,6 +9,7 @@ variables:
   failure: "%prefix% &cFailure: %message%" ## Messages for error handling, messages can be seen under variables.error
   success: "%prefix% &aSuccess: %message%" ## Messages for successful responses, messages can be seen under variables.successful
   debug: "%prefix% &dDEBUG: &f%message%"
+  reset: "%prefix% Are you sure you want to reset the database? This is irreversible. To confirm, please type /%command% reset confirm"
   version:
     - "&dMCSF (My Christian Swear Filter) v%current% by Jochyoua"
     - "&dResource: &fhttps://www.spigotmc.org/resources/54115/"
@@ -25,16 +26,18 @@ variables:
     - "&6* /%command% status [player] - Views the status of a target's filter status"
     - "<%PERMISSION=MCSF.version%>&6* /%command% version - Shows version of this plugin"
     - "<%PERMISSION=MCSF.modify%>&6* /%command% add/remove [word] - Modifies swearlist"
+    - "<%PERMISSION=MCSF.modify%>&6* /%command% reset - Resets database to config data"
     - "<%PERMISSION=MCSF.modify%>&6* /%command% reload - Reload the server's configuration files"
     - "&6------------------------------------------------"
   successful:
     added: "Word has been added." ## Word has been added message
     removed: "Word has been removed." ## Word has been removed message
     reloaded: "Plugin successfully reloaded" ## Plugin has been reloaded
+    reset: "Blacklist and user data has been set into database"
   error:
+    failedtoconnect: "Failed to connect through MySQL. Please re-check credentials."
     incorrectargs: "Incorrect amount of arguments." ## Incorrect about of arguments given
     invalidtarget: "%target% is not a valid user." ## Target isn't a valid user or isn't in the database/config
-    illegalcharacters: "Word contains illegal characters. Please correct this." ## Word contains illegal characters and cannot be added to database/config
     alreadyexists: "That word already exists." ## Word already exists in the database/config
     doesntexist: "That word doesn't exist." ## Word doesn't exist in the database/config
     updatecheck: "Couldn't check for an update. See below error for more information:" ## Coudln't check for updates. Followed by a stacktrace of any errors
@@ -50,7 +53,17 @@ settings:
   discordSRV: false #Support for plugin DiscordSRV
   mysql: false # Whether or not to use mysql
   bookcheck: true #Book check allows the server to filter out swears inside of Books.
+  signcheck: false #Sign check allows the server to filter out swears inside of signs, could cause lag.
   experimental_regex: true # Experimental regex which better identifies blacklisted words
+  command_args_enabled:
+    version: true
+    add: true
+    status: true
+    remove: true
+    reset: true
+    reload: true
+    help: true
+    toggle: true
 
 ##### Mysql
 mysql:
@@ -59,6 +72,7 @@ mysql:
   password: "foobar" # Password
   database: "default" # Database
   port: "3306" # Port
+  ssl: false # SSL enabled or not
 
 ##### User data
 users:

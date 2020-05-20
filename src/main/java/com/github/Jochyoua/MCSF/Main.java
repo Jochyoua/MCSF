@@ -7,14 +7,16 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.github.Jochyoua.MCSF.signcheck.SignPacketListener;
+import com.github.Jochyoua.MCSF.signcheck.SignViewEvent;
+import com.github.Jochyoua.MCSF.signcheck.Utils;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.api.Subscribe;
-import me.vagdedes.mysql.basic.Config;
 import me.vagdedes.mysql.database.MySQL;
-import me.vagdedes.mysql.database.SQL;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,9 +25,11 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -41,7 +45,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main extends JavaPlugin {
-    String version;
+    public static Plugin plugin;
+    MySQL MySQL;
+    List<UUID> playersOnline = new ArrayList<>();
+    private String version;
+
     {
         try {
             version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
@@ -50,38 +58,52 @@ public class Main extends JavaPlugin {
         }
     }
 
+    public static Main getInstance() {
+        return (Main) plugin;
+    }
+
     public void reload() {
         if (getConfig().getBoolean("settings.mysql")) {
-            ArrayList<String> array = new ArrayList<>();
-            ResultSet rs;
-            try {
-                rs = MySQL.query("SELECT * FROM swears;");
-                while (rs.next()) {
-                    array.add(rs.getString("word"));
+            if (!MySQL.isConnected())
+                MySQL.connect();
+            if (MySQL.isConnected()) {
+                ArrayList<String> array = new ArrayList<>();
+                ResultSet rs;
+                try {
+                    rs = MySQL.query("SELECT * FROM swears;");
+                    while (rs.next()) {
+                        array.add(rs.getString("word"));
+                    }
+                    rs = MySQL.query("SELECT * FROM users");
+                    while (rs.next()) {
+                        String ID = rs.getObject("uuid").toString();
+                        String name = rs.getObject("name").toString();
+                        boolean status = Boolean.parseBoolean(rs.getObject("status").toString());
+                        getConfig().set("users." + ID + ".enabled", status);
+                        getConfig().set("users." + ID + ".playername", name);
+                    }
+                } catch (Exception ignored) {
                 }
-                rs = MySQL.query("SELECT * FROM users");
-                while (rs.next()) {
-                    String ID = rs.getObject("uuid").toString();
-                    String name = rs.getObject("name").toString();
-                    boolean status = Boolean.parseBoolean(rs.getObject("status").toString());
-                    getConfig().set("users." + ID + ".enabled", status);
-                    getConfig().set("users." + ID + ".playername", name);
+                if (!array.isEmpty()) {
+                    getConfig().set("swears", array);
                 }
-            } catch (Exception ignored) {
+                saveConfig();
+            } else {
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
             }
-            getConfig().set("swears", array);
-            saveConfig();
         }
         reloadConfig();
     }
 
-    private void debug(String str) {
+    public void debug(String str) {
         if (getConfig().getBoolean("settings.debug"))
             send(Bukkit.getConsoleSender(), getConfig().getString("variables.debug").replace("%message%", str));
     }
 
     @Override
     public void onEnable() {
+        plugin = this;
+        MySQL = new MySQL(this);
         saveDefaultConfig();
         getConfig().options().header(
                 "MCSF (My Christian Swear Filter) v" + getDescription().getVersion() + " by Jochyoua\n"
@@ -90,15 +112,20 @@ public class Main extends JavaPlugin {
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n");
         getConfig().options().copyDefaults(true);
         saveConfig();
-        if (getConfig().getBoolean("settings.discordSRV")) {
-            getServer().getPluginManager().registerEvents(new Listener() {
-                @Subscribe
-                public void discordMessageProcessed(
-                        final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-                    event.setProcessedMessage(clean(event.getProcessedMessage()).replaceAll("\\*", "\\" + "\\*"));
-                }
-            }, this);
-            debug("Registered DiscordSRV event");
+        if (getConfig().getBoolean("settings.discordSRV") && getServer().getPluginManager().getPlugin("DiscordSRV") != null) {
+            try {
+                DiscordSRV.api.subscribe(new Listener() {
+                    @Subscribe
+                    public void DiscordGuildMessageSentEvent(
+                            final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
+                        event.setProcessedMessage(ChatColor.stripColor(clean(event.getProcessedMessage())).replaceAll("\\*", "\\" + "\\*"));
+                    }
+                });
+                debug("Registered DiscordSRV event successfully!");
+            } catch (Exception e) {
+                String message = e.getMessage();
+                debug("Registered DiscordSRV event unsuccessfully: " + message);
+            }
         }
         getServer().getPluginManager().registerEvents(new Listener() {
             @EventHandler
@@ -128,6 +155,12 @@ public class Main extends JavaPlugin {
             private void registerCommand(CommandSender sender, List<String> args) {
                 reloadConfig();
                 if (!args.isEmpty()) {
+                    if(getConfig().isSet("settings.command_args_enabled."+args.get(0))){
+                        if(!getConfig().getBoolean("settings.command_args_enabled." + args.get(0))){
+                            send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
+                            return;
+                        }
+                    }
                     switch (args.get(0).toLowerCase()) {
                         case "help":
                         default:
@@ -140,6 +173,10 @@ public class Main extends JavaPlugin {
                                     send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
                                     break;
                                 }
+                                if (getConfig().getBoolean("settings.force")) {
+                                    send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
+                                    break;
+                                }
                                 if (sender.hasPermission("MCSF.bypass")) {
                                     value = toggle(((Player) sender).getUniqueId());
                                     if (getConfig().getBoolean("settings.log"))
@@ -148,10 +185,6 @@ public class Main extends JavaPlugin {
                                     send(sender, Objects.requireNonNull(getConfig().getString("variables.toggle"))
                                             .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
 
-                                    break;
-                                }
-                                if (getConfig().getBoolean("settings.force")) {
-                                    send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
                                     break;
                                 }
                                 value = toggle(((Player) sender).getUniqueId());
@@ -176,12 +209,17 @@ public class Main extends JavaPlugin {
                                             targetid = UUID.fromString(key);
                                         }
                                     }
-                                    value = toggle(targetid);
-                                    if (getConfig().getBoolean("settings.log"))
-                                        send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
-                                                .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
-                                    send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target%", args.get(1)).replace("%value%", (value ? "enabled" : "disabled")));
-
+                                    if (targetid == null) {
+                                        send(sender, Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%",
+                                                getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                                        break;
+                                    } else {
+                                        value = toggle(targetid);
+                                        if (getConfig().getBoolean("settings.log"))
+                                            send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.targetToggle"))
+                                                    .replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
+                                        send(sender, Objects.requireNonNull(getConfig().getString("variables.targetToggle")).replace("%target%", args.get(1)).replace("%value%", (value ? "enabled" : "disabled")));
+                                    }
                                     break;
                                 }
                                 if (getConfig().getBoolean("settings.force")) {
@@ -254,12 +292,34 @@ public class Main extends JavaPlugin {
                                 }
                             }
                             break;
+                        case "reset":
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                send(sender, getConfig().getString("variables.noperm"));
+                                break;
+                            }
+                            if (!getConfig().getBoolean("settings.mysql")) {
+                                send(sender, getConfig().getString("variables.disabled"));
+                                break;
+                            }
+                            if (args.size() != 2) {
+                                send(sender, getConfig().getString("variables.reset"));
+                                break;
+                            } else {
+                                if (args.get(1).equalsIgnoreCase("confirm")) {
+                                    createTable(true);
+                                } else {
+                                    send(sender, getConfig().getString("variables.reset"));
+                                    break;
+                                }
+                            }
+                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.reset")));
+                            break;
                         case "version":
                             if (sender.hasPermission("MCSF.version")) {
                                 for (String str : getConfig().getStringList("variables.version")) {
                                     send(sender, str);
                                 }
-                            }else{
+                            } else {
                                 send(sender, Objects.requireNonNull(getConfig().getString("variables.noperm")));
                             }
                             break;
@@ -271,24 +331,24 @@ public class Main extends JavaPlugin {
                                     break;
                                 }
                                 String word = args.get(1).toLowerCase();
-                                if (Pattern.compile("[`,./';+=\\-\\\\~#@*%(){}<>\\[\\]|\"_^]").matcher(word).find() || word.length() == 1) {
-                                    send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.illegalcharacters")));
-                                    debug(sender.getName() + " has attempted to add `" + word + "` but it contains illegal characters");
-                                    break;
-                                }
                                 List<String> swears = getConfig().getStringList("swears");
                                 switch (args.get(0)) {
                                     case "add":
                                         if (getConfig().getBoolean("settings.mysql")) {
-                                            if (SQL.exists("word", word, "swears")) {
-                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.alreadyexists")));
-                                                break;
+                                            if (!MySQL.isConnected())
+                                                MySQL.connect();
+                                            if (MySQL.isConnected()) {
+                                                if (MySQL.exists("word", word, "swears")) {
+                                                    send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.alreadyexists")));
+                                                    break;
+                                                }
+                                                if (!swears.contains(word))
+                                                    swears.add(word);
+                                                MySQL.stateInsert(word);
+                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.added")));
+                                            } else {
+                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
                                             }
-                                            if (!swears.contains(word))
-                                                swears.add(word);
-                                            SQL.insertData("word", "'" + word + "'", "swears");
-                                            debug(sender.getName() + " has added `" + word + "` to the database");
-                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.added")));
                                         } else {
                                             boolean modified = false;
                                             if (!swears.contains(word))
@@ -304,14 +364,19 @@ public class Main extends JavaPlugin {
                                         break;
                                     case "remove":
                                         if (getConfig().getBoolean("settings.mysql")) {
-                                            if (!SQL.exists("word", word, "swears")) {
-                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.doesntexist")));
-                                                break;
+                                            if (!MySQL.isConnected())
+                                                MySQL.connect();
+                                            if (MySQL.isConnected()) {
+                                                if (!MySQL.exists("word", word, "swears")) {
+                                                    send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.doesntexist")));
+                                                    break;
+                                                }
+                                                swears.remove(word);
+                                                MySQL.stateRemove(word);
+                                                send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.removed")));
+                                            } else {
+                                                send(sender, getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
                                             }
-                                            swears.remove(word);
-                                            SQL.deleteData("word", "=", word, "swears");
-                                            debug(sender.getName() + " has removed `" + word + "` from database");
-                                            send(sender, getConfig().getString("variables.success").replace("%message%", getConfig().getString("variables.successful.removed")));
                                         } else {
                                             boolean modified = swears.remove(word);
                                             if (modified) {
@@ -342,13 +407,48 @@ public class Main extends JavaPlugin {
             public void Join(PlayerJoinEvent e) {
                 Player player = e.getPlayer();
                 getConfig().set("users." + player.getUniqueId() + ".playername", player.getName());
+                saveConfig();
+                playersOnline.add(player.getUniqueId());
                 if (!getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
                     toggle(player.getUniqueId());
                 if (getConfig().getBoolean("settings.mysql")) {
                     MySQL.update("UPDATE users SET name='" + player.getName() + "' WHERE uuid='" + player.getUniqueId() + "';");
+                    ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + player.getUniqueId() + "'");
+                    boolean result = false;
+                    try {
+                        while (rs.next()) {
+                            result = Boolean.parseBoolean(rs.getString("status"));
+                        }
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                        result = getConfig().getBoolean("settings.default");
+                    }
+                    getConfig().set("users." + player.getUniqueId() + ".enabled", result);
+                    saveConfig();
                 }
                 debug("Player " + player.getName() + "'s swear filter is " + (status(player.getUniqueId()) ? "enabled" : "disabled"));
-                saveConfig();
+                /*if (status(player.getUniqueId())) {
+                    signCheck(player);
+                }*/
+            }
+
+            @EventHandler
+            public void Leave(PlayerQuitEvent event) {
+                playersOnline.remove(event.getPlayer().getUniqueId());
+            }
+
+            @EventHandler
+            public void viewSign(SignViewEvent event) {
+                if (getConfig().getBoolean("settings.signcheck") && status(event.getPlayer().getUniqueId())) {
+                    List<String> lines = new ArrayList<>();
+                    for (String line : event.getLines()) {
+                        if (!isclean(line)) {
+                            line = ChatColor.stripColor(clean(line));
+                        }
+                        lines.add(line);
+                    }
+                    event.setLines(lines.toArray(new String[0]));
+                }
             }
 
             @SuppressWarnings("deprecation")
@@ -366,8 +466,8 @@ public class Main extends JavaPlugin {
                         BookMeta newmeta = (BookMeta) newbook.getItemMeta();
                         for (String page : meta.getPages())
                             newmeta.addPage(isclean(page) ? page : ChatColor.stripColor(clean(page))); // Have to strip colors for book or the pages would mess up pretty badly..
-                        newmeta.setAuthor("Server");
-                        newmeta.setTitle("Example Title");
+                        newmeta.setAuthor(meta.getAuthor());
+                        newmeta.setTitle(meta.getTitle());
                         newbook.setItemMeta(newmeta);
                         player.getInventory().setItem(slot, newbook);
                         BookUtil.openPlayer(player, newbook);
@@ -376,35 +476,21 @@ public class Main extends JavaPlugin {
                 }
             }
         }, this);
-        if (getServer().getPluginManager().getPlugin("MySQL") != null) {
+        if (getConfig().getBoolean("settings.mysql")) {
             send(Bukkit.getConsoleSender(), "MySQL brought to you by MySQL API: https://www.spigotmc.org/resources/mysql-api.23932/");
-            if (getConfig().getBoolean("settings.mysql")) {
-                Config.setHost(getConfig().getString("mysql.host"));
-                Config.setUser(getConfig().getString("mysql.username"));
-                Config.setPassword(getConfig().getString("mysql.password"));
-                Config.setDatabase(getConfig().getString("mysql.database"));
-                Config.setPort(getConfig().getString("mysql.port"));
+            if (!MySQL.isConnected())
                 MySQL.connect();
-                if (!SQL.tableExists("swears") || !SQL.tableExists("users")) {
+            if (MySQL.isConnected()) {
+                if (!MySQL.tableExists("swears") || MySQL.countRows("swears") == 0 || !MySQL.tableExists("users") || MySQL.countRows("users") == 0) {
                     createTable(false);
                 }
                 reload();
                 debug("MySQL has been enabled & information has been set");
             } else {
-                send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%", "MySQL api is installed but settings.mysql is currently false."));
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
             }
-        } else if (getConfig().getBoolean("settings.mysql")) {
-            send(Bukkit.getConsoleSender(), Objects.requireNonNull(getConfig().getString("variables.failure")).replace("%message%", "Make sure you have the MySQL API installed!: https://www.spigotmc.org/resources/mysql-api.23932/"));
         }
-        if (getServer().getPluginManager().getPlugin("DiscordSRV") != null) {
-            DiscordSRV.api.subscribe(this);
-            debug("DiscordSRV events have been subscribed to");
-        }
-        if (getConfig().getBoolean("settings.metrics")) {
-            final Metrics metrics = new Metrics(this);
-            debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
-        }
-
+        ProtocolLibrary.getProtocolManager().addPacketListener(new SignPacketListener());
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
             @Override
             public void onPacketSending(PacketEvent event) {
@@ -443,8 +529,49 @@ public class Main extends JavaPlugin {
                     send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.no_new_version"));
                 }
             }
-
+            if (getConfig().getBoolean("settings.metrics")) {
+                final Metrics metrics = new Metrics(this);
+                debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
+            }
         }, 0L, 432000L);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (playersOnline.contains(player.getUniqueId()))
+                return;
+            signCheck(player);
+        }
+    }
+
+    private void signCheck(Player player) {
+        if (!getConfig().getBoolean("settings.signcheck"))
+            return;
+        if (player == null) {
+            return;
+        }
+        if (!player.isOnline()) {
+            return;
+        }
+        List<Sign> nearbySigns = Utils.getNearbyTileEntities(player.getLocation(), Bukkit.getViewDistance(), Sign.class);
+        if (nearbySigns.size() == 0) {
+            return;
+        }
+        List<Sign> first = new ArrayList<>();
+        List<Sign> second = new ArrayList<>();
+        int size = nearbySigns.size();
+        for (int i = 0; i < size / 2; i++)
+            first.add(nearbySigns.get(i));
+        for (int i = size / 2; i < size; i++)
+            second.add(nearbySigns.get(i));
+        for (Sign sign : first) {
+            player.sendSignChange(sign.getLocation(), sign.getLines());
+        }
+        for (Sign sign : second) {
+            player.sendSignChange(sign.getLocation(), sign.getLines());
+        }
+        if (status(player.getUniqueId())) {
+            debug("Filtering " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
+        } else {
+            debug("Resetting " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
+        }
     }
 
     public void showHelp(CommandSender sender) {
@@ -465,63 +592,54 @@ public class Main extends JavaPlugin {
         }
     }
 
+
     public void createTable(boolean reset) {
         if (getConfig().getStringList("swears").isEmpty()) {
             getConfig().set("swears", new String[]{"fuck", "shit"});
             saveConfig();
         }
         StringBuilder omg = new StringBuilder();
-        for (final String str : getConfig().getStringList("swears")) {
-            omg.append("('").append(str.trim()).append("'),");
-        }
-        StringBuilder omg2 = new StringBuilder();
         for (final String ID : getConfig().getConfigurationSection("users").getKeys(false)) {
             String playername = getConfig().getString("users." + ID + ".playername");
             boolean status = status(UUID.fromString(ID));
-            omg2.append("('").append(ID).append("', '").append(playername).append("', '").append(status).append("'),");
+            omg.append("('").append(ID).append("', '").append(playername).append("', '").append(status).append("'),");
         }
-        if (reset) {
-            MySQL.update("DROP TABLE IF EXISTS swears;DROP TABLE IF EXISTS users;");
+        if (!MySQL.isConnected())
+            MySQL.connect();
+        if (MySQL.isConnected()) {
+            MySQL.query("SET NAMES utf8");
+            MySQL.query("SET CHARACTER SET utf8");
+            if (reset) {
+                MySQL.update("DROP TABLE IF EXISTS swears,users;");
+            }
+            if (!MySQL.tableExists("swears") || MySQL.countRows("swears") == 0) {
+                MySQL.update("CREATE TABLE IF NOT EXISTS swears (word varchar(255) UNIQUE);");
+                MySQL.stateSwears(getConfig().getStringList("swears"));
+            }
+            if (!MySQL.tableExists("users") || MySQL.countRows("users") == 0) {
+                MySQL.update("CREATE TABLE IF NOT EXISTS users (uuid varchar(255) UNIQUE, name varchar(255), status varchar(255));");
+                MySQL.update("INSERT INTO users (uuid,name,status) VALUES " + omg.toString().trim().substring(0, omg.length() - 1) + ";");
+            }
+        } else {
+            send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
         }
-        if (!SQL.tableExists("swears") || countRows("swears") == 0) {
-            MySQL.update("DROP TABLE IF EXISTS swears;");
-            MySQL.update("CREATE TABLE IF NOT EXISTS swears (word varchar(255) UNIQUE)");
-            boolean query = MySQL.update("INSERT INTO swears (word) VALUES "
-                    + omg.toString().trim().substring(0, omg.length() - 1).replace("(''),".toLowerCase(), "") + ";");
-        }
-        if (!SQL.tableExists("users") || countRows("users") == 0) {
-            MySQL.update("DROP TABLE IF EXISTS users;");
-            MySQL.update("CREATE TABLE IF NOT EXISTS users (uuid varchar(255) UNIQUE, name varchar(255), status varchar(255))");
-            MySQL.update("INSERT INTO users (uuid,name,status) VALUES " + omg2.toString().trim().substring(0, omg2.length() - 1) + ";");
-        }
-    }
-
-    public int countRows(String table) {
-        int i = 0;
-        if (table == null)
-            return i;
-        ResultSet rs = MySQL.query("SELECT * FROM " + table + ";");
-        try {
-            while (rs.next())
-                i++;
-        } catch (Exception ignored) {
-        }
-        return i;
     }
 
     public boolean status(UUID ID) {
         reloadConfig();
-        return getConfig().getBoolean("users." + ID + ".enabled");
+        return getConfig().getBoolean("settings.force") ? getConfig().getBoolean("settings.force") : getConfig().getBoolean("users." + ID + ".enabled");
     }
 
     public String clean(String string) {
         reloadConfig();
         if (string != null) {
             if (getConfig().getBoolean("settings.experimental_regex")) {
+
                 List<String> regex = new ArrayList<>();
                 for (String str : getConfig().getStringList("swears")) {
                     StringBuilder omg = new StringBuilder();
                     for (String str2 : str.split("")) {
+                        str2 = escape(str2);
                         omg.append(str2).append("+\\s*");
                     }
                     regex.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
@@ -554,6 +672,10 @@ public class Main extends JavaPlugin {
         return string;
     }
 
+    public String escape(String str) {
+        return Pattern.compile("[{}()\\[\\].+*?^$\\\\|]").matcher(str).replaceAll("\\$0");
+    }
+
     public boolean isclean(String str) {
         reloadConfig();
         if (getConfig().getBoolean("settings.experimental_regex") || getConfig().getStringList("swears").isEmpty()) {
@@ -564,6 +686,8 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (MySQL.isConnected())
+            MySQL.disconnect();
         if (getServer().getPluginManager().getPlugin("DiscordSRV") != null)
             DiscordSRV.api.unsubscribe(this);
     }
@@ -579,40 +703,44 @@ public class Main extends JavaPlugin {
 
     public boolean toggle(UUID ID) {
         reloadConfig();
-        boolean value;
+        Boolean value = null;
         if (getConfig().getBoolean("settings.mysql")) {
-            if (!SQL.exists("uuid", ID.toString(), "users")) {
-                value = getConfig().getBoolean("settings.default");
-                MySQL.update("INSERT INTO users (uuid,status) VALUES ('" + ID + "','" + value + "')");
-                getConfig().set("users." + ID + ".enabled", value);
-                saveConfig();
-                return value;
-            } else {
-                ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + ID + "'");
-                boolean result = false;
-                try {
-                    while (rs.next()) {
-                        result = Boolean.parseBoolean(rs.getString("status"));
+            if (!MySQL.isConnected()) {
+                MySQL.connect();
+            }
+            if (MySQL.isConnected()) {
+                if (!MySQL.exists("uuid", ID.toString(), "users")) {
+                    value = getConfig().getBoolean("settings.default");
+                    MySQL.update("INSERT INTO users (uuid,status) VALUES ('" + ID + "','" + value + "')");
+                    getConfig().set("users." + ID + ".enabled", value);
+                } else {
+                    ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + ID + "'");
+                    boolean result = false;
+                    try {
+                        while (rs.next()) {
+                            result = Boolean.parseBoolean(rs.getString("status"));
+                        }
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                        result = getConfig().getBoolean("settings.default");
                     }
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                    result = getConfig().getBoolean("settings.default");
+                    value = !result;
+                    MySQL.update("UPDATE users SET status='" + value + "' WHERE uuid='" + ID + "';");
+                    getConfig().set("users." + ID + ".enabled", value);
                 }
-                value = !result;
-                MySQL.update("UPDATE users SET status='" + value + "' WHERE uuid='" + ID + "';");
-                getConfig().set("users." + ID + ".enabled", value);
-                saveConfig();
-                return value;
             }
         } else if (!getConfig().isSet("users." + ID + ".enabled")) { // If enabled value doesn't exist, set to default value
             value = getConfig().getBoolean("settings.default");
             getConfig().set("users." + ID + ".enabled", value);
-            saveConfig();
-            return value;
         }
-        value = getConfig().getBoolean("users." + ID + ".enabled");
-        getConfig().set("users." + ID + ".enabled", !value);
+        if (value == null) {
+            value = getConfig().getBoolean("users." + ID + ".enabled");
+            getConfig().set("users." + ID + ".enabled", !value);
+            value = !value;
+            saveConfig();
+        }
         saveConfig();
-        return !value;
+        signCheck(Bukkit.getPlayer(ID));
+        return value;
     }
 }
