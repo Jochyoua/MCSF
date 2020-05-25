@@ -41,6 +41,7 @@ Modifies the blacklist
 # Installation instructions:
 Download both the ProtocolLib & this plugin
 Place both these plugins inside of the plugins folder
+
 (OPTIONAL)
 If you plan on using [DiscordSRV](https://www.spigotmc.org/resources/discordsrv.18494/) you must first download the plugin and then add them to your server and then restart the server.
 
