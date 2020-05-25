@@ -42,7 +42,7 @@ Modifies the blacklist
 Download both the ProtocolLib & this plugin
 Place both these plugins inside of the plugins folder
 (OPTIONAL)
-If you are either installing [DiscordSRV](https://www.spigotmc.org/resources/discordsrv.18494/) or [MySQL API](https://www.spigotmc.org/resources/mysql-api.23932/) you must first download them and add them to your server and then restart the server.
+If you plan on using [DiscordSRV](https://www.spigotmc.org/resources/discordsrv.18494/) you must first download the plugin and then add them to your server and then restart the server.
 
 # IMAGES:
 ![](https://oof.ddns.net/u/05.31.01-05.05.20.png)
