@@ -29,6 +29,15 @@ variables:
     - "<%PERMISSION=MCSF.modify%>&6* /%command% reset - Resets database to config data"
     - "<%PERMISSION=MCSF.modify%>&6* /%command% reload - Reload the server's configuration files"
     - "&6------------------------------------------------"
+  console_motd:
+    - "&dMCSF (My Christian Swear Filter) v%current% by Jochyoua"
+    - "&dServer version:&f %serverversion%"
+    - "&dPlugin version:&f %version%"
+    - "&dSwear count:&f %wordcount%"
+    - "&dWords blocked:&f %swearcount%"
+  punishment_commands:
+    - "<%EXECUTE_AS=CONSOLE%>tellraw @a \"%prefix% &c%player% has swore! >:)\""
+    - "<%EXECUTE_AS=PLAYER%>me has been a bad boy ):"
   successful:
     added: "Word has been added." ## Word has been added message
     removed: "Word has been removed." ## Word has been removed message
@@ -41,6 +50,8 @@ variables:
     alreadyexists: "That word already exists." ## Word already exists in the database/config
     doesntexist: "That word doesn't exist." ## Word doesn't exist in the database/config
     updatecheck: "Couldn't check for an update. See below error for more information:" ## Coudln't check for updates. Followed by a stacktrace of any errors
+    unsupported: "Sorry but %feature% isn't supported on %serverversion% ):"
+
 ##### Settings
 settings:
   default: false #Enable filter by default
@@ -48,13 +59,20 @@ settings:
   metrics: true #Anonymous metric data
   log: true #Log toggle events for players
   debug: false
+  console_motd: true
   check_for_updates: true # Whether to check for updates or not
-  replacement: "&c*&f" # What to replace blacklisted words with E.G: fuck = ****
+  update_notification_ingame: true # Whether or not to notify admins onjoin about updates
+  replacement: "&c*&r" # What to replace blacklisted words with E.G: fuck = ****
   discordSRV: false #Support for plugin DiscordSRV
   mysql: false # Whether or not to use mysql
   bookcheck: true #Book check allows the server to filter out swears inside of Books.
   signcheck: false #Sign check allows the server to filter out swears inside of signs, could cause lag.
   experimental_regex: true # Experimental regex which better identifies blacklisted words
+  punish_players: false
+  punish_check:
+    books: true
+    signs: true
+    chat: true
   command_args_enabled:
     version: true
     add: true
@@ -81,6 +99,7 @@ users:
     playername: Notch
 
 ##### Swear list
+swearcount: 0
 swears:
   - 2g1c
   - anal

@@ -22,10 +22,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -48,16 +46,18 @@ public class Main extends JavaPlugin {
     public static Plugin plugin;
     MySQL MySQL;
     List<UUID> playersOnline = new ArrayList<>();
+    List<String> regex = new ArrayList<>();
+    List<String> localSwears;
     private String version;
     private boolean signSupport = true;
 
     {
-        if(
+        if (
                 getServer().getVersion().contains("1.8") ||
-                getServer().getVersion().contains("1.9")
+                        getServer().getVersion().contains("1.9")
         )
             signSupport = false;
-    try {
+        try {
             version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
         } catch (ParseException | IOException ignored) {
             version = getDescription().getVersion();
@@ -99,6 +99,28 @@ public class Main extends JavaPlugin {
             }
         }
         reloadConfig();
+        reloadPattern();
+    }
+
+    private void reloadPattern() {
+            if ((localSwears == null ? 0 : localSwears.size()) != getConfig().getStringList("swears").size() || regex.isEmpty()) {
+                debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
+                localSwears = getConfig().getStringList("swears");
+                if (localSwears.isEmpty()) {
+                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure")
+                            .replaceAll("%message%", "PATH `swears` is empty in config, please fix this ASAP; Using `fuck, shit` as placeholders"));
+                    localSwears = Arrays.asList("fuck", "shit");
+                }
+                regex.clear();
+                for (String str : localSwears) {
+                    StringBuilder omg = new StringBuilder();
+                    for (String str2 : str.split("")) {
+                        str2 = escape(str2);
+                        omg.append(str2).append("+\\s*");
+                    }
+                    regex.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
+                }
+            }
     }
 
     public void debug(String str) {
@@ -124,7 +146,13 @@ public class Main extends JavaPlugin {
                     @Subscribe
                     public void DiscordGuildMessageSentEvent(
                             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-                        event.setProcessedMessage(ChatColor.stripColor(clean(event.getProcessedMessage())).replaceAll("\\*", "\\" + "\\*"));
+                        //Some escaping before actually changing the message so it doesn't contain any text altering strings
+                        event.setProcessedMessage(clean(event.getProcessedMessage(), true)
+                                .replaceAll("\\*", "\\\\*")
+                                .replaceAll("_", "\\_")
+                                .replaceAll("\\|", "\\\\|")
+                                .replaceAll("~", "\\~")
+                                .replaceAll("`", "\\\\`"));
                     }
                 });
                 debug("Registered DiscordSRV event successfully!");
@@ -161,8 +189,8 @@ public class Main extends JavaPlugin {
             private void registerCommand(CommandSender sender, List<String> args) {
                 reloadConfig();
                 if (!args.isEmpty()) {
-                    if(getConfig().isSet("settings.command_args_enabled."+args.get(0))){
-                        if(!getConfig().getBoolean("settings.command_args_enabled." + args.get(0))){
+                    if (getConfig().isSet("settings.command_args_enabled." + args.get(0))) {
+                        if (!getConfig().getBoolean("settings.command_args_enabled." + args.get(0))) {
                             send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
                             return;
                         }
@@ -170,6 +198,10 @@ public class Main extends JavaPlugin {
                     switch (args.get(0).toLowerCase()) {
                         case "help":
                         default:
+                            if (!getConfig().getBoolean("settings.command_args_enabled.help")) {
+                                send(sender, Objects.requireNonNull(getConfig().getString("variables.disabled")));
+                                break;
+                            }
                             showHelp(sender);
                             break;
                         case "toggle":
@@ -433,9 +465,11 @@ public class Main extends JavaPlugin {
                     saveConfig();
                 }
                 debug("Player " + player.getName() + "'s swear filter is " + (status(player.getUniqueId()) ? "enabled" : "disabled"));
-                /*if (status(player.getUniqueId())) {
-                    signCheck(player);
-                }*/
+
+                if ( getConfig().getBoolean("settings.update_notification_ingame") && player.hasPermission("MCSF.update") && getConfig().getBoolean("settings.check_for_updates") && (Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(version))) {
+                    send(player, getConfig().getString("variables.updatecheck.update_available"));
+                    send(player, getConfig().getString("variables.updatecheck.update_link"));
+                }
             }
 
             @EventHandler
@@ -457,7 +491,7 @@ public class Main extends JavaPlugin {
                         ItemStack newbook = new ItemStack(Material.WRITTEN_BOOK);
                         BookMeta newmeta = (BookMeta) newbook.getItemMeta();
                         for (String page : meta.getPages())
-                            newmeta.addPage(isclean(page) ? page : ChatColor.stripColor(clean(page))); // Have to strip colors for book or the pages would mess up pretty badly..
+                            newmeta.addPage(isclean(page) ? page : clean(page, true)); // Have to strip colors for book or the pages would mess up pretty badly..
                         newmeta.setAuthor(meta.getAuthor());
                         newmeta.setTitle(meta.getTitle());
                         newbook.setItemMeta(newmeta);
@@ -482,19 +516,89 @@ public class Main extends JavaPlugin {
                 send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.failedtoconnect")));
             }
         }
-        if(getConfig().getBoolean("settings.signcheck")){
-            if(!signSupport){
+
+        if (getConfig().getBoolean("settings.force") && getConfig().getBoolean("settings.punish_players")) {
+            getServer().getPluginManager().registerEvents(new Listener() {
+                @EventHandler
+                public void signEdit(SignChangeEvent event) {
+                    if (event.getPlayer().hasPermission("MCSF.bypass") || isclean(String.join("", event.getLines())) || !getConfig().getBoolean("settings.punish_check.signs")) {
+                        return;
+                    }
+                    for (String str : getConfig().getStringList("variables.punishment_commands")) {
+                        String command = prepare(event.getPlayer(), str);
+                        Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
+                        String executor = "CONSOLE";
+                        while (match.find()) {
+                            executor = match.group(1);
+                        }
+                        command = command.replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+                        if (executor.equalsIgnoreCase("CONSOLE")) {
+                            debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        } else {
+                            debug((Bukkit.dispatchCommand(event.getPlayer(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        }
+                    }
+                }
+
+                @SuppressWarnings("deprecation")
+                @EventHandler
+                public void playerChat(PlayerChatEvent event) {
+                    // Method is deprecated but I don't wish to call this async because I'll need to access the bukkit api to run the commands.
+                    Player player = event.getPlayer();
+                    if (player.hasPermission("MCSF.bypass") || isclean(event.getMessage()) || !getConfig().getBoolean("settings.punish_check.chat"))
+                        return;
+                    for (String str : getConfig().getStringList("variables.punishment_commands")) {
+                        String command = prepare(player, str);
+                        Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
+                        String executor = "CONSOLE";
+                        while (match.find()) {
+                            executor = match.group(1);
+                        }
+                        command = command.replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+                        if (executor.equalsIgnoreCase("CONSOLE")) {
+                            debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        } else {
+                            debug((Bukkit.dispatchCommand(player, command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        }
+
+                    }
+                }
+
+                @EventHandler
+                public void bookEdit(PlayerEditBookEvent event) {
+                    if (event.getPlayer().hasPermission("MCSF.bypass") || isclean(String.join("", event.getNewBookMeta().getPages())) || !getConfig().getBoolean("settings.punish_check.books")) {
+                        return;
+                    }
+                    for (String str : getConfig().getStringList("variables.punishment_commands")) {
+                        String command = prepare(event.getPlayer(), str);
+                        Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
+                        String executor = "CONSOLE";
+                        while (match.find()) {
+                            executor = match.group(1);
+                        }
+                        command = command.replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+                        if (executor.equalsIgnoreCase("CONSOLE")) {
+                            debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        } else {
+                            debug((Bukkit.dispatchCommand(event.getPlayer(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
+                        }
+                    }
+                }
+            }, this);
+        }
+        if (getConfig().getBoolean("settings.signcheck")) {
+            if (!signSupport) {
                 send(Bukkit.getConsoleSender(), getConfig().getString("variables.failure").replace("%message%", getConfig().getString("variables.error.unsupported")).replace("%feature%", "sign filtering"));
                 return;
             }
-            getServer().getPluginManager().registerEvents(new Listener(){
+            getServer().getPluginManager().registerEvents(new Listener() {
                 @EventHandler
                 public void viewSign(SignViewEvent event) {
                     if (getConfig().getBoolean("settings.signcheck") && status(event.getPlayer().getUniqueId())) {
                         List<String> lines = new ArrayList<>();
                         for (String line : event.getLines()) {
                             if (!isclean(line)) {
-                                line = ChatColor.stripColor(clean(line));
+                                line = clean(line, false);
                             }
                             lines.add(line);
                         }
@@ -517,7 +621,7 @@ public class Main extends JavaPlugin {
                         if (component != null) {
                             if (!component.getJson().isEmpty()) {
                                 if (!isclean(component.getJson())) {
-                                    String string = clean(component.getJson());
+                                    String string = clean(component.getJson(), false);
                                     if (string == null) {
                                         return;
                                     }
@@ -532,25 +636,32 @@ public class Main extends JavaPlugin {
 
             }
         });
-        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
-            if (getConfig().getBoolean("settings.check_for_updates")) {
-                send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.checking"));
-                if ((Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(version))) {
-                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_available"));
-                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_link"));
-                } else {
-                    send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.no_new_version"));
-                }
-            }
-            if (getConfig().getBoolean("settings.metrics")) {
-                final Metrics metrics = new Metrics(this);
-                debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
-            }
-        }, 0L, 432000L);
+        reload();
+        final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));
+        String clean = clean(test, true);
+        debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (playersOnline.contains(player.getUniqueId()))
                 return;
             signCheck(player);
+        }
+        if (getConfig().getBoolean("settings.console_motd")) {
+            for (String str : getConfig().getStringList("variables.console_motd")) {
+                send(Bukkit.getConsoleSender(), str);
+            }
+        }
+        if (getConfig().getBoolean("settings.check_for_updates")) {
+            send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.checking"));
+            if ((Double.parseDouble(getDescription().getVersion()) < Double.parseDouble(version))) {
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_available"));
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.update_link"));
+            } else {
+                send(Bukkit.getConsoleSender(), getConfig().getString("variables.updatecheck.no_new_version"));
+            }
+        }
+        if (getConfig().getBoolean("settings.metrics")) {
+            final Metrics metrics = new Metrics(this);
+            debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
         }
     }
 
@@ -589,7 +700,7 @@ public class Main extends JavaPlugin {
 
     public void showHelp(CommandSender sender) {
         for (String str : getConfig().getStringList("variables.help")) {
-            Matcher match = Pattern.compile("<%PERMISSION=(.*?)%>", Pattern.DOTALL).matcher(str);
+            Matcher match = Pattern.compile("(?i)<%PERMISSION=(.*?)%>", Pattern.DOTALL).matcher(str);
             String permission = null;
             while (match.find()) {
                 permission = match.group(1);
@@ -598,7 +709,7 @@ public class Main extends JavaPlugin {
                 if (!sender.hasPermission(permission)) {
                     continue;
                 } else {
-                    str = str.replaceAll("<%PERMISSION=(.*?)%>", "");
+                    str = str.replaceAll("(?i)<%PERMISSION=(.*?)%>", "");
                 }
             }
             send(sender, str);
@@ -643,29 +754,28 @@ public class Main extends JavaPlugin {
         return getConfig().getBoolean("settings.force") ? getConfig().getBoolean("settings.force") : getConfig().getBoolean("users." + ID + ".enabled");
     }
 
-    public String clean(String string) {
+    public String clean(String string, boolean strip) {
         reloadConfig();
+        String replacement = ChatColor.translateAlternateColorCodes('&', getConfig().getString("settings.replacement"));
+        if (strip) {
+            replacement = ChatColor.stripColor(replacement);
+        }
         if (string != null) {
             if (getConfig().getBoolean("settings.experimental_regex")) {
-
-                List<String> regex = new ArrayList<>();
-                for (String str : getConfig().getStringList("swears")) {
-                    StringBuilder omg = new StringBuilder();
-                    for (String str2 : str.split("")) {
-                        str2 = escape(str2);
-                        omg.append(str2).append("+\\s*");
-                    }
-                    regex.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
+                reloadPattern();
+                Pattern pattern = Pattern.compile(String.join("|", regex), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
+                Matcher matcher = pattern.matcher(string);
+                StringBuffer out = new StringBuffer();
+                int swearcount = getConfig().getInt("swearcount");
+                while (matcher.find()) {
+                    String r = matcher.group(0).replaceAll("(?s).", replacement);
+                    matcher.appendReplacement(out, r);
+                    swearcount++;
                 }
-                for (String r : regex) {
-                    String clean = r.replace("+\\s*", "");
-                    clean = clean.substring(0, clean.length() - 1);
-                    Pattern pattern = Pattern.compile(r, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-                    Matcher matcher = pattern.matcher(string);
-                    String replacement = ChatColor.translateAlternateColorCodes('&', clean.replaceAll("(?s).", getConfig().getString("settings.replacement")));
-                    string = matcher.replaceAll(replacement);
-                }
-
+                getConfig().set("swearcount", swearcount);
+                saveConfig();
+                matcher.appendTail(out);
+                string = out.toString();
             } else {
                 final List<String> delete = new ArrayList<>();
                 for (int start = 0; start < string.length(); start++) {
@@ -677,7 +787,6 @@ public class Main extends JavaPlugin {
                     }
                 }
                 for (final String s : delete) {
-                    final String replacement = s.replaceAll("(?s).", ChatColor.translateAlternateColorCodes('&', Objects.requireNonNull(getConfig().getString("settings.replacement"))));
                     string = string.replaceAll(String.format("(?i)%s", s), replacement);
                 }
             }
@@ -691,10 +800,8 @@ public class Main extends JavaPlugin {
 
     public boolean isclean(String str) {
         reloadConfig();
-        if (getConfig().getBoolean("settings.experimental_regex") || getConfig().getStringList("swears").isEmpty()) {
-            return false;
-        }
-        return getConfig().getStringList("swears").stream().parallel().noneMatch((str).toLowerCase()::contains);
+        reloadPattern();
+        return getConfig().getBoolean("settings.experimental_regex") ? !Pattern.compile(String.join("|", regex), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str).find() : getConfig().getStringList("swears").stream().parallel().noneMatch((str).toLowerCase()::contains);
     }
 
     @Override
@@ -705,13 +812,22 @@ public class Main extends JavaPlugin {
             DiscordSRV.api.unsubscribe(this);
     }
 
+    public String prepare(CommandSender player, String message) {
+        message = message.replaceAll("(?i)%prefix%", getConfig().getString("variables.prefix"));
+        message = message.replaceAll("(?i)%command%", getConfig().getString("variables.command"));
+        message = message.replaceAll("(?i)%player%", player.getName());
+        message = message.replaceAll("(?i)%current%", getDescription().getVersion());
+        message = message.replaceAll("(?i)%version%", version);
+        message = message.replaceAll("(?i)%serverversion%", getServer().getVersion());
+        message = message.replaceAll("(?i)%swearcount%", Integer.toString(getConfig().getInt("swearcount")));
+        message = message.replaceAll("(?i)%wordcount%", Integer.toString(getConfig().getStringList("swears").size()));
+        return ChatColor.translateAlternateColorCodes('&', message);
+    }
+
     public void send(CommandSender player, String message) {
-        message = message.replaceAll("%prefix%", Objects.requireNonNull(getConfig().getString("variables.prefix")));
-        message = message.replaceAll("%command%", getConfig().getString("variables.command"));
-        message = message.replaceAll("%player%", player.getName());
-        message = message.replaceAll("%current%", getDescription().getVersion());
-        message = message.replaceAll("%version%", version);
-        message = message.replace("%serverversion%", getServer().getVersion());
+        if("".equals(message))
+            return;
+        message = prepare(player, message);
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
     }
 
