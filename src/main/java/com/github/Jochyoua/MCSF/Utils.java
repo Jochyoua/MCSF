@@ -48,12 +48,14 @@ public class Utils {
     }
 
     public boolean supported(String string) {
-        boolean statement = true;
+        boolean statement = false;
         switch (string.toLowerCase()) {
             case "signcheck":
                 statement = !(plugin.getServer().getVersion().contains("1.8") ||
                         plugin.getServer().getVersion().contains("1.9"));
                 break;
+            case "discordsrv":
+                statement = plugin.getConfig().getBoolean("settings.discordSRV") && plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null;
         }
         return statement;
     }
