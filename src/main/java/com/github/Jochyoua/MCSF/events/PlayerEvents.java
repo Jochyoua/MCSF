@@ -2,13 +2,16 @@ package com.github.Jochyoua.MCSF.events;
 
 import com.github.Jochyoua.MCSF.Main;
 import com.github.Jochyoua.MCSF.Utils;
+import github.scarsz.discordsrv.DiscordSRV;
 import me.vagdedes.mysql.database.MySQL;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.InventoryHolder;
@@ -31,6 +34,20 @@ public class PlayerEvents implements Listener {
         this.MySQL = MySQL;
         this.utils = utils;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @EventHandler
+    public void PlayerChatEvent(PlayerChatEvent e) {
+        if (plugin.getConfig().getBoolean("settings.only_filter_players")) {
+            e.setCancelled(true);
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (utils.status(player.getUniqueId())) {
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(e.getMessage(), false, true)));
+                } else {
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), e.getMessage()));
+                }
+            }
+        }
     }
 
     @EventHandler

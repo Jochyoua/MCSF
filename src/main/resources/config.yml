@@ -70,6 +70,7 @@ settings:
   bookcheck: true #Book check allows the server to filter out swears inside of Books.
   signcheck: false #Sign check allows the server to filter out swears inside of signs, could cause lag.
   punish_players: false
+  only_filter_players: false #Only filter player chat, useful if you want server messages to remain unfiltered
   punish_check:
     books: true
     signs: true

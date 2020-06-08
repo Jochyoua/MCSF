@@ -56,6 +56,7 @@ public class Utils {
                 break;
             case "discordsrv":
                 statement = plugin.getConfig().getBoolean("settings.discordSRV") && plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null;
+                break;
         }
         return statement;
     }

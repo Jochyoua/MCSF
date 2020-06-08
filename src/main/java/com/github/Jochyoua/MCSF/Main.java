@@ -60,32 +60,34 @@ public class Main extends JavaPlugin {
         new PunishmentEvents(this, utils);
         new SignEvents(this, utils);
 
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                Player player = event.getPlayer();
-                UUID ID = player.getUniqueId();
-                PacketContainer packet = event.getPacket();
-                StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
-                for (WrappedChatComponent component : chatComponents.getValues()) {
-                    if (getConfig().getBoolean("settings.force") || utils.status(ID)) {
-                        reloadConfig();
-                        if (component != null) {
-                            if (!component.getJson().isEmpty()) {
-                                if (!utils.isclean(component.getJson())) {
-                                    String string = utils.clean(component.getJson(), false, true);
-                                    if (string == null) {
-                                        return;
+        if (!getConfig().getBoolean("settings.only_filter_players")) {
+            ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
+                @Override
+                public void onPacketSending(PacketEvent event) {
+                    Player player = event.getPlayer();
+                    UUID ID = player.getUniqueId();
+                    PacketContainer packet = event.getPacket();
+                    StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
+                    for (WrappedChatComponent component : chatComponents.getValues()) {
+                        if (getConfig().getBoolean("settings.force") || utils.status(ID)) {
+                            reloadConfig();
+                            if (component != null) {
+                                if (!component.getJson().isEmpty()) {
+                                    if (!utils.isclean(component.getJson())) {
+                                        String string = utils.clean(component.getJson(), false, true);
+                                        if (string == null) {
+                                            return;
+                                        }
+                                        component.setJson(string);
+                                        chatComponents.write(0, component);
                                     }
-                                    component.setJson(string);
-                                    chatComponents.write(0, component);
                                 }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
         utils.reload();
         final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));
@@ -111,7 +113,6 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        saveConfig();
         if (MySQL.isConnected())
             MySQL.disconnect();
         if (utils.supported("DiscordSRV"))

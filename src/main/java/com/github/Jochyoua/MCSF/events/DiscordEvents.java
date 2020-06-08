@@ -15,12 +15,12 @@ public class DiscordEvents implements Listener {
         this.utils = utils;
         if (utils.supported("DiscordSRV")) {
             try {
+                utils.debug("Registered DiscordSRV event successfully!");
                 DiscordSRV.api.subscribe(new Listener() {
                     @Subscribe
                     public void DiscordGuildMessageSentEvent(
                             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
                         //Some escaping before actually changing the message so it doesn't contain any text altering strings
-                        utils.debug("Registered DiscordSRV event successfully!");
                         event.setProcessedMessage(utils.clean(event.getProcessedMessage(), true, false)
                                 .replaceAll("\\*", "\\\\*")
                                 .replaceAll("_", "\\_")

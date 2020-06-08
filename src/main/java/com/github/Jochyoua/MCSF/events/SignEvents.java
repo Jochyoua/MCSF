@@ -26,8 +26,9 @@ public class SignEvents implements Listener {
             utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.unsupported")).replace("%feature%", "sign filtering"));
             return;
         }
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        ProtocolLibrary.getProtocolManager().addPacketListener(new SignPacketListener());
+
+            plugin.getServer().getPluginManager().registerEvents(this, plugin);
+            ProtocolLibrary.getProtocolManager().addPacketListener(new SignPacketListener());
     }
 
     // Sign Events
