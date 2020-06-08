@@ -1,6 +1,6 @@
 name: MCSF
 main: com.github.Jochyoua.MCSF.Main
-version: 3.3
+version: 3.4
 description: simple toggleable swear filter
 authors: [Jochyoua]
 depend:
@@ -8,6 +8,7 @@ depend:
 softdepend:
   - DiscordSRV
 api-version: 1.15
+load: POSTWORLD
 commands:
   mcsf:
     description: Main command for MCSF

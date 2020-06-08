@@ -1,6 +1,7 @@
 package me.vagdedes.mysql.database;
 
 import com.github.Jochyoua.MCSF.Main;
+import com.github.Jochyoua.MCSF.Utils;
 import me.vagdedes.mysql.basic.Config;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -10,12 +11,15 @@ import java.util.List;
 
 @SuppressWarnings("ALL")
 public class MySQL {
-    private Connection con;
     Main plugin;
     Config Config;
-    public MySQL(Main plugin){
+    Utils utils;
+    private Connection con;
+
+    public MySQL(Main plugin) {
         this.plugin = plugin;
         Config = new Config(plugin);
+        this.utils = new Utils(plugin, this);
     }
 
     public Connection getConnection() {
@@ -28,7 +32,7 @@ public class MySQL {
         disconnect(false);
         try {
             con = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + database + "?useUnicode=true&characterEncoding=utf8&autoReconnect=true&useSSL=" + Config.getSSL(), user, password);
-            plugin.debug("SQL connected.");
+            utils.debug("SQL connected.");
         } catch (Exception e) {
             Bukkit.getConsoleSender().sendMessage("SQL Connect Error: " + e.getMessage());
         }
@@ -46,7 +50,7 @@ public class MySQL {
         String port = Config.getPort();
         if (isConnected()) {
             if (message)
-                plugin.debug("SQL Connect Error: Already connected");
+                utils.debug("SQL Connect Error: Already connected");
         } else if (host.equalsIgnoreCase("")) {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Config Error: Host is blank");
         } else if (user.equalsIgnoreCase("")) {
@@ -71,13 +75,14 @@ public class MySQL {
             if (isConnected()) {
                 con.close();
                 if (message)
-                    plugin.debug("SQL disconnected.");
+                    utils.debug("SQL disconnected.");
             } else if (message) {
-                plugin.debug("SQL Disconnect Error: No existing connection");
+                utils.debug("SQL Disconnect Error: No existing connection");
             }
         } catch (Exception e) {
             if (message)
                 Bukkit.getConsoleSender().sendMessage("SQL Disconnect Error: " + e.getMessage());
+            e.printStackTrace();
         }
         con = null;
     }
@@ -93,6 +98,7 @@ public class MySQL {
                 return !con.isClosed();
             } catch (Exception e) {
                 Bukkit.getConsoleSender().sendMessage("SQL Connection Error:" + e.getMessage());
+                e.printStackTrace();
             }
         return false;
     }
@@ -125,14 +131,16 @@ public class MySQL {
         try {
             Statement st = getConnection().createStatement();
             rs = st.executeQuery(command);
-        } catch (Exception e){
+        } catch (Exception e) {
             String message = e.getMessage();
             if (message != null) {
                 Bukkit.getConsoleSender().sendMessage("SQL Query Error: " + message);
+                e.printStackTrace();
             }
         }
         return rs;
     }
+
     // SQL
     public boolean tableExists(String table) {
         try {
@@ -144,7 +152,8 @@ public class MySQL {
             ResultSet rs = metadata.getTables(null, null, table, null);
             if (rs.next())
                 return true;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
@@ -165,7 +174,8 @@ public class MySQL {
             ResultSet rs = query("SELECT * FROM " + table + " WHERE " + column + "=" + data + ";");
             if (rs.next())
                 return true;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
@@ -175,7 +185,8 @@ public class MySQL {
         try {
             while (rs.next())
                 i++;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return i;
     }
 
@@ -183,40 +194,42 @@ public class MySQL {
         connect(false);
         PreparedStatement preparedStatement = null;
         StringBuilder query = new StringBuilder("INSERT INTO swears(word) VALUES (?)");
-        for(int i = 0; i < swears.size() -1; i++){
+        for (int i = 0; i < swears.size() - 1; i++) {
             query.append(", (?)");
         }
         try {
             preparedStatement = con.prepareStatement(query.toString());
             for (int i = 0; i < swears.size(); i++) {
-                preparedStatement.setString(i+1, swears.get(i));
+                preparedStatement.setString(i + 1, swears.get(i));
             }
             preparedStatement.executeUpdate();
-            plugin.debug("Successfully insert data into database consisting of "+swears.size()+" words");
+            utils.debug("Successfully insert data into database consisting of " + swears.size() + " words");
         } catch (SQLException throwables) {
             Bukkit.getConsoleSender().sendMessage("Failed to insert data into database: " + throwables.getMessage());
         }
     }
-    public void stateInsert(String word){
+
+    public void stateInsert(String word) {
         PreparedStatement preparedStatement = null;
         StringBuilder query = new StringBuilder("INSERT INTO swears(word) VALUES (?)");
         try {
             preparedStatement = con.prepareStatement(query.toString());
             preparedStatement.setString(1, word);
             preparedStatement.executeUpdate();
-            plugin.debug("added `" + word + "` to the database");
+            utils.debug("added `" + word + "` to the database");
         } catch (SQLException throwables) {
-            Bukkit.getConsoleSender().sendMessage("failed to add `" + word + "` to the database: "+throwables.getMessage());
+            Bukkit.getConsoleSender().sendMessage("failed to add `" + word + "` to the database: " + throwables.getMessage());
         }
     }
-    public void stateRemove(String word){
+
+    public void stateRemove(String word) {
         PreparedStatement preparedStatement = null;
         StringBuilder query = new StringBuilder("DELETE FROM swears WHERE word = (?);");
         try {
             preparedStatement = con.prepareStatement(query.toString());
             preparedStatement.setString(1, word);
             preparedStatement.executeUpdate();
-            plugin.debug("`" + word + "` has been removed from the database");
+            utils.debug("`" + word + "` has been removed from the database");
         } catch (SQLException throwables) {
             Bukkit.getConsoleSender().sendMessage("failed to remove  `" + word + "` from database: " + throwables.getMessage());
         }
