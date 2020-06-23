@@ -95,12 +95,12 @@ settings:
 
 ##### Mysql
 mysql:
-  host: "localhost" # Host name
-  username: "root" # Username
-  password: "foobar" # Password
-  database: "default" # Database
-  port: "3306" # Port
-  ssl: false # SSL enabled or not
+  host: "localhost"
+  username: "root"
+  password: "foobar"
+  database: "default"
+  port: "3306"
+  ssl: false
 
 ##### User data
 users:
