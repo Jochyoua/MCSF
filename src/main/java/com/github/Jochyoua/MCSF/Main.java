@@ -17,7 +17,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Objects;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -124,6 +125,18 @@ public class Main extends JavaPlugin {
         if (getConfig().getBoolean("settings.metrics")) {
             final Metrics metrics = new Metrics(this);
             utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled" : "disabled"));
+        }
+        //Reloaded plugin check:
+        if (Bukkit.getOnlinePlayers().size() != 0) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
+                plugin.saveConfig();
+                if(!plugin.getConfig().isSet("users."+player.getUniqueId()+".playername")){
+                    utils.debug("There was an issue saving "+player.getName()+"'s name to the config.");
+                }else {
+                    utils.debug("Successfully added "+player.getName()+"'s name to the config.");
+                }
+            }
         }
     }
 

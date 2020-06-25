@@ -63,6 +63,7 @@ public class PlayerEvents implements Listener {
         if(!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
             if(utils.getAll().containsKey(e.getPlayer().getUniqueId())){
                 plugin.getConfig().set("users."+e.getPlayer().getUniqueId()+".cooldown", utils.getAll().get(e.getPlayer().getUniqueId()));
+                plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".playername", e.getPlayer().getName().toLowerCase());
                 plugin.saveConfig();
                 utils.removeUser(e.getPlayer().getUniqueId());
             }
@@ -76,9 +77,14 @@ public class PlayerEvents implements Listener {
                 utils.setUser(e.getPlayer().getUniqueId(), plugin.getConfig().getInt("users."+e.getPlayer().getUniqueId()+".cooldown"));
             }
         }
+        plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
+        plugin.saveConfig();
+        if(!plugin.getConfig().isSet("users."+player.getUniqueId()+".playername")){
+            utils.debug("There was an issue saving "+player.getName()+"'s name to the config.");
+        }else {
+            utils.debug("Successfully added "+player.getName()+"'s name to the config.");
+        }
         if (!plugin.getConfig().getBoolean("settings.force")) {
-            plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
-            plugin.saveConfig();
             if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
                 utils.toggle(player.getUniqueId());
             if (utils.supported("mysql")) {
