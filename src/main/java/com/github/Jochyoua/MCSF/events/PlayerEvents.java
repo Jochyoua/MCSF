@@ -77,7 +77,7 @@ public class PlayerEvents implements Listener {
             }
         }
         if (!plugin.getConfig().getBoolean("settings.force")) {
-            plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName());
+            plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
             plugin.saveConfig();
             if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
                 utils.toggle(player.getUniqueId());

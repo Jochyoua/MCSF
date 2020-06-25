@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.event.server.TabCompleteEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ public class CommandEvents implements Listener {
         this.utils = utils;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
+
 
     @EventHandler
     public void serverCommand(ServerCommandEvent e) {
@@ -49,7 +51,7 @@ public class CommandEvents implements Listener {
             if (!(plugin.getConfig().getInt("settings.cooldown") <= 0) && !sender.hasPermission("MCSF.bypass")) {
                 if (!utils.getAll().containsKey(sender.getUniqueId())) {
                     utils.setUser(sender.getUniqueId(), plugin.getConfig().getInt("settings.cooldown"));
-                } else if (!(utils.getAll().get(sender.getUniqueId()) <= 0)){
+                } else if (!(utils.getAll().get(sender.getUniqueId()) <= 0)) {
                     utils.send(sender, plugin.getConfig().getString("variables.cooldown").replace("%duration%", String.valueOf(utils.getAll().get(sender.getUniqueId()))));
                     return;
                 }
@@ -172,6 +174,8 @@ public class CommandEvents implements Listener {
                             for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
                                 if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(args.get(1))) {
                                     targetid = UUID.fromString(key);
+                                } else if (key.equalsIgnoreCase(args.get(1))) {
+                                    targetid = UUID.fromString(key);
                                 }
                             }
                             if (targetid == null) {
@@ -239,6 +243,8 @@ public class CommandEvents implements Listener {
                         UUID targetid = null;
                         for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
                             if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(args.get(1))) {
+                                targetid = UUID.fromString(key);
+                            } else if (key.equalsIgnoreCase(args.get(1))) {
                                 targetid = UUID.fromString(key);
                             }
                         }
