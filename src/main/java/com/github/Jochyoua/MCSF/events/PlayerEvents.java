@@ -4,12 +4,12 @@ import com.github.Jochyoua.MCSF.Main;
 import com.github.Jochyoua.MCSF.Utils;
 import github.scarsz.discordsrv.DiscordSRV;
 import me.vagdedes.mysql.database.MySQL;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -24,7 +24,6 @@ import xyz.upperlevel.spigot.book.BookUtil;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.UUID;
 
 public class PlayerEvents implements Listener {
     Main plugin;
@@ -41,48 +40,54 @@ public class PlayerEvents implements Listener {
 
     @EventHandler
     public void PlayerChatEvent(AsyncPlayerChatEvent e) {
+        //Respect cancelling of AsyncPlayerChatEvent from other plugins:
+        if(e.isCancelled())
+            return;
         if (plugin.getConfig().getBoolean("settings.only_filter_players") || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
             if (utils.supported("DiscordSRV") && e.isCancelled())
                 DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), e.getMessage(), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", false);
             // The above code registers the process chat message even though asyncplayerchat event is cancelled so original messages are still being sent to the discord, and then filtered elsewhere (DiscordEvents.java)
-            if(plugin.getConfig().getBoolean("settings.remove_message_on_swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
+            if (plugin.getConfig().getBoolean("settings.remove_message_on_swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             String message = e.getMessage();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true)));
+                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true))));
                 } else {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message));
+
+                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message)));
                 }
             }
         }
     }
+
     @EventHandler
-    public void leave(PlayerQuitEvent e){
-        if(!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
-            if(utils.getAll().containsKey(e.getPlayer().getUniqueId())){
-                plugin.getConfig().set("users."+e.getPlayer().getUniqueId()+".cooldown", utils.getAll().get(e.getPlayer().getUniqueId()));
+    public void leave(PlayerQuitEvent e) {
+        if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
+            if (utils.getAll().containsKey(e.getPlayer().getUniqueId())) {
+                plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".cooldown", utils.getAll().get(e.getPlayer().getUniqueId()));
                 plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".playername", e.getPlayer().getName().toLowerCase());
                 plugin.saveConfig();
                 utils.removeUser(e.getPlayer().getUniqueId());
             }
         }
     }
+
     @EventHandler
     public void Join(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-        if(!(plugin.getConfig().getInt("settings.cooldown") <= 0)){
-            if(plugin.getConfig().isSet("users."+e.getPlayer().getUniqueId()+".cooldown")){
-                utils.setUser(e.getPlayer().getUniqueId(), plugin.getConfig().getInt("users."+e.getPlayer().getUniqueId()+".cooldown"));
+        if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
+            if (plugin.getConfig().isSet("users." + e.getPlayer().getUniqueId() + ".cooldown")) {
+                utils.setUser(e.getPlayer().getUniqueId(), plugin.getConfig().getInt("users." + e.getPlayer().getUniqueId() + ".cooldown"));
             }
         }
         plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
         plugin.saveConfig();
-        if(!plugin.getConfig().isSet("users."+player.getUniqueId()+".playername")){
-            utils.debug("There was an issue saving "+player.getName()+"'s name to the config.");
-        }else {
-            utils.debug("Successfully added "+player.getName()+"'s name to the config.");
+        if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".playername")) {
+            utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+        } else {
+            utils.debug("Successfully added " + player.getName() + "'s name to the config.");
         }
         if (!plugin.getConfig().getBoolean("settings.force")) {
             if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))

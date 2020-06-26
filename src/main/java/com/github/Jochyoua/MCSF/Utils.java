@@ -2,6 +2,7 @@ package com.github.Jochyoua.MCSF;
 
 import com.github.Jochyoua.MCSF.signcheck.SignUtils;
 import me.vagdedes.mysql.database.MySQL;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
@@ -365,13 +366,14 @@ public class Utils {
         message = message.replaceAll("(?i)%serverversion%", plugin.getServer().getVersion());
         message = message.replaceAll("(?i)%swearcount%", Integer.toString(plugin.getConfig().getInt("swearcount")));
         message = message.replaceAll("(?i)%wordcount%", Integer.toString(plugin.getConfig().getStringList("swears").size()));
-        return ChatColor.translateAlternateColorCodes('&', message);
+        message = ChatColor.translateAlternateColorCodes('&', message);
+        return message;
     }
 
     public void send(CommandSender player, String message) {
         if ("".equals(message))
             return;
         message = prepare(player, message);
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+        player.spigot().sendMessage(new TextComponent(message));
     }
 }

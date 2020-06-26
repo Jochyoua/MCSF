@@ -17,8 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -131,10 +129,10 @@ public class Main extends JavaPlugin {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
                 plugin.saveConfig();
-                if(!plugin.getConfig().isSet("users."+player.getUniqueId()+".playername")){
-                    utils.debug("There was an issue saving "+player.getName()+"'s name to the config.");
-                }else {
-                    utils.debug("Successfully added "+player.getName()+"'s name to the config.");
+                if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".playername")) {
+                    utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+                } else {
+                    utils.debug("Successfully added " + player.getName() + "'s name to the config.");
                 }
             }
         }

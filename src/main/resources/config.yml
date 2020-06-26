@@ -63,6 +63,7 @@ settings:
   default: false #Enable filter by default
   force: false #Force filter to enabled state
   metrics: true
+  link filter regex:
   log: true #Log toggle events for players
   debug: false # If you want the nasty console spam
   console_motd: true # If you want some information on plugin startup :)

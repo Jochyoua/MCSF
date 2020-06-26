@@ -34,17 +34,6 @@ public class SignEvents implements Listener {
     // Sign Events
     @EventHandler
     public void viewSign(SignViewEvent event) {
-        /*
-        if (plugin.getConfig().getBoolean("settings.signcheck") && utils.status(event.getPlayer().getUniqueId())) {
-            List<String> lines = new ArrayList<>();
-            for (String line : event.getLines()) {
-                if (!utils.isclean(line)) {
-                    line = utils.clean(line, false, true);
-                }
-                lines.add(line);
-            }
-            event.setLines(lines.toArray(new String[0]));
-        }*/
         if (plugin.getConfig().getBoolean("settings.signcheck")) {
             if (!(event.getLine(0).equalsIgnoreCase("{\"text\":\"\"}")
                     && event.getLine(1).equalsIgnoreCase("{\"text\":\"\"}")
