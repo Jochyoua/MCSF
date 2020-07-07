@@ -1,9 +1,10 @@
 package com.github.Jochyoua.MCSF.events;
 
-import com.github.Jochyoua.MCSF.Main;
-import com.github.Jochyoua.MCSF.Utils;
+import com.github.Jochyoua.MCSF.MCSF;
+import com.github.Jochyoua.MCSF.shared.Filters;
+import com.github.Jochyoua.MCSF.shared.MySQL;
+import com.github.Jochyoua.MCSF.shared.Utils;
 import github.scarsz.discordsrv.DiscordSRV;
-import me.vagdedes.mysql.database.MySQL;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,12 +27,12 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 public class PlayerEvents implements Listener {
-    Main plugin;
+    MCSF plugin;
     MySQL MySQL;
     Utils utils;
 
 
-    public PlayerEvents(Main plugin, MySQL MySQL, Utils utils) {
+    public PlayerEvents(MCSF plugin, MySQL MySQL, Utils utils) {
         this.plugin = plugin;
         this.MySQL = MySQL;
         this.utils = utils;
@@ -41,7 +42,7 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void PlayerChatEvent(AsyncPlayerChatEvent e) {
         //Respect cancelling of AsyncPlayerChatEvent from other plugins:
-        if(e.isCancelled())
+        if (e.isCancelled())
             return;
         if (plugin.getConfig().getBoolean("settings.only_filter_players") || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
@@ -53,9 +54,8 @@ public class PlayerEvents implements Listener {
             String message = e.getMessage();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.force")) {
-                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true))));
+                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Filters.PLAYERS))));
                 } else {
-
                     player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message)));
                 }
             }
@@ -106,12 +106,12 @@ public class PlayerEvents implements Listener {
                 plugin.getConfig().set("users." + player.getUniqueId() + ".enabled", result);
                 plugin.saveConfig();
             }
-            utils.debug("Player " + player.getName() + "'s swear filter is " + (utils.status(player.getUniqueId()) ? "enabled" : "disabled"));
+            utils.debug("Player " + player.getName() + "'s swear filter is " + (utils.status(player.getUniqueId()) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
         }
 
         if (plugin.getConfig().getBoolean("settings.update_notification_ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.check_for_updates") && !utils.isUpToDate()) {
-            utils.send(player, plugin.getConfig().getString("variables.updatecheck.update_available"));
-            utils.send(player, plugin.getConfig().getString("variables.updatecheck.update_link"));
+            utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
+            utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
         }
     }
 
@@ -140,7 +140,7 @@ public class PlayerEvents implements Listener {
                 }
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false));
+                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

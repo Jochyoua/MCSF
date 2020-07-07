@@ -1,0 +1,61 @@
+variables:
+  command: "mcsf" ## Befehl für das plugin
+  prefix: "&6[MCSF]&f" ## Präfix für alle MCSF-Nachrichten
+  noperm: "{prefix} Ihnen fehlt die Erlaubnis." ## Keine Berechtigung Nachricht
+  toggle: "{prefix} Das schwöre filter wurde {value}" ## Wert (aktiviert/deaktiviert)
+  targetToggle: "{prefix} {target}'s schwörfilter wurde {value}" ## Ziel (name des Spielers) / Wert (aktiviert/deaktiviert)
+  disabled: "{prefix} Ein administrator hat diese Funktion deaktiviert" ## Funktion ist deaktiviert Nachricht
+  status: "{prefix} {target}'s schwören filter ist {value}" ## Ziel (name des Spielers) / Wert (aktiviert/deaktiviert)
+  failure: "{prefix} &cScheitern: {message}" ## Meldungen zur Fehlerbehandlung können Meldungen unter Variablen angezeigt werden.Fehlermeldung
+  success: "{prefix} &aErfolg: {message}" ## Nachrichten für erfolgreiche Antworten können Nachrichten unter Variablen gesehen werden.erfolgreich
+  activated: "aktiviert"
+  deactivated: "deaktiviert"
+  debug: "{prefix} &dDEBUG: &f{message}"
+  reset: "{prefix} Möchten Sie die Datenbank wirklich zurücksetzen? Dies ist irreversibel. Zur Bestätigung geben Sie bitte /{command} reset confirm ein"
+  cooldown: "{prefix} Sie müssen &c{duration}s&f warten, um diesen Befehl zu verwenden!"
+  version:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dResource: &fhttps://www.spigotmc.org/resources/54115/"
+    - "&dGithub: &fhttps://www.github.com/Jochyoua/MCSF/"
+  updatecheck:
+    checking: "{prefix} Nach updates suchen"
+    no_new_version: "{prefix} Keine neue version verfügbar"
+    update_available: "{prefix} Eine neue version (v{version}), ist out! Sie laufen immer noch v{current}"
+    update_link: "{prefix} Laden Sie die neueste version hier: https://www.spigotmc.org/resources/54115/" ## Update-link zum aktualisieren des plugins mit der neuesten Version
+  help:
+    - "&6-------------------{prefix}&6-------------------------"
+    - "&6* Befehl - Beschreibung"
+    - "&6* /{command} toggle [player] - Schaltet den schwören für sich selbst oder jemand anderes um"
+    - "&6* /{command} status [player] - Zeigt den Status des filterstatus eines Ziels an"
+    - "{PERMISSION=MCSF.version}&6* /{command} version - Zeigt die version dieses plugins"
+    - "{PERMISSION=MCSF.modify}&6* /{command} add/remove [word] - Ändert schwöre Liste"
+    - "{PERMISSION=MCSF.modify}&6* /{command} unset [all/player/uuid] - Modifiziert Benutzer"
+    - "{PERMISSION=MCSF.modify}&6* /{command} reset - Setzt Datenbank auf Konfigurationsdaten zurück"
+    - "{PERMISSION=MCSF.modify}&6* /{command} reload - Laden Sie die Konfigurationsdateien des Servers neu"
+    - "&6------------------------------------------------"
+  console_motd:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dServer version:&f {serverversion}"
+    - "&dPlugin version:&f {current}"
+    - "&dSchwöre Zählung:&f {wordcount}"
+    - "&dWörter blockiert:&f {swearcount}"
+  punishment_commands:
+    - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} hat geschworen! >:)\""
+    - "{EXECUTE_AS=PLAYER}me war ein böser junge ):"
+  successful:
+    added: "Word wurde hinzugefügt." ## Word wurde Nachricht Hinzugefügt
+    removed: "Word wurde entfernt." ## Word wurde entfernt Nachricht
+    reloaded: "Plugin erfolgreiches neu geladen" ## Plugin wurde neu geladen
+    reset: "Blacklist- und Benutzerdaten wurden in die Datenbank aufgenommen"
+    removed_players: "Spieler wurden erfolgreich aus der Datenbank und der Konfiguration entfernt"
+    removed_player: "{target} wurde erfolgreich aus der Datenbank entfernt"
+  error:
+    failedtoconnect: "Fehler bei der Verbindung über MySQL. Bitte überprüfen Sie die Anmeldeinformationen erneut."
+    incorrectargs: "Falsche Menge an Argumenten." ## Falsch über Argumente gegeben
+    invalidtarget: "{target} ist kein Gültiger Benutzer." ## Target ist kein Gültiger Benutzer oder nicht in der Datenbank / config
+    alreadyexists: "Dieses Wort existiert bereits." ## Word existiert bereits in der Datenbank / config
+    doesntexist: "Dieses Wort existiert nicht." ## Wort existiert nicht in der Datenbank/config
+    updatecheck: "Konnte nicht überprüfen Sie für ein update. Siehe unten Fehler für weitere Informationen:" ## Konnte nicht auf updates überprüfen. Gefolgt von einem stack-trace von Fehlern
+    unsupported: "Leider wird {feature} auf {serverversion} ):"
+    execute_failure: "Fehler beim laden von{feature}!"
+    execute_failure_link: "Wenn Sie das Gefühl, als wenn das ein bug ist, poste eine Frage, die hier: https://git.io/Jf5L8"

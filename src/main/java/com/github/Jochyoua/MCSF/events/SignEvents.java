@@ -2,8 +2,9 @@ package com.github.Jochyoua.MCSF.events;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketListener;
-import com.github.Jochyoua.MCSF.Main;
-import com.github.Jochyoua.MCSF.Utils;
+import com.github.Jochyoua.MCSF.MCSF;
+import com.github.Jochyoua.MCSF.shared.Filters;
+import com.github.Jochyoua.MCSF.shared.Utils;
 import com.github.Jochyoua.MCSF.signcheck.SignPacketListener;
 import com.github.Jochyoua.MCSF.signcheck.SignViewEvent;
 import org.bukkit.Bukkit;
@@ -11,10 +12,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 public class SignEvents implements Listener {
-    Main plugin;
+    MCSF plugin;
     Utils utils;
 
-    public SignEvents(Main plugin, Utils utils) {
+    public SignEvents(MCSF plugin, Utils utils) {
         this.plugin = plugin;
         this.utils = utils;
         if (!plugin.getConfig().getBoolean("settings.signcheck")) {
@@ -27,7 +28,7 @@ public class SignEvents implements Listener {
                 plugin.getServer().getPluginManager().registerEvents(this, plugin);
             }
         } else {
-            utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.unsupported")).replace("%feature%", "Sign Filtering"));
+            utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.unsupported")).replaceAll("(?i)\\{feature}", "Sign Filtering"));
         }
     }
 
@@ -42,7 +43,7 @@ public class SignEvents implements Listener {
                 String lines = String.join("_", event.getLines());
                 if (utils.status(event.getPlayer().getUniqueId())) {
                     if (!utils.isclean(lines)) {
-                        lines = utils.clean(lines, true, false);
+                        lines = utils.clean(lines, true, false, Filters.SIGNS);
                     }
                 }
                 event.setLines(lines.split("_"));

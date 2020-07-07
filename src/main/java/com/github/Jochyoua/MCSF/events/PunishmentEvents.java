@@ -1,7 +1,7 @@
 package com.github.Jochyoua.MCSF.events;
 
-import com.github.Jochyoua.MCSF.Main;
-import com.github.Jochyoua.MCSF.Utils;
+import com.github.Jochyoua.MCSF.MCSF;
+import com.github.Jochyoua.MCSF.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,10 +14,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PunishmentEvents implements Listener {
-    Main plugin;
+    MCSF plugin;
     Utils utils;
 
-    public PunishmentEvents(Main plugin, Utils utils) {
+    public PunishmentEvents(MCSF plugin, Utils utils) {
         this.plugin = plugin;
         this.utils = utils;
         if (!plugin.getConfig().getBoolean("settings.force") || !plugin.getConfig().getBoolean("settings.punish_players")) {
@@ -31,14 +31,14 @@ public class PunishmentEvents implements Listener {
         if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines())) || !plugin.getConfig().getBoolean("settings.punish_check.signs")) {
             return;
         }
-        for (String str : plugin.getConfig().getStringList("variables.punishment_commands")) {
+        for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {
             String command = utils.prepare(event.getPlayer(), str);
-            Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
+            Matcher match = Pattern.compile("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
             String executor = "CONSOLE";
             while (match.find()) {
                 executor = match.group(1);
             }
-            command = command.replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+            command = command.replaceAll("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
             if (executor.equalsIgnoreCase("CONSOLE")) {
                 utils.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
             } else {
@@ -52,15 +52,15 @@ public class PunishmentEvents implements Listener {
         String message = event.getMessage();
         Player player = event.getPlayer();
         if(!player.hasPermission("MCSF.bypass") && !utils.isclean(message) && plugin.getConfig().getBoolean("settings.punish_check.chat")) {
-            for (String str : plugin.getConfig().getStringList("variables.punishment_commands")) {
+            for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {
                 final String[] command = {utils.prepare(player, str)};
-                Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command[0]);
+                Matcher match = Pattern.compile("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command[0]);
                 while (match.find()) {
                     String executor = match.group(1);
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        command[0] = command[0].replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+                        command[0] = command[0].replaceAll("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
                         if (executor.equalsIgnoreCase("CONSOLE")) {
-                            utils.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command[0].replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim()) ? "successfully executed " : "failed to execute ") + " command `" + command[0] + "`");
+                            utils.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command[0].replaceAll("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", "").trim()) ? "successfully executed " : "failed to execute ") + " command `" + command[0] + "`");
                         } else {
                             utils.debug((Bukkit.dispatchCommand(player, command[0]) ? "successfully executed " : "failed to execute ") + " command `" + command[0] + "`");
                         }
@@ -75,14 +75,14 @@ public class PunishmentEvents implements Listener {
         if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages())) || !plugin.getConfig().getBoolean("settings.punish_check.books")) {
             return;
         }
-        for (String str : plugin.getConfig().getStringList("variables.punishment_commands")) {
+        for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {
             String command = utils.prepare(event.getPlayer(), str);
-            Matcher match = Pattern.compile("(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
+            Matcher match = Pattern.compile("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command);
             String executor = "CONSOLE";
             while (match.find()) {
                 executor = match.group(1);
             }
-            command = command.replaceAll("(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
+            command = command.replaceAll("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", "").trim();
             if (executor.equalsIgnoreCase("CONSOLE")) {
                 utils.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command) ? "successfully executed " : "failed to execute ") + " command `" + command + "`");
             } else {

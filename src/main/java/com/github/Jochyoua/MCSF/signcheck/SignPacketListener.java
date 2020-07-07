@@ -10,10 +10,11 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
-import com.github.Jochyoua.MCSF.Main;
+import com.github.Jochyoua.MCSF.MCSF;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 
@@ -26,7 +27,7 @@ public class SignPacketListener extends PacketAdapter {
 
     public SignPacketListener() {
         super(PacketAdapter.params()
-                .plugin(Main.getInstance())
+                .plugin(MCSF.getInstance())
                 .serverSide()
                 .listenerPriority(ListenerPriority.NORMAL)
                 .types(PacketType.Play.Server.TILE_ENTITY_DATA, PacketType.Play.Server.MAP_CHUNK));
@@ -40,11 +41,12 @@ public class SignPacketListener extends PacketAdapter {
                 onMapChunk(event);
             }
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Failure: %message%"
-                    .replace("%message%",
-                            plugin.getConfig().getString("variables.error.execute_failure")
-                                    .replace("%feature%", "Sign Filtering")), e);
-            plugin.getLogger().log(Level.INFO, "Failure: %message%".replace("%message%", plugin.getConfig().getString("variables.error.execute_failure_link")));
+            FileConfiguration language = MCSF.getInstance().getLanguage();
+            plugin.getLogger().log(Level.SEVERE, "Failure: {message}"
+                    .replaceAll("(?i)\\{message}|(?i)%message%",
+                            language.getString("variables.error.execute_failure")
+                                    .replaceAll("(?i)\\{feature}", "Sign Filtering")), e);
+            plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", language.getString("variables.error.execute_failure_link")));
             ProtocolLibrary.getProtocolManager().removePacketListener(this);
         }
     }

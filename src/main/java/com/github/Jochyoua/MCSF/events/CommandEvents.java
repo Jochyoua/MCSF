@@ -1,26 +1,26 @@
 package com.github.Jochyoua.MCSF.events;
 
-import com.github.Jochyoua.MCSF.Main;
-import com.github.Jochyoua.MCSF.Utils;
-import me.vagdedes.mysql.database.MySQL;
+import com.github.Jochyoua.MCSF.MCSF;
+import com.github.Jochyoua.MCSF.shared.Utils;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import com.github.Jochyoua.MCSF.shared.MySQL;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
-import org.bukkit.event.server.TabCompleteEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommandEvents implements Listener {
-    Main plugin;
+    MCSF plugin;
     MySQL MySQL;
     Utils utils;
 
-    public CommandEvents(Main plugin, MySQL mysql, Utils utils) {
+    public CommandEvents(MCSF plugin, MySQL mysql, Utils utils) {
         this.plugin = plugin;
         this.MySQL = mysql;
         this.utils = utils;
@@ -31,7 +31,7 @@ public class CommandEvents implements Listener {
     @EventHandler
     public void serverCommand(ServerCommandEvent e) {
         String command = e.getCommand().split(" ")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
-        if (command.equalsIgnoreCase(plugin.getConfig().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
+        if (command.equalsIgnoreCase(plugin.getLanguage().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
             e.setCancelled(true);
             CommandSender sender = e.getSender();
             List<String> args = new LinkedList<>(Arrays.asList(e.getCommand().split(" ")));
@@ -43,7 +43,7 @@ public class CommandEvents implements Listener {
     @EventHandler
     public void playerCommand(PlayerCommandPreprocessEvent e) {
         String command = e.getMessage().split(" ")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
-        if (command.equalsIgnoreCase(plugin.getConfig().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
+        if (command.equalsIgnoreCase(plugin.getLanguage().getString("variables.command")) || command.equalsIgnoreCase("mcsf")) {
             e.setCancelled(true);
             Player sender = e.getPlayer();
             List<String> args = new LinkedList<>(Arrays.asList(e.getMessage().split(" ")));
@@ -52,7 +52,7 @@ public class CommandEvents implements Listener {
                 if (!utils.getAll().containsKey(sender.getUniqueId())) {
                     utils.setUser(sender.getUniqueId(), plugin.getConfig().getInt("settings.cooldown"));
                 } else if (!(utils.getAll().get(sender.getUniqueId()) <= 0)) {
-                    utils.send(sender, plugin.getConfig().getString("variables.cooldown").replace("%duration%", String.valueOf(utils.getAll().get(sender.getUniqueId()))));
+                    utils.send(sender, plugin.getLanguage().getString("variables.cooldown").replaceAll("(?i)\\{duration}|(?i)%duration%", String.valueOf(utils.getAll().get(sender.getUniqueId()))));
                     return;
                 }
             }
@@ -62,7 +62,7 @@ public class CommandEvents implements Listener {
 
     private void registerCommand(CommandSender sender, List<String> args) {
         if (!sender.hasPermission("MCSF.use")) {
-            utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
             return;
         }
         args = args.stream()
@@ -72,7 +72,7 @@ public class CommandEvents implements Listener {
         if (!args.isEmpty()) {
             if (plugin.getConfig().isSet("settings.command_args_enabled." + args.get(0))) {
                 if (!plugin.getConfig().getBoolean("settings.command_args_enabled." + args.get(0))) {
-                    utils.send(sender, plugin.getConfig().getString("variables.disabled"));
+                    utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                     return;
                 }
             }
@@ -80,18 +80,18 @@ public class CommandEvents implements Listener {
                 case "help":
                 default:
                     if (!plugin.getConfig().getBoolean("settings.command_args_enabled.help")) {
-                        utils.send(sender, plugin.getConfig().getString("variables.disabled"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                         break;
                     }
                     utils.showHelp(sender);
                     break;
                 case "unset":
                     if (!sender.hasPermission("MCSF.modify")) {
-                        utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                         break;
                     }
                     if (args.size() == 1) {
-                        utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", Objects.requireNonNull(plugin.getConfig().getString("variables.error.incorrectargs"))));
+                        utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.error.incorrectargs"))));
                         break;
                     }
                     if (args.get(1).equalsIgnoreCase("all")) {
@@ -101,8 +101,8 @@ public class CommandEvents implements Listener {
                         plugin.saveConfig();
                         MySQL.update("DROP TABLE users;");
                         utils.send(Bukkit.getConsoleSender(),
-                                Objects.requireNonNull(plugin.getConfig().getString("variables.success")).
-                                        replace("%message%", Objects.requireNonNull(plugin.getConfig().getString("variables.successful.removed_players"))));
+                                Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).
+                                        replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed_players"))));
                     } else {
                         UUID targetid = null;
                         for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
@@ -113,8 +113,8 @@ public class CommandEvents implements Listener {
                             }
                         }
                         if (targetid == null) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1))));
                             break;
                         } else {
                             plugin.getConfig().set("users." + targetid, null);
@@ -124,12 +124,12 @@ public class CommandEvents implements Listener {
                         }
                         if (!plugin.getConfig().isSet("users." + targetid)) {
                             utils.send(Bukkit.getConsoleSender(),
-                                    Objects.requireNonNull(plugin.getConfig().getString("variables.success")).
-                                            replace("%message%", Objects.requireNonNull(plugin.getConfig().getString("variables.successful.removed_player"))).
-                                            replace("%target%", args.get(1)));
+                                    Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).
+                                            replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed_player"))).
+                                            replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)));
                         } else {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1))));
                         }
                     }
                     break;
@@ -137,37 +137,37 @@ public class CommandEvents implements Listener {
                     boolean value;
                     if (args.size() == 1 && (sender instanceof Player)) {
                         if (!sender.hasPermission("MCSF.toggle")) {
-                            utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                             break;
                         }
                         if (plugin.getConfig().getBoolean("settings.force")) {
-                            utils.send(sender, plugin.getConfig().getString("variables.disabled"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                             break;
                         }
                         if (sender.hasPermission("MCSF.bypass")) {
                             value = utils.toggle(((Player) sender).getUniqueId());
                             if (plugin.getConfig().getBoolean("settings.log"))
-                                utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.targetToggle").
-                                        replaceAll("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
-                            utils.send(sender, plugin.getConfig().getString("variables.toggle")
-                                    .replace("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
+                                utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
+                                        replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                            utils.send(sender, plugin.getLanguage().getString("variables.toggle")
+                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
 
                             break;
                         }
                         value = utils.toggle(((Player) sender).getUniqueId());
-                        utils.send(sender, plugin.getConfig().getString("variables.toggle")
-                                .replace("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
+                        utils.send(sender, plugin.getLanguage().getString("variables.toggle")
+                                .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
                         if (plugin.getConfig().getBoolean("settings.log"))
-                            utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.targetToggle")
-                                    .replace("%value%", value ? "enabled" : "disabled").replaceAll("%target%", sender.getName()));
+                            utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
+                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
                     } else {
                         if (args.size() != 2) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", sender.getName())));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName())));
                             break;
                         }
                         if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                             break;
                         } else if (sender.hasPermission("MCSF.bypass")) {
                             UUID targetid = null;
@@ -179,20 +179,20 @@ public class CommandEvents implements Listener {
                                 }
                             }
                             if (targetid == null) {
-                                utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                        plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1))));
                                 break;
                             } else {
                                 value = utils.toggle(targetid);
                                 if (plugin.getConfig().getBoolean("settings.log"))
-                                    utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.targetToggle")
-                                            .replace("%value%", value ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
-                                utils.send(sender, plugin.getConfig().getString("variables.targetToggle").replace("%target%", args.get(1)).replace("%value%", (value ? "enabled" : "disabled")));
+                                    utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)));
+                                utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                             }
                             break;
                         }
                         if (plugin.getConfig().getBoolean("settings.force")) {
-                            utils.send(sender, plugin.getConfig().getString("variables.disabled"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                             break;
                         }
                         UUID targetid = null;
@@ -202,24 +202,25 @@ public class CommandEvents implements Listener {
                             }
                         }
                         if (targetid == null) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1))));
                             break;
                         } else {
                             utils.toggle(targetid);
                             if (plugin.getConfig().getBoolean("settings.log"))
-                                utils.send(Bukkit.getConsoleSender(), plugin.getConfig().getString("variables.targetToggle").replace("%value%", utils.status(targetid) ? "enabled" : "disabled").replaceAll("%target%", args.get(1)));
-                            utils.send(sender, plugin.getConfig().getString("variables.targetToggle").replace("%target", args.get(1)).replace("%value%", (utils.status(targetid) ? "enabled" : "disabled")));
+                                utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)));
+                            utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                         }
                     }
                     break;
                 case "reload":
                     if (!sender.hasPermission("MCSF.modify")) {
-                        utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                         break;
                     }
                     utils.reload();
-                    utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.reloaded")));
+                    plugin.reloadLanguage();
+                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reloaded")));
                     break;
                 case "status":
                     if (args.size() == 1 && (sender instanceof Player)) {
@@ -228,16 +229,16 @@ public class CommandEvents implements Listener {
                         } else {
                             value = utils.status(((Player) sender).getUniqueId());
                         }
-                        utils.send(sender, plugin.getConfig().getString("variables.status").replace("%target%", sender.getName()).replace("%value%", (value ? "enabled" : "disabled")));
+                        utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                         break;
                     } else {
                         if (args.size() != 2) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", sender.getName())));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName())));
                             break;
                         }
                         if (!sender.hasPermission("MCSF.status")) {
-                            utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                             break;
                         }
                         UUID targetid = null;
@@ -249,8 +250,8 @@ public class CommandEvents implements Listener {
                             }
                         }
                         if (targetid == null) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%",
-                                    plugin.getConfig().getString("variables.error.invalidtarget").replace("%target%", args.get(1))));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
+                                    plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1))));
                             break;
                         } else {
                             if (plugin.getConfig().getBoolean("settings.force")) {
@@ -258,46 +259,46 @@ public class CommandEvents implements Listener {
                             } else {
                                 value = utils.status(targetid);
                             }
-                            utils.send(sender, plugin.getConfig().getString("variables.status").replace("%target%", args.get(1)).replace("%value%", (value ? "enabled" : "disabled")));
+                            utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", args.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                         }
                     }
                     break;
                 case "reset":
                     if (!sender.hasPermission("MCSF.modify")) {
-                        utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                         break;
                     }
                     if (!utils.supported("mysql")) {
-                        utils.send(sender, plugin.getConfig().getString("variables.disabled"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                         break;
                     }
                     if (args.size() != 2) {
-                        utils.send(sender, plugin.getConfig().getString("variables.reset"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.reset"));
                         break;
                     } else {
                         if (args.get(1).equalsIgnoreCase("confirm")) {
                             utils.createTable(true);
                         } else {
-                            utils.send(sender, plugin.getConfig().getString("variables.reset"));
+                            utils.send(sender, plugin.getLanguage().getString("variables.reset"));
                             break;
                         }
                     }
-                    utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.reset")));
+                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reset")));
                     break;
                 case "version":
                     if (sender.hasPermission("MCSF.version")) {
-                        for (String str : plugin.getConfig().getStringList("variables.version")) {
+                        for (String str : plugin.getLanguage().getStringList("variables.version")) {
                             utils.send(sender, str);
                         }
                     } else {
-                        utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                     }
                     break;
                 case "add":
                 case "remove":
                     if (sender.hasPermission("MCSF.modify")) {
                         if (args.size() != 2) {
-                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.incorrectargs")));
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
                             break;
                         }
                         String word = args.get(1).toLowerCase();
@@ -309,15 +310,15 @@ public class CommandEvents implements Listener {
                                         MySQL.connect();
                                     if (MySQL.isConnected()) {
                                         if (MySQL.exists("word", word, "swears")) {
-                                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.alreadyexists")));
+                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.alreadyexists")));
                                             break;
                                         }
                                         if (!swears.contains(word))
                                             swears.add(word);
                                         MySQL.stateInsert(word);
-                                        utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.added")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
                                     } else {
-                                        utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.failedtoconnect")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.failedtoconnect")));
                                     }
                                 } else {
                                     boolean modified = false;
@@ -326,9 +327,9 @@ public class CommandEvents implements Listener {
                                     if (modified) {
                                         swears.add(word);
                                         utils.debug(sender.getName() + " has added `" + word + "` to the config");
-                                        utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.added")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
                                     } else {
-                                        utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.alreadyexists")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.alreadyexists")));
                                     }
                                 }
                                 break;
@@ -338,33 +339,33 @@ public class CommandEvents implements Listener {
                                         MySQL.connect();
                                     if (MySQL.isConnected()) {
                                         if (!MySQL.exists("word", word, "swears")) {
-                                            utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.doesntexist")));
+                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.doesntexist")));
                                             break;
                                         }
                                         swears.remove(word);
                                         MySQL.stateRemove(word);
-                                        utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.removed")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
                                     } else {
-                                        utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.failedtoconnect")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.failedtoconnect")));
                                     }
                                 } else {
                                     boolean modified = swears.remove(word);
                                     if (modified) {
                                         utils.debug(sender.getName() + " has removed `" + word + "` from config");
-                                        utils.send(sender, plugin.getConfig().getString("variables.success").replace("%message%", plugin.getConfig().getString("variables.successful.removed")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
                                     } else {
-                                        utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.doesntexist")));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.doesntexist")));
                                     }
                                 }
                                 break;
                             default:
-                                utils.send(sender, plugin.getConfig().getString("variables.failure").replace("%message%", plugin.getConfig().getString("variables.error.incorrectargs")));
+                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%value%", plugin.getLanguage().getString("variables.error.incorrectargs")));
                                 break;
                         }
                         plugin.getConfig().set("swears", swears);
                         plugin.saveConfig();
                     } else {
-                        utils.send(sender, plugin.getConfig().getString("variables.noperm"));
+                        utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                     }
                     break;
             }

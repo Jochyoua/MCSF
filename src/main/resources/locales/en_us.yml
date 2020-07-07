@@ -1,0 +1,61 @@
+variables:
+  command: "mcsf" ## Command for the plugin
+  prefix: "&6[MCSF]&f" ## Prefix for all MCSF messages
+  noperm: "{prefix} You lack permission." ## No permission message
+  toggle: "{prefix} The swear filter has been {value}" ## Value (enabled/disabled)
+  targetToggle: "{prefix} {target}'s swear filter has been {value}" ## Target (Player's name) / Value (enabled/disabled)
+  disabled: "{prefix} An administrator has disabled this function" ## Function is disabled message
+  status: "{prefix} {target}'s swear filter is {value}" ## Target (Player's name) / Value (enabled/disabled)
+  failure: "{prefix} &cFailure: {message}" ## Messages for error handling, messages can be seen under variables.error
+  success: "{prefix} &aSuccess: {message}" ## Messages for successful responses, messages can be seen under variables.successful
+  activated: "enabled"
+  deactivated: "disabled"
+  debug: "{prefix} &dDEBUG: &f{message}"
+  reset: "{prefix} Are you sure you want to reset the database? This is irreversible. To confirm, please type /{command} reset confirm"
+  cooldown: "{prefix} You need to wait &c{duration}s&f to use this command!"
+  version:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dResource: &fhttps://www.spigotmc.org/resources/54115/"
+    - "&dGithub: &fhttps://www.github.com/Jochyoua/MCSF/"
+  updatecheck:
+    checking: "{prefix} Checking for updates"
+    no_new_version: "{prefix} No new version available"
+    update_available: "{prefix} A new version (v{version}) is out! You are still running v{current}"
+    update_link: "{prefix} Download the latest version here: https://www.spigotmc.org/resources/54115/" ## Update link for updating the plugin with latest release
+  help:
+    - "&6-------------------{prefix}&6-------------------------"
+    - "&6* Command - Description"
+    - "&6* /{command} toggle [player] - Toggles the swear filter for yourself or someone else"
+    - "&6* /{command} status [player] - Views the status of a target's filter status"
+    - "{PERMISSION=MCSF.version}&6* /{command} version - Shows version of this plugin"
+    - "{PERMISSION=MCSF.modify}&6* /{command} add/remove [word] - Modifies swearlist"
+    - "{PERMISSION=MCSF.modify}&6* /{command} unset [all/player/uuid] - Modifies users"
+    - "{PERMISSION=MCSF.modify}&6* /{command} reset - Resets database to config data"
+    - "{PERMISSION=MCSF.modify}&6* /{command} reload - Reload the server's configuration files"
+    - "&6------------------------------------------------"
+  console_motd:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dServer version:&f {serverversion}"
+    - "&dPlugin version:&f {current}"
+    - "&dSwear count:&f {wordcount}"
+    - "&dWords blocked:&f {swearcount}"
+  punishment_commands:
+    - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} has swore! >:)\""
+    - "{EXECUTE_AS=PLAYER}me has been a bad boy ):"
+  successful:
+    added: "Word has been added." ## Word has been added message
+    removed: "Word has been removed." ## Word has been removed message
+    reloaded: "Plugin successfully reloaded" ## Plugin has been reloaded
+    reset: "Blacklist and user data has been set into database"
+    removed_players: "Successfully removed players from the database and removed all users from config"
+    removed_player: "Successfully removed {target} from the database"
+  error:
+    failedtoconnect: "Failed to connect through MySQL. Please re-check credentials."
+    incorrectargs: "Incorrect amount of arguments." ## Incorrect about of arguments given
+    invalidtarget: "{target} is not a valid user." ## Target isn't a valid user or isn't in the database/config
+    alreadyexists: "That word already exists." ## Word already exists in the database/config
+    doesntexist: "That word doesn't exist." ## Word doesn't exist in the database/config
+    updatecheck: "Couldn't check for an update. See below error for more information:" ## Couldn't check for updates. Followed by a stacktrace of any errors
+    unsupported: "Sorry but {feature} isn't supported on {serverversion} ):"
+    execute_failure: "Failed to load {feature}!"
+    execute_failure_link: "If you feel as if this is a bug, post an issue here: https://git.io/Jf5L8"
