@@ -35,15 +35,14 @@ public class MCSF extends JavaPlugin {
     public static Plugin plugin;
     MySQL MySQL;
     Utils utils;
-    ConfigAPI config;
+    ConfigAPI config = null;
 
     public static MCSF getInstance() {
         return (MCSF) plugin;
     }
 
-    public YamlConfiguration getLanguage() {
-        reloadConfig();
-        String language = getConfig().getString("settings.language");
+    public void loadLanguage() {
+        String language = getConfig().getString("settings.language", "en_us").replaceAll(".yml", "");
         Settings settings = new Settings();
         settings.setSetting("reportMissingOptions", false);
         config = new ConfigAPI("locales/" + language + ".yml", settings, this);
@@ -60,14 +59,20 @@ public class MCSF extends JavaPlugin {
             } catch (IOException ignored) {
             }
         }
-        return conf;
     }
 
     public void reloadLanguage() {
         if (config == null) {
-            getLanguage();
+            loadLanguage();
         }
         config.reloadContents();
+    }
+
+    public YamlConfiguration getLanguage() {
+        if (config == null) {
+            reloadConfig();
+        }
+        return config.getLiveConfiguration();
     }
 
     @Override
@@ -75,7 +80,6 @@ public class MCSF extends JavaPlugin {
         plugin = this;
         MySQL = new MySQL(this);
         utils = new Utils(this, MySQL);
-        getLanguage();
         saveDefaultConfig();
         getConfig().options().header(
                 "MCSF (My Christian Swear Filter) v" + getDescription().getVersion() + " by Jochyoua\n"
@@ -89,6 +93,7 @@ public class MCSF extends JavaPlugin {
             }
         }
         saveConfig();
+        loadLanguage();
         new CommandEvents(this, MySQL, utils);
         new PlayerEvents(this, MySQL, utils);
         if (utils.supported("mysql")) {
@@ -105,8 +110,10 @@ public class MCSF extends JavaPlugin {
                 utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%}", getLanguage().getString("variables.error.failedtoconnect")));
             }
         }
-        new PunishmentEvents(this, utils);
-        new SignEvents(this, utils);
+        if (getConfig().getBoolean("settings.punish_players"))
+            new PunishmentEvents(this, utils);
+        if (getConfig().getBoolean("settings.signcheck"))
+            new SignEvents(this, utils);
 
         if (!getConfig().getBoolean("settings.only_filter_players")) {
             try {
