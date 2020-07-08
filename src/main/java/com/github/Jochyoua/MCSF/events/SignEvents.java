@@ -3,7 +3,7 @@ package com.github.Jochyoua.MCSF.events;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketListener;
 import com.github.Jochyoua.MCSF.MCSF;
-import com.github.Jochyoua.MCSF.shared.Filters;
+import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Utils;
 import com.github.Jochyoua.MCSF.signcheck.SignPacketListener;
 import com.github.Jochyoua.MCSF.signcheck.SignViewEvent;
@@ -43,7 +43,7 @@ public class SignEvents implements Listener {
                 String lines = String.join("_", event.getLines());
                 if (utils.status(event.getPlayer().getUniqueId())) {
                     if (!utils.isclean(lines)) {
-                        lines = utils.clean(lines, true, false, Filters.SIGNS);
+                        lines = utils.clean(lines, true, false, Types.Filters.SIGNS);
                     }
                 }
                 event.setLines(lines.split("_"));

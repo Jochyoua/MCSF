@@ -1,0 +1,63 @@
+variables:
+  command: "mcsf" ## Commande pour le plugin
+  prefix: "&6[MCSF]&f" ## Préfixe pour tous les messages MCSF
+  noperm: "{prefix} Il vous manque l'autorisation." ##Pas de message d'autorisation
+  toggle: "{prefix} Le jurer filtre a été {value}" ## Valeur (activé/désactivé)
+  targetToggle: "{prefix} le filtre de jurons de {target} a été {value}" ## Target (nom du Joueur) / Value (activé/ désactivé)
+  disabled: "{prefix} Un administrateur a désactivé cette fonction" ## Fonction est désactivée message
+  status: "{prefix} le filtre de jurons de {target} est {value} " ## Target (nom du Joueur) / Value (activé / désactivé)
+  failure: "{prefix} &cÉchec: {message}" ## Messages pour la gestion des erreurs, les messages peuvent être vus sous variables.error
+  success: "{prefix} &aSuccès: {message}" ## Messages pour les réponses réussies, les messages peuvent être vus sous variables.successful
+  activated: "activé"
+  deactivated: "ésactivé"
+  debug: "{prefix} &dDEBUG: &f{message}"
+  reset: "{prefix} Voulez-vous vraiment réinitialiser la base de données? C'est irréversible. Pour confirmer, veuillez taper /{command} reset confirm"
+  cooldown: "{prefix} Vous devez vous attendre &c{duration}s&f pour utiliser cette commande!"
+  version:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dResource: &fhttps://www.spigotmc.org/resources/54115/"
+    - "&dGithub: &fhttps://www.github.com/Jochyoua/MCSF/"
+  updatecheck:
+    checking: "{prefix} Vérification des mises à jour"
+    no_new_version: "{prefix} Aucune nouvelle version disponiblee"
+    update_available: "{prefix} Une nouvelle version (v{version}) est sorti! Vous utilisez toujours v{current}"
+    update_link: "{prefix} Téléchargez la dernière version ici: https://www.spigotmc.org/resources/54115/" ## Update link for updating the plugin with latest release
+  help:
+    - "&6-------------------------"
+    - "{prefix}"
+    - "&6Commande - Description"
+    - "&6([] = Facultatif / <> = Requis)"
+    - "{PERMISSION=MCSF.toggle}&6> /{command} toggle [player] - Bascule le filtre jurer pour vous-même ou quelqu'un d'autre"
+    - "&6> /{command} status [player] - Vue sur le statut d'une cible sur le statut du filtre"
+    - "{PERMISSION=MCSF.version}&b> /{command} version - Affiche la version de ce plugin"
+    - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> - Modifie la liste des jurés"
+    - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifie les utilisateurs"
+    - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Réinitialise la base de données aux données de configuration"
+    - "{PERMISSION=MCSF.modify}&6> /{command} reload - Recharger les fichiers de configuration du serveur"
+    - "&6-------------------------"
+  console_motd:
+    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
+    - "&dLa version du serveur:&f {serverversion}"
+    - "&dVersion du greffon:&f {current}"
+    - "&dJure comte:&f {wordcount}"
+    - "&dMots bloqués:&f {swearcount}"
+  punishment_commands:
+    - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} a juré! >:)\""
+    - "{EXECUTE_AS=PLAYER}me a été un mauvais garçon ):"
+  successful:
+    added: "Le mot a été ajouté." ##Mot a été ajouté message
+    removed: "La parole a été supprimé." ## Mot a été supprimé message
+    reloaded: "Plugin reloaded avec succès" # # Plugin a été rechargé
+    reset: "La liste noire et les données utilisateur ont été définies dans la base de données"
+    removed_players: "Suppression réussie des joueurs de la base de données et suppression de tous les utilisateurs de config"
+    removed_player: "Suppression réussie de {target} de la base de données"
+  error:
+    failedtoconnect: "Impossible de se connecter via MySQL. S'il vous plaît revérifier les informations d'identification."
+    incorrectargs: "Quantité incorrecte d'arguments." ##Incorrect à propos des arguments donnés
+    invalidtarget: "{target} n'est pas un utilisateur valide."# # Cible n'est pas un utilisateur valide ou n'est pas dans la base de données/config
+    alreadyexists: "Ce mot existe déjà."## Mot existe déjà dans la base de données/config
+    doesntexist: "Ce mot n'existe pas." ## Mot n'existe pas dans la base de données/config
+    updatecheck: "Impossible de vérifier une mise à jour. Voir erreur ci-dessous pour plus d'informations: " ## impossible de vérifier les mises à jour. Suivi d'une trace de pile de toutes les erreurs
+    unsupported: "Désolé, mais {feature} n'est pas pris en charge sur la {serverversion} ):"
+    execute_failure: "Impossible de charger {feature}!"
+    execute_failure_link: "Si vous avez l'impression qu'il s'agit d'un bug, postez un problème ici: https://git.io/Jf5L8"

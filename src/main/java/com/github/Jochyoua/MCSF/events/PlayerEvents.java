@@ -1,7 +1,7 @@
 package com.github.Jochyoua.MCSF.events;
 
 import com.github.Jochyoua.MCSF.MCSF;
-import com.github.Jochyoua.MCSF.shared.Filters;
+import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.MySQL;
 import com.github.Jochyoua.MCSF.shared.Utils;
 import github.scarsz.discordsrv.DiscordSRV;
@@ -54,7 +54,7 @@ public class PlayerEvents implements Listener {
             String message = e.getMessage();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.force")) {
-                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Filters.PLAYERS))));
+                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Types.Filters.PLAYERS))));
                 } else {
                     player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message)));
                 }
@@ -140,7 +140,7 @@ public class PlayerEvents implements Listener {
                 }
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, Filters.BOOKS));
+                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

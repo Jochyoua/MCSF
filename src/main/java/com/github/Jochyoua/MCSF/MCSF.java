@@ -2,6 +2,7 @@ package com.github.Jochyoua.MCSF;
 
 import be.dezijwegel.configapi.ConfigAPI;
 import be.dezijwegel.configapi.Settings;
+import be.dezijwegel.configapi.utility.Logger;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -13,12 +14,11 @@ import com.github.Jochyoua.MCSF.events.CommandEvents;
 import com.github.Jochyoua.MCSF.events.PlayerEvents;
 import com.github.Jochyoua.MCSF.events.PunishmentEvents;
 import com.github.Jochyoua.MCSF.events.SignEvents;
-import com.github.Jochyoua.MCSF.shared.Filters;
+import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Metrics;
 import com.github.Jochyoua.MCSF.shared.MySQL;
 import com.github.Jochyoua.MCSF.shared.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -33,8 +33,8 @@ import java.util.logging.Level;
 
 public class MCSF extends JavaPlugin {
     public static Plugin plugin;
+    public Utils utils;
     MySQL MySQL;
-    Utils utils;
     ConfigAPI config = null;
 
     public static MCSF getInstance() {
@@ -42,7 +42,7 @@ public class MCSF extends JavaPlugin {
     }
 
     public void loadLanguage() {
-        String language = getConfig().getString("settings.language", "en_us").replaceAll(".yml", "");
+        String language = Types.Languages.getLanguage(this);
         Settings settings = new Settings();
         settings.setSetting("reportMissingOptions", false);
         config = new ConfigAPI("locales/" + language + ".yml", settings, this);
@@ -50,29 +50,36 @@ public class MCSF extends JavaPlugin {
         YamlConfiguration conf = config.getLiveConfiguration();
         Map<String, Object> missingOptions = config.getMissingOptions(conf, config.getDefaultConfiguration());
         if (!missingOptions.isEmpty()) {
-            Bukkit.getConsoleSender().sendMessage("There are some missing options! Filling them in now!");
             for (Map.Entry<String, Object> missing : missingOptions.entrySet()) {
                 conf.set(missing.getKey(), missing.getValue());
             }
             try {
                 conf.save(new File(plugin.getDataFolder(), "locales/" + language + ".yml"));
-            } catch (IOException ignored) {
+                utils.debug("Missing options have been found in " + language + ".yml!");
+                utils.debug("No fret, the default values have been filled.");
+                utils.debug("Successfully saved " + language + ".yml!");
+            } catch (IOException e) {
+                Logger.log("Failed to save " + language + ".yml!:\n" + e.getMessage());
             }
         }
     }
 
     public void reloadLanguage() {
-        if (config == null) {
+        if (config == null)
             loadLanguage();
-        }
+        YamlConfiguration conf = config.getLiveConfiguration();
+        if (!config.getMissingOptions(conf, config.getDefaultConfiguration()).isEmpty())
+            loadLanguage(); // Reload the language file because some details are missing - Prevents nullpointerexception in some cases
         config.reloadContents();
     }
 
     public YamlConfiguration getLanguage() {
-        if (config == null) {
+        if (config == null)
             reloadConfig();
-        }
-        return config.getLiveConfiguration();
+        YamlConfiguration conf = config.getLiveConfiguration();
+        if (!config.getMissingOptions(conf, config.getDefaultConfiguration()).isEmpty())
+            reloadLanguage();
+        return conf;
     }
 
     @Override
@@ -94,6 +101,15 @@ public class MCSF extends JavaPlugin {
         }
         saveConfig();
         loadLanguage();
+        // Loop through each language file that isn't the selected one and add it to /locales/ folder
+        for (Types.Languages language : Types.Languages.values()) {
+            if (!(new File(getDataFolder(), "locales/" + language.name() + ".yml").exists()) && !Types.Languages.getLanguage(this).equalsIgnoreCase(language.name())) {
+                Settings settings = new Settings();
+                settings.setSetting("reportMissingOptions", false);
+                ConfigAPI lang = new ConfigAPI("locales/" + language.name() + ".yml", settings, this);
+                lang.copyDefConfigIfNeeded();
+            }
+        }
         new CommandEvents(this, MySQL, utils);
         new PlayerEvents(this, MySQL, utils);
         if (utils.supported("mysql")) {
@@ -130,7 +146,7 @@ public class MCSF extends JavaPlugin {
                                 if (component != null) {
                                     if (!component.getJson().isEmpty()) {
                                         if (!utils.isclean(component.getJson())) {
-                                            String string = utils.clean(component.getJson(), false, true, Filters.ALL);
+                                            String string = utils.clean(component.getJson(), false, true, Types.Filters.ALL);
                                             if (string == null) {
                                                 return;
                                             }
@@ -154,7 +170,7 @@ public class MCSF extends JavaPlugin {
 
         utils.reload();
         final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));
-        String clean = utils.clean(test, true, false, Filters.DEBUG);
+        String clean = utils.clean(test, true, false, Types.Filters.DEBUG);
         utils.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
         if (getConfig().getBoolean("settings.console_motd")) {
             utils.send(Bukkit.getConsoleSender(), String.join("\n", getLanguage().getStringList("variables.console_motd")));
@@ -171,8 +187,8 @@ public class MCSF extends JavaPlugin {
             });
         }
         final Metrics metrics = new Metrics(this, 4345);
-        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> getConfig().getString("settings.language", "en_us")));
-        utils.debug("Metrics is " + (metrics.isEnabled() ? getLanguage().getString("variables.activated") : getLanguage().getString("variables.deactivated")) + "\nDisable it through the global bStats config.");
+        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
+        utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
         //Reloaded plugin check:
         if (Bukkit.getOnlinePlayers().size() != 0) {
             for (Player player : Bukkit.getOnlinePlayers()) {

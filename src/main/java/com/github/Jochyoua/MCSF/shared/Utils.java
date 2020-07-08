@@ -12,10 +12,14 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -202,7 +206,7 @@ public class Utils {
         return plugin.getConfig().getBoolean("settings.force") || plugin.getConfig().getBoolean("users." + ID + ".enabled");
     }
 
-    public String clean(String string, boolean strip, boolean log, Filters type) {
+    public String clean(String string, boolean strip, boolean log, Types.Filters type) {
         plugin.reloadConfig();
         String replacement = plugin.getConfig().getString("settings.replacement");
         if (string != null) {
@@ -360,8 +364,31 @@ public class Utils {
 
 
     public void debug(String str) {
-        if (plugin.getConfig().getBoolean("settings.debug"))
-            send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.debug").replaceAll("(?i)\\{message}|(?i)%message%", str));
+        if (plugin.getConfig().getBoolean("settings.debug")) {
+            String message = prepare(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.debug").replaceAll("(?i)\\{message}|(?i)%message%", str));
+            send(Bukkit.getConsoleSender(), message);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                File file = new File(plugin.getDataFolder(), "/debug/log.txt");
+                File dir = new File(plugin.getDataFolder(), "debug");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                if (!file.exists()) {
+                    try {
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+                    bw.append("[").append(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date())).append("] ").append(ChatColor.stripColor(message)).append("\n");
+                    bw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
     private void reloadPattern() {
