@@ -32,6 +32,9 @@ Modifies the blacklist
 /MCSF unset \[all/player/uuid] (Permission:MCSF.modify)
 Removes remove specific or all users from the config/database
 
+/MCSF whitlist \[word] (Permission:MCSF.modify)
+Adds/Removes word from the whitelist (Requires settings.whitelist to be true)
+
 # PLACEHOLDERS:
 %prefix%: gets the prefix set in config
 %command%: gets the command set in config
