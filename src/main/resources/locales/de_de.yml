@@ -31,6 +31,7 @@ variables:
     - "&6* /{command} status [player] - Zeigt den Status des filterstatus eines Ziels an"
     - "{PERMISSION=MCSF.version}&6> /{command} version - Zeigt die version dieses plugins"
     - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> - Ändert schwöre Liste"
+    - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Ändert whitelist"
     - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifiziert Benutzer"
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Setzt Datenbank auf Konfigurationsdaten zurück"
     - "{PERMISSION=MCSF.modify}&6> /{command} reload - Laden Sie die Konfigurationsdateien des Servers neu"

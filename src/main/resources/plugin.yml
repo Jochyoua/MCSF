@@ -13,6 +13,9 @@ commands:
   mcsf:
     description: Main command for MCSF
     permission: MCSF.use
+    aliases:
+      - as
+      - antiswear
 permissions:
   MCSF.use:
     description: Should user be able to use MCSF commands?

@@ -14,10 +14,11 @@ import com.github.Jochyoua.MCSF.events.CommandEvents;
 import com.github.Jochyoua.MCSF.events.PlayerEvents;
 import com.github.Jochyoua.MCSF.events.PunishmentEvents;
 import com.github.Jochyoua.MCSF.events.SignEvents;
-import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Metrics;
 import com.github.Jochyoua.MCSF.shared.MySQL;
+import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Utils;
+import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -85,6 +86,7 @@ public class MCSF extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
+        ////
         MySQL = new MySQL(this);
         utils = new Utils(this, MySQL);
         saveDefaultConfig();
@@ -116,15 +118,6 @@ public class MCSF extends JavaPlugin {
             utils.send(Bukkit.getConsoleSender(), "MySQL brought to you by MySQL API: https://www.spigotmc.org/resources/mysql-api.23932/");
             if (!MySQL.isConnected())
                 MySQL.connect();
-            if (MySQL.isConnected()) {
-                if (!MySQL.tableExists("swears") || MySQL.countRows("swears") == 0 || !MySQL.tableExists("users") || MySQL.countRows("users") == 0) {
-                    utils.createTable(false);
-                }
-                utils.reload();
-                utils.debug("MySQL has been enabled & information has been set");
-            } else {
-                utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%}", getLanguage().getString("variables.error.failedtoconnect")));
-            }
         }
         if (getConfig().getBoolean("settings.punish_players"))
             new PunishmentEvents(this, utils);
@@ -167,7 +160,6 @@ public class MCSF extends JavaPlugin {
                 plugin.getLogger().log(Level.INFO, getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", getLanguage().getString("variables.error.execute_failure_link")));
             }
         }
-
         utils.reload();
         final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));
         String clean = utils.clean(test, true, false, Types.Filters.DEBUG);
@@ -189,7 +181,7 @@ public class MCSF extends JavaPlugin {
         final Metrics metrics = new Metrics(this, 4345);
         metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
         utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
-        //Reloaded plugin check:
+
         if (Bukkit.getOnlinePlayers().size() != 0) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
@@ -201,11 +193,5 @@ public class MCSF extends JavaPlugin {
                 }
             }
         }
-    }
-
-    @Override
-    public void onDisable() {
-        if (MySQL.isConnected())
-            MySQL.disconnect();
     }
 }

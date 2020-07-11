@@ -1,10 +1,9 @@
 package com.github.Jochyoua.MCSF.events;
 
 import com.github.Jochyoua.MCSF.MCSF;
-import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.MySQL;
+import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Utils;
-import github.scarsz.discordsrv.DiscordSRV;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -13,7 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -40,21 +39,16 @@ public class PlayerEvents implements Listener {
     }
 
     @EventHandler
-    public void PlayerChatEvent(AsyncPlayerChatEvent e) {
-        //Respect cancelling of AsyncPlayerChatEvent from other plugins:
-        if (e.isCancelled())
-            return;
+    public void PlayerChatEvent(PlayerChatEvent e) {
         if (plugin.getConfig().getBoolean("settings.only_filter_players") || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
-            if (utils.supported("DiscordSRV") && e.isCancelled())
-                DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), e.getMessage(), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", false);
-            // The above code registers the process chat message even though asyncplayerchat event is cancelled so original messages are still being sent to the discord, and then filtered elsewhere (DiscordEvents.java)
             if (plugin.getConfig().getBoolean("settings.remove_message_on_swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             String message = e.getMessage();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.force")) {
-                    player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Types.Filters.PLAYERS))));
+                    TextComponent clean = new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Types.Filters.PLAYERS)));
+                    player.spigot().sendMessage(clean);
                 } else {
                     player.spigot().sendMessage(new TextComponent(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message)));
                 }
@@ -64,55 +58,60 @@ public class PlayerEvents implements Listener {
 
     @EventHandler
     public void leave(PlayerQuitEvent e) {
-        if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
-            if (utils.getAll().containsKey(e.getPlayer().getUniqueId())) {
-                plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".cooldown", utils.getAll().get(e.getPlayer().getUniqueId()));
-                plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".playername", e.getPlayer().getName().toLowerCase());
-                plugin.saveConfig();
-                utils.removeUser(e.getPlayer().getUniqueId());
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
+                if (utils.getAll().containsKey(e.getPlayer().getUniqueId())) {
+                    plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".cooldown", utils.getAll().get(e.getPlayer().getUniqueId()));
+                    plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".playername", e.getPlayer().getName().toLowerCase());
+                    plugin.saveConfig();
+                    utils.removeUser(e.getPlayer().getUniqueId());
+                }
             }
-        }
+        });
     }
 
     @EventHandler
     public void Join(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-        if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
-            if (plugin.getConfig().isSet("users." + e.getPlayer().getUniqueId() + ".cooldown")) {
-                utils.setUser(e.getPlayer().getUniqueId(), plugin.getConfig().getInt("users." + e.getPlayer().getUniqueId() + ".cooldown"));
-            }
-        }
-        plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
-        plugin.saveConfig();
-        if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".playername")) {
-            utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
-        } else {
-            utils.debug("Successfully added " + player.getName() + "'s name to the config.");
-        }
-        if (!plugin.getConfig().getBoolean("settings.force")) {
-            if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
-                utils.toggle(player.getUniqueId());
-            if (utils.supported("mysql")) {
-                MySQL.update("UPDATE users SET name='" + player.getName() + "' WHERE uuid='" + player.getUniqueId() + "';");
-                ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + player.getUniqueId() + "'");
-                boolean result = false;
-                try {
-                    while (rs.next()) {
-                        result = Boolean.parseBoolean(rs.getString("status"));
-                    }
-                } catch (SQLException ignored) {
-                    result = plugin.getConfig().getBoolean("settings.default");
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (!(plugin.getConfig().getInt("settings.cooldown") <= 0)) {
+                if (plugin.getConfig().isSet("users." + e.getPlayer().getUniqueId() + ".cooldown")) {
+                    utils.setUser(e.getPlayer().getUniqueId(), plugin.getConfig().getInt("users." + e.getPlayer().getUniqueId() + ".cooldown"));
                 }
-                plugin.getConfig().set("users." + player.getUniqueId() + ".enabled", result);
-                plugin.saveConfig();
             }
-            utils.debug("Player " + player.getName() + "'s swear filter is " + (utils.status(player.getUniqueId()) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
-        }
+            plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
+            plugin.saveConfig();
+            if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".playername")) {
+                utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+            } else {
+                utils.debug("Successfully added " + player.getName() + "'s name to the config.");
+            }
+            if (!plugin.getConfig().getBoolean("settings.force")) {
+                if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
+                    utils.toggle(player.getUniqueId());
+                if (utils.supported("mysql")) {
+                    MySQL.update("UPDATE users SET name='" + player.getName() + "' WHERE uuid='" + player.getUniqueId() + "';");
+                    ResultSet rs = MySQL.query("SELECT status FROM users WHERE uuid='" + player.getUniqueId() + "'");
+                    boolean result = false;
+                    try {
+                        while (rs.next()) {
+                            result = Boolean.parseBoolean(rs.getString("status"));
+                        }
+                    } catch (SQLException ignored) {
+                        result = plugin.getConfig().getBoolean("settings.default");
+                    }
+                    plugin.getConfig().set("users." + player.getUniqueId() + ".enabled", result);
+                    plugin.saveConfig();
+                }
+                utils.debug("Player " + player.getName() + "'s swear filter is " + (utils.status(player.getUniqueId()) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
 
-        if (plugin.getConfig().getBoolean("settings.update_notification_ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.check_for_updates") && !utils.isUpToDate()) {
-            utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
-            utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
-        }
+            }
+
+            if (plugin.getConfig().getBoolean("settings.update_notification_ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.check_for_updates") && !utils.isUpToDate()) {
+                utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
+                utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
+            }
+        });
     }
 
 

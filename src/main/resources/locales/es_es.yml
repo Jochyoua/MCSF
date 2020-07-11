@@ -31,6 +31,7 @@ variables:
     - "&6> /{command} status [player] - Visualiza el estado del estado del filtro de un destino"
     - "{PERMISSION=MCSF.version}&6> /{command} version - Muestra la versión de este plugin"
     - "{PERMISSION=MCSF.modify}&6> /{command} add/remove <word> - Modifies swearlist"
+    - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Modifica la lista blanca"
     - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifica la lista de jurar"
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Restablece la base de datos a los datos de configuración"
     - "{PERMISSION=MCSF.modify}&6> /{command} reload - Vuelva a cargar los archivos de configuración del servidor"
