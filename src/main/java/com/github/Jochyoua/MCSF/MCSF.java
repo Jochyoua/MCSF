@@ -3,53 +3,47 @@ package com.github.Jochyoua.MCSF;
 import be.dezijwegel.configapi.ConfigAPI;
 import be.dezijwegel.configapi.Settings;
 import be.dezijwegel.configapi.utility.Logger;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.github.Jochyoua.MCSF.events.CommandEvents;
-import com.github.Jochyoua.MCSF.events.PlayerEvents;
-import com.github.Jochyoua.MCSF.events.PunishmentEvents;
-import com.github.Jochyoua.MCSF.events.SignEvents;
-import com.github.Jochyoua.MCSF.shared.Metrics;
+import com.github.Jochyoua.MCSF.events.*;
 import com.github.Jochyoua.MCSF.shared.MySQL;
 import com.github.Jochyoua.MCSF.shared.Types;
 import com.github.Jochyoua.MCSF.shared.Utils;
-import net.md_5.bungee.chat.ComponentSerializer;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
-import java.util.UUID;
-import java.util.logging.Level;
 
 public class MCSF extends JavaPlugin {
     public static Plugin plugin;
     public Utils utils;
     MySQL MySQL;
-    ConfigAPI config = null;
+    ConfigAPI lang = null;
+
 
     public static MCSF getInstance() {
         return (MCSF) plugin;
     }
 
     public void loadLanguage() {
-        String language = Types.Languages.getLanguage(this);
+        String language = Types.Languages.getLanguage(getInstance());
         Settings settings = new Settings();
         settings.setSetting("reportMissingOptions", false);
-        config = new ConfigAPI("locales/" + language + ".yml", settings, this);
-        config.copyDefConfigIfNeeded();
-        YamlConfiguration conf = config.getLiveConfiguration();
-        Map<String, Object> missingOptions = config.getMissingOptions(conf, config.getDefaultConfiguration());
+        lang = new ConfigAPI("locales/" + language + ".yml", settings, this);
+        lang.copyDefConfigIfNeeded();
+        YamlConfiguration conf = lang.getLiveConfiguration();
+        Map<String, Object> missingOptions = lang.getMissingOptions(conf, lang.getDefaultConfiguration());
         if (!missingOptions.isEmpty()) {
             for (Map.Entry<String, Object> missing : missingOptions.entrySet()) {
                 conf.set(missing.getKey(), missing.getValue());
@@ -64,21 +58,21 @@ public class MCSF extends JavaPlugin {
             }
         }
     }
-
+    
     public void reloadLanguage() {
-        if (config == null)
+        if (lang == null)
             loadLanguage();
-        YamlConfiguration conf = config.getLiveConfiguration();
-        if (!config.getMissingOptions(conf, config.getDefaultConfiguration()).isEmpty())
+        YamlConfiguration conf = lang.getLiveConfiguration();
+        if (!lang.getMissingOptions(conf, lang.getDefaultConfiguration()).isEmpty())
             loadLanguage(); // Reload the language file because some details are missing - Prevents nullpointerexception in some cases
-        config.reloadContents();
+        lang.reloadContents();
     }
 
     public YamlConfiguration getLanguage() {
-        if (config == null)
-            reloadConfig();
-        YamlConfiguration conf = config.getLiveConfiguration();
-        if (!config.getMissingOptions(conf, config.getDefaultConfiguration()).isEmpty())
+        if (lang == null)
+            reloadLanguage();
+        YamlConfiguration conf = lang.getLiveConfiguration();
+        if (!lang.getMissingOptions(conf, lang.getDefaultConfiguration()).isEmpty())
             reloadLanguage();
         return conf;
     }
@@ -86,7 +80,6 @@ public class MCSF extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
-        ////
         MySQL = new MySQL(this);
         utils = new Utils(this, MySQL);
         saveDefaultConfig();
@@ -97,8 +90,8 @@ public class MCSF extends JavaPlugin {
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n");
         getConfig().options().copyDefaults(true);
         if (getConfig().isSet("replacements.all")) {
-            if (getConfig().getString("replacements.all").equalsIgnoreCase("&c*&f") && !getConfig().getString("settings.replacement").equalsIgnoreCase("&c*&f")) {
-                getConfig().set("replacements.all", getConfig().getString("settings.replacement"));
+            if (Objects.requireNonNull(getConfig().getString("replacements.all")).equalsIgnoreCase("&c*&f") && !getConfig().getString("settings.filtering.replacement").equalsIgnoreCase("&c*&f")) {
+                getConfig().set("replacements.all", getConfig().getString("settings.filtering.replacement"));
             }
         }
         saveConfig();
@@ -119,55 +112,22 @@ public class MCSF extends JavaPlugin {
             if (!MySQL.isConnected())
                 MySQL.connect();
         }
+        if (!getConfig().getBoolean("settings.only_filter_players.enabled") && utils.supported("ProtocolLib"))
+            new ProtocolLib(this, utils);
         if (getConfig().getBoolean("settings.punish_players"))
             new PunishmentEvents(this, utils);
-        if (getConfig().getBoolean("settings.signcheck"))
+        if (getConfig().getBoolean("settings.filtering.filter checks.signcheck") && utils.supported("ProtocolLib"))
             new SignEvents(this, utils);
-
-        if (!getConfig().getBoolean("settings.only_filter_players")) {
-            try {
-                ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Server.CHAT) {
-                    @Override
-                    public void onPacketSending(PacketEvent event) {
-                        Player player = event.getPlayer();
-                        UUID ID = player.getUniqueId();
-                        PacketContainer packet = event.getPacket();
-                        StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
-                        for (WrappedChatComponent component : chatComponents.getValues()) {
-                            if (getConfig().getBoolean("settings.force") || utils.status(ID)) {
-                                reloadConfig();
-                                if (component != null) {
-                                    if (!component.getJson().isEmpty()) {
-                                        if (!utils.isclean(component.getJson())) {
-                                            String string = utils.clean(component.getJson(), false, true, Types.Filters.ALL);
-                                            if (string == null) {
-                                                return;
-                                            }
-                                            component.setJson(string);
-                                            chatComponents.write(0, component);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, getLanguage().getString("variables.failure")
-                        .replaceAll("(?i)\\{message}|(?i)%message%",
-                                getLanguage().getString("variables.error.execute_failure")
-                                        .replaceAll("(?i)\\{feature}|(?i)%feature%", "Chat Filtering (ProtocolLib)")), e);
-                plugin.getLogger().log(Level.INFO, getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", getLanguage().getString("variables.error.execute_failure_link")));
-            }
-        }
+        if (getConfig().getBoolean("settings.discordSRV.enabled"))
+            new DiscordEvents(this, utils);
         utils.reload();
         final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));
         String clean = utils.clean(test, true, false, Types.Filters.DEBUG);
         utils.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
-        if (getConfig().getBoolean("settings.console_motd")) {
-            utils.send(Bukkit.getConsoleSender(), String.join("\n", getLanguage().getStringList("variables.console_motd")));
+        if (getConfig().getBoolean("settings.console motd")) {
+            utils.send(Bukkit.getConsoleSender(), String.join("\n", getLanguage().getStringList("variables.console motd")));
         }
-        if (getConfig().getBoolean("settings.check_for_updates")) {
+        if (getConfig().getBoolean("settings.updating.check for updates")) {
             Bukkit.getScheduler().runTask(this, () -> {
                 utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.checking"));
                 if (!utils.isUpToDate()) {

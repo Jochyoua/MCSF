@@ -36,20 +36,17 @@ variables:
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Resets database to config data"
     - "{PERMISSION=MCSF.modify}&6> /{command} reload - Reload the server's configuration files"
     - "&6-------------------------"
-  console_motd:
+  console motd:
     - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
     - "&dServer version:&f {serverversion}"
     - "&dPlugin version:&f {current}"
     - "&dSwear count:&f {wordcount}"
     - "&dWords blocked:&f {swearcount}"
-  punishment_commands:
-    - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} has swore! >:)\""
-    - "{EXECUTE_AS=PLAYER}me has been a bad boy ):"
   successful:
     added: "Word has been added." ## Word has been added message
     removed: "Word has been removed." ## Word has been removed message
     reloaded: "Plugin successfully reloaded" ## Plugin has been reloaded
-    reset: "Blacklist and user data has been set into database"
+    reset: "Blacklist, whitelist and user data has been set into database"
     removed_players: "Successfully removed players from the database and removed all users from config"
     removed_player: "Successfully removed {target} from the database"
   error:

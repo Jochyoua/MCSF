@@ -11,6 +11,7 @@ import java.util.UUID;
 public class MySQL {
     MCSF plugin;
     Utils utils;
+
     private Connection con;
     private HikariDataSource hikari = null;
 
@@ -30,29 +31,27 @@ public class MySQL {
         if (host == null || user == null || password == null || database == null)
             return;
         if (!isConnected()) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                try {
-                    hikari.setDataSourceClassName("org.mariadb.jdbc.MySQLDataSource");
-                    hikari.addDataSourceProperty("serverName", host);
-                    hikari.addDataSourceProperty("port", port);
-                    hikari.addDataSourceProperty("databaseName", database);
-                    hikari.addDataSourceProperty("user", user);
-                    hikari.addDataSourceProperty("password", password);
-                    if(unicode)
-                        hikari.addDataSourceProperty("properties", "useUnicode=true;characterEncoding=utf8;autoReconnect=true");
-                    con = hikari.getConnection();
-                    utils.debug("SQL connected.");
-                    if (!tableExists("swears") || countRows("swears") == 0
-                            || !tableExists("users") || countRows("users") == 0
-                            || !tableExists("whitelist") || countRows("whitelist") == 0) {
-                        utils.createTable(false);
-                    }
-                    utils.reload();
-                    utils.debug("MySQL has been enabled & information has been set");
-                } catch (Exception e) {
-                    Bukkit.getConsoleSender().sendMessage("SQL Connect Error: " + e.getMessage());
+            try {
+                hikari.setDataSourceClassName("org.mariadb.jdbc.MySQLDataSource");
+                hikari.addDataSourceProperty("serverName", host);
+                hikari.addDataSourceProperty("port", port);
+                hikari.addDataSourceProperty("databaseName", database);
+                hikari.addDataSourceProperty("user", user);
+                hikari.addDataSourceProperty("password", password);
+                if (unicode)
+                    hikari.addDataSourceProperty("properties", "useUnicode=true;characterEncoding=utf8;autoReconnect=true");
+                con = hikari.getConnection();
+                utils.debug("SQL connected.");
+                if (!tableExists("swears") || countRows("swears") == 0
+                        || !tableExists("users") || countRows("users") == 0
+                        || !tableExists("whitelist") || countRows("whitelist") == 0) {
+                    utils.createTable(false);
                 }
-            });
+                utils.reload();
+                utils.debug("MySQL has been enabled & information has been set");
+            } catch (Exception e) {
+                Bukkit.getConsoleSender().sendMessage("SQL Connect Error: " + e.getMessage());
+            }
         }
     }
 
@@ -101,6 +100,9 @@ public class MySQL {
         } catch (Exception e) {
             String message = e.getMessage();
             utils.debug("SQL Update Error: " + message);
+            if(e.getMessage().equals("Connection is closed"))
+                if(hikari != null)
+                    hikari.close();
         }
         //return result;
     }

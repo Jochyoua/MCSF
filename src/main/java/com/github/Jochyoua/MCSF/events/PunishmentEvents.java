@@ -17,10 +17,11 @@ public class PunishmentEvents implements Listener {
     MCSF plugin;
     Utils utils;
 
+
     public PunishmentEvents(MCSF plugin, Utils utils) {
         this.plugin = plugin;
         this.utils = utils;
-        if (!plugin.getConfig().getBoolean("settings.force") || !plugin.getConfig().getBoolean("settings.punish_players")) {
+        if (!plugin.getConfig().getBoolean("settings.filtering.force") || !plugin.getConfig().getBoolean("settings.filtering.punish_players")) {
             return;
         }
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -28,7 +29,7 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines())) || !plugin.getConfig().getBoolean("settings.punish_check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines())) || !plugin.getConfig().getBoolean("settings.punish check.signs")) {
             return;
         }
         for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {
@@ -51,7 +52,7 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if(!player.hasPermission("MCSF.bypass") && !utils.isclean(message) && plugin.getConfig().getBoolean("settings.punish_check.chat")) {
+        if(!player.hasPermission("MCSF.bypass") && !utils.isclean(message) && plugin.getConfig().getBoolean("settings.punish check.chat")) {
             for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {
                 final String[] command = {utils.prepare(player, str)};
                 Matcher match = Pattern.compile("(?i)\\{EXECUTE_AS=(.*?)}|(?i)<%EXECUTE_AS=(.*?)%>", Pattern.DOTALL).matcher(command[0]);
@@ -72,7 +73,7 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages())) || !plugin.getConfig().getBoolean("settings.punish_check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages())) || !plugin.getConfig().getBoolean("settings.punish check.books")) {
             return;
         }
         for (String str : plugin.getLanguage().getStringList("variables.punishment_commands")) {

@@ -16,7 +16,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,9 +43,9 @@ public class SignPacketListener extends PacketAdapter {
             FileConfiguration language = MCSF.getInstance().getLanguage();
             plugin.getLogger().log(Level.SEVERE, "Failure: {message}"
                     .replaceAll("(?i)\\{message}|(?i)%message%",
-                            language.getString("variables.error.execute_failure")
+                            Objects.requireNonNull(language.getString("variables.error.execute_failure"))
                                     .replaceAll("(?i)\\{feature}", "Sign Filtering")), e);
-            plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", language.getString("variables.error.execute_failure_link")));
+            plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))));
             ProtocolLibrary.getProtocolManager().removePacketListener(this);
         }
     }
@@ -115,7 +114,7 @@ public class SignPacketListener extends PacketAdapter {
                         for (String key : tileEntityData.getKeys())
                             outgoingSignData.put(key, tileEntityData.getValue(key));
                         ProtocolUtils.TileEntity.Sign.setText(outgoingSignData, newLines);
-                        outgoingTileEntitiesData.set(index, ((NbtWrapper)outgoingSignData).getHandle());
+                        outgoingTileEntitiesData.set(index, outgoingSignData.getHandle());
                     }
                 }
             }
@@ -130,7 +129,7 @@ public class SignPacketListener extends PacketAdapter {
 
     private SignViewEvent callSignEvent(Player player, Location location, String[] rawLines) {
         SignViewEvent signSendEvent = new SignViewEvent(player, location, rawLines);
-        Bukkit.getPluginManager().callEvent((Event)signSendEvent);
+        Bukkit.getPluginManager().callEvent(signSendEvent);
         return signSendEvent;
     }
 }

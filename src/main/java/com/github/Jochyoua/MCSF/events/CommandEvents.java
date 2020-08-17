@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,6 +19,7 @@ public class CommandEvents {
     MCSF plugin;
     MySQL MySQL;
     Utils utils;
+
 
     public CommandEvents(MCSF plugin, MySQL mysql, Utils utils) {
         this.plugin = plugin;
@@ -71,11 +73,15 @@ public class CommandEvents {
                     if (sender instanceof Player) {
                         Player player = (Player) sender;
                         if (!(plugin.getConfig().getInt("settings.cooldown") <= 0) && !sender.hasPermission("MCSF.bypass")) {
-                            if (!utils.getAll().containsKey(player.getUniqueId())) {
-                                utils.setUser(player.getUniqueId(), plugin.getConfig().getInt("settings.cooldown"));
-                            } else if (!(utils.getAll().get(player.getUniqueId()) <= 0)) {
-                                utils.send(player, plugin.getLanguage().getString("variables.cooldown").replaceAll("(?i)\\{duration}|(?i)%duration%", String.valueOf(utils.getAll().get(player.getUniqueId()))));
-                                return true;
+                            if (!utils.getCooldowns().containsKey(player.getUniqueId())) {
+                                utils.addUser(player.getUniqueId());
+                            } else {
+                                long duration = utils.getCooldowns().getExpectedExpiration(player.getUniqueId());
+                                duration = TimeUnit.MILLISECONDS.toSeconds(duration);
+                                if (duration != 0) {
+                                    utils.send(player, plugin.getLanguage().getString("variables.cooldown").replaceAll("(?i)\\{duration}|(?i)%duration%", String.valueOf(duration)));
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -100,8 +106,8 @@ public class CommandEvents {
             }
             plugin.reloadConfig();
             if (!finalArgs.isEmpty()) {
-                if (plugin.getConfig().isSet("settings.command_args_enabled." + finalArgs.get(0))) {
-                    if (!plugin.getConfig().getBoolean("settings.command_args_enabled." + finalArgs.get(0))) {
+                if (plugin.getConfig().isSet("settings.command args enabled." + finalArgs.get(0))) {
+                    if (!plugin.getConfig().getBoolean("settings.command args enabled." + finalArgs.get(0))) {
                         utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                         return;
                     }
@@ -109,13 +115,17 @@ public class CommandEvents {
                 switch (finalArgs.get(0).toLowerCase()) {
                     case "help":
                     default:
-                        if (!plugin.getConfig().getBoolean("settings.command_args_enabled.help")) {
+                        if (!plugin.getConfig().getBoolean("settings.command args enabled.help")) {
                             utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                             break;
                         }
                         utils.showHelp(sender);
                         break;
                     case "whitelist":
+                        if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
+                            break;
+                        }
                         if (!sender.hasPermission("MCSF.modify")) {
                             utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                             break;
@@ -216,13 +226,13 @@ public class CommandEvents {
                                 utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                                 break;
                             }
-                            if (plugin.getConfig().getBoolean("settings.force")) {
+                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                 utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                                 break;
                             }
                             if (sender.hasPermission("MCSF.bypass")) {
                                 value = utils.toggle(((Player) sender).getUniqueId());
-                                if (plugin.getConfig().getBoolean("settings.log"))
+                                if (plugin.getConfig().getBoolean("settings.filtering.log filter changes"))
                                     utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
                                             replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
                                 utils.send(sender, plugin.getLanguage().getString("variables.toggle")
@@ -233,7 +243,7 @@ public class CommandEvents {
                             value = utils.toggle(((Player) sender).getUniqueId());
                             utils.send(sender, plugin.getLanguage().getString("variables.toggle")
                                     .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
-                            if (plugin.getConfig().getBoolean("settings.log"))
+                            if (plugin.getConfig().getBoolean("settings.filtering.log filter changes"))
                                 utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
                                         .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
                         } else {
@@ -260,14 +270,14 @@ public class CommandEvents {
                                     break;
                                 } else {
                                     value = utils.toggle(targetid);
-                                    if (plugin.getConfig().getBoolean("settings.log"))
+                                    if (plugin.getConfig().getBoolean("settings.filtering.log filter changes"))
                                         utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
                                                 .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                                     utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                 }
                                 break;
                             }
-                            if (plugin.getConfig().getBoolean("settings.force")) {
+                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                 utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
                                 break;
                             }
@@ -283,7 +293,7 @@ public class CommandEvents {
                                 break;
                             } else {
                                 utils.toggle(targetid);
-                                if (plugin.getConfig().getBoolean("settings.log"))
+                                if (plugin.getConfig().getBoolean("settings.filtering.log filter changes"))
                                     utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                                 utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                             }
@@ -300,7 +310,7 @@ public class CommandEvents {
                         break;
                     case "status":
                         if (finalArgs.size() == 1 && (sender instanceof Player)) {
-                            if (plugin.getConfig().getBoolean("settings.force")) {
+                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                 value = true;
                             } else {
                                 value = utils.status(((Player) sender).getUniqueId());
@@ -330,7 +340,7 @@ public class CommandEvents {
                                         plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
                                 break;
                             } else {
-                                if (plugin.getConfig().getBoolean("settings.force")) {
+                                if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                     value = true;
                                 } else {
                                     value = utils.status(targetid);
@@ -376,6 +386,10 @@ public class CommandEvents {
                             if (finalArgs.size() != 2) {
                                 utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
                                 break;
+                            }
+                            if (utils.supported("mysql")) {
+                                utils.setTable("swears");
+                                utils.setTable("whitelist");
                             }
                             String word = finalArgs.get(1).toLowerCase();
                             List<String> swears = plugin.getConfig().getStringList("swears");

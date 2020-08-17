@@ -1,11 +1,10 @@
 name: MCSF
 main: com.github.Jochyoua.MCSF.MCSF
-version: 4.1
+version: 4.3
 description: simple toggleable swear filter
 authors: [Jochyoua]
-depend:
-  - ProtocolLib
 softdepend:
+  - ProtocolLib
   - DiscordSRV
 api-version: 1.13
 load: POSTWORLD
@@ -26,6 +25,9 @@ permissions:
       MCSF.modify: true
       MCSF.toggle: true
       MCSF.update: true
+  MCSF.dontfilterme:
+    description: Gives the player the option to not be filtered at all
+    default: false
   MCSF.modify:
     description: Gives the player the ability to modify the blacklist
     default: false

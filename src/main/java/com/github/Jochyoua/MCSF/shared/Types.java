@@ -5,7 +5,7 @@ import org.bukkit.Bukkit;
 
 public class Types {
     public enum Filters {
-        BOOKS, SIGNS, PLAYERS, ALL, DEBUG;
+        BOOKS, SIGNS, PLAYERS, ALL, DEBUG, DISCORD;
     }
 
     public enum Arguments {

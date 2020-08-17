@@ -1,30 +1,71 @@
-##### Settings
 settings:
-  default: false #Enable filter by default
   language: en_us
-  force: false #Force filter to enabled state
-  log: true #Log toggle events for players
-  whitelist: false #Prevent words like hello from being filtered if hell is on the list of blacklisted words
-  debug: false # If you want the nasty console spam
-  console_motd: true # If you want some information on plugin startup :)
-  check_for_updates: true # Whether to check for updates or not
-  hovering_shows_original_message: true
-  update_notification_ingame: true # Whether or not to notify admins onjoin about updates
-  replace_word_for_word: false # Replace each word with another, predefined word.
-  cooldown: 5 # Set this to 0 If you wish to disable. Follows seconds and is an Integer
-  replacement: "&c*&r" # What to replace blacklisted words with E.G: fuck = ****
-  discordSRV: false #Support for plugin DiscordSRV
-  mysql: false # Whether or not to use mysql
-  bookcheck: true #Book check allows the server to filter out swears inside of Books.
-  signcheck: false #Sign check allows the server to filter out swears inside of signs, could cause lag.
-  punish_players: false # Punish players if they swear!
-  remove_message_on_swear: false # Removes messages that contain swears, only works for players!
-  only_filter_players: false #Only filter player chat, useful if you want server messages to remain unfiltered
-  punish_check:
-    books: true
-    signs: true
-    chat: true
-  command_args_enabled:
+  #Acceptable languages: en_us, de_de, es_es, fr_fr
+  debug: false
+  # Use the above for messages that help debug and show some nice information
+  console motd: true
+  # Use the above for receiving some info whenever the plugin is enabled
+  cooldown: 5
+  # Cool down for all MCSF commands, ignored if the player has the Permission MCSF.bypass
+  # Default value is 5, to disable set to 0 (Integer)
+  updating:
+    check for updates: true
+    # Whether or not to check for updates
+    update notification ingame: true
+    # Whether or not to notify admins about updates upon joining
+  filtering:
+    default: false
+    # Should the filter be enabled whenever the player first joins?
+    force: false
+    # Should the player have the filter forcefully enabled?
+    log filter changes: true
+    # Should filter changes be logged into console?
+    whitelist words: false
+    # Enable the above if you plan on whitelisting words
+    replace word for word: false
+    # Enable this if you plan on replacing words with another word, see replacements
+    replacement: "&c*&r"
+    # Basic replacement, repeats for each letter in the blacklisted word so E.G fuck would be ****
+    punishments:
+      punish players: false
+      # Should players be punished for swearing?
+      punish check:
+        books: true
+        signs: true
+        chat: true
+      # Where would swearing be punishable?
+      commands:
+        - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} has swore! >:)\""
+        - "{EXECUTE_AS=PLAYER}me has been a bad boy ):"
+      # List of commands to be executed upon swearing
+    enable filter bypass: false
+    # Should MCSF.dontfilterme be enabled? This prevents the user with the permission from having words filtered
+    filter checks:
+      bookcheck: true
+      # Should books be checked and filtered for swears?
+      signcheck: false
+      # Should signs be checked and filtered for swears? *Could cause lag*
+  only filter players:
+    enabled: false
+    # Should only players be filtered? This prevents private messages or any message from another plugin from being filtered
+    log chat messages: true
+    # Should player messages be sent to console? Since the chat event is cancelled, console doesn't receive messages if this is disabled.
+    remove message on swear: false
+    # Removes messages that contain swears, only works for players!
+  discordSRV:
+    enabled: false
+    # Should discordSRV be enabled? IF so, all messages from the minecraft server would be filtered before being sent to Discord.
+    escape special chars:
+      escape swears: true
+      # Should special characters only be escaped for swears?
+      escape entire message: false
+      # Should special characters be escaped before sending the cleaned message to the Discord server? Can't be enabled in correlation with escape swears
+    spoilers:
+      enabled: false
+      # Should messages be contained in spoilers?
+      template: "||{swear}||"
+      # Template for swear replacement, E.G ||{swear}|| would show up as ||fuck|| if the message contained the word fuck
+  command args enabled:
     version: true
     add: true
     whitelist: true
@@ -35,14 +76,13 @@ settings:
     help: true
     toggle: true
     unset: true
-
 custom_regex:
   enabled: false
   regex:
-    - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS}'
-    - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS}'
-##### Mysql
+    - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
+    - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
 mysql:
+  enabled: false
   host: "localhost"
   username: "root"
   password: "foobar"
@@ -50,20 +90,17 @@ mysql:
   port: "3306"
   ssl: false
   use_unicode: true
-##### User data
 users:
   069a79f4-44e9-4726-a5be-fca90e38aaf5:
     enabled: true
     playername: Notch
-##### Replace word for word
+
 replacements:
   all: "&c*&f"
   fuck: "&cReally bad word!"
 whitelist:
-  - hello
   - class
-  - classy
-##### Swear list
+  - hello
 swearcount: 0
 swears:
   - 2g1c

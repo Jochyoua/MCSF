@@ -36,15 +36,12 @@ variables:
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Restablece la base de datos a los datos de configuración"
     - "{PERMISSION=MCSF.modify}&6> /{command} reload - Vuelva a cargar los archivos de configuración del servidor"
     - "&6-------------------------"
-  console_motd:
+  console motd:
     - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
     - "&dVersión del servidor:&f {serverversion}"
     - "&dVersión del complemento:&f {current}"
     - "&dRecuento de juramentos:&f {wordcount}"
     - "&dPalabras bloqueadas:&f {swearcount}"
-  punishment_commands:
-    - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} ha jurado! >:)\""
-    - "{EXECUTE_AS=PLAYER}me ha sido un chico malo ):"
   successful:
     added: "Se ha añadido la palabra." ## Palabra ha sido añadido mensaje
     removed: "Se ha eliminado la palabra." ## Palabra ha sido eliminado mensaje
