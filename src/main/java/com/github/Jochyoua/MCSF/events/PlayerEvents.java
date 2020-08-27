@@ -41,19 +41,19 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void PlayerChatEvent(AsyncPlayerChatEvent e) {
         String message = e.getMessage();
-        if (plugin.getConfig().getBoolean("settings.only_filter_players.enabled") || !utils.supported("ProtocolLib")) {
+        if (plugin.getConfig().getBoolean("settings.only filter players.enabled") || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
-            if (plugin.getConfig().getBoolean("settings.only_filter_players.remove message on swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
+            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             if (utils.supported("DiscordSRV") && e.isCancelled())
                 DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), e.getMessage(), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", false);
             // The above code registers the process chat message even though asyncplayerchat event is cancelled so original messages are still being sent to the discord, and then filtered elsewhere (DiscordEvents.java)
             // String message = e.getMessage();
-            if (plugin.getConfig().getBoolean("settings.only_filter_players.log chat messages")) {
+            if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message));
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
-                if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force") && !player.hasPermission("MCSF.dontfilterme")) {
+                if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(message, false, true, Types.Filters.PLAYERS)));
                 } else {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), message));
@@ -94,14 +94,20 @@ public class PlayerEvents implements Listener {
 
             }
 
-            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.check for updates") && !utils.isUpToDate()) {
+            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && !utils.isUpToDate()) {
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }
         });
     }
 
-
+    @EventHandler
+    public void onLeave(PlayerQuitEvent e){
+        if(plugin.getConfig().getBoolean("settings.filtering.punishments.flags.reset every leave")){
+            plugin.getConfig().set("users."+e.getPlayer().getUniqueId()+".flags", 0);
+            plugin.saveConfig();
+        }
+    }
     @EventHandler
     public void openBook(PlayerInteractEvent e) {
         Player player = e.getPlayer();

@@ -1,7 +1,6 @@
 package com.github.Jochyoua.MCSF.shared;
 
 import com.github.Jochyoua.MCSF.MCSF;
-import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.Bukkit;
 
 import java.sql.*;
@@ -13,45 +12,29 @@ public class MySQL {
     Utils utils;
 
     private Connection con;
-    private HikariDataSource hikari = null;
-
     public MySQL(MCSF plugin) {
         this.plugin = plugin;
         this.utils = new Utils(plugin, this);
-        if (hikari == null) {
-            hikari = new HikariDataSource();
-        }
     }
 
     public Connection getConnection() {
         return con;
     }
 
-    public void setConnection(String host, String user, String password, String database, String port, boolean ssl, boolean unicode) {
+    public void setConnection(String host, String user, String password, String database, String port, String connection, String unicode, String ssl) {
         if (host == null || user == null || password == null || database == null)
             return;
-        if (!isConnected()) {
-            try {
-                hikari.setDataSourceClassName("org.mariadb.jdbc.MySQLDataSource");
-                hikari.addDataSourceProperty("serverName", host);
-                hikari.addDataSourceProperty("port", port);
-                hikari.addDataSourceProperty("databaseName", database);
-                hikari.addDataSourceProperty("user", user);
-                hikari.addDataSourceProperty("password", password);
-                if (unicode)
-                    hikari.addDataSourceProperty("properties", "useUnicode=true;characterEncoding=utf8;autoReconnect=true");
-                con = hikari.getConnection();
-                utils.debug("SQL connected.");
-                if (!tableExists("swears") || countRows("swears") == 0
-                        || !tableExists("users") || countRows("users") == 0
-                        || !tableExists("whitelist") || countRows("whitelist") == 0) {
-                    utils.createTable(false);
-                }
-                utils.reload();
-                utils.debug("MySQL has been enabled & information has been set");
-            } catch (Exception e) {
-                Bukkit.getConsoleSender().sendMessage("SQL Connect Error: " + e.getMessage());
-            }
+        disconnect(false);
+        try {
+            connection = connection.replaceAll("(?i)\\{host}|(?i)%host%", host)
+                    .replaceAll("(?i)\\{port}|(?i)%port%", port)
+                    .replaceAll("(?i)\\{database}|(?i)%database%", database)
+                    .replaceAll("(?i)\\{unicode}|(?i)%unicode%", unicode)
+                    .replaceAll("(?i)\\{ssl}|(?i)%ssl%", ssl);
+            con = DriverManager.getConnection(connection, user, password);
+            utils.debug("SQL connected.");
+        } catch (Exception e) {
+            Bukkit.getConsoleSender().sendMessage("SQL Connect Error: " + e.getMessage());
         }
     }
 
@@ -71,9 +54,27 @@ public class MySQL {
                     plugin.getConfig().getString("mysql.password"),
                     plugin.getConfig().getString("mysql.database"),
                     plugin.getConfig().getString("mysql.port"),
-                    plugin.getConfig().getBoolean("mysql.ssl"),
-                    plugin.getConfig().getBoolean("mysql.use_unicode"));
+                    plugin.getConfig().getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL{ssl}"),
+                    plugin.getConfig().getBoolean("mysql.use_unicode", true) + "",
+                    plugin.getConfig().getBoolean("mysql.ssl", false) + "");
         }
+    }
+
+    private void disconnect(boolean message) {
+        try {
+            if (isConnected()) {
+                con.close();
+                if (message)
+                    utils.debug("SQL disconnected.");
+            } else if (message) {
+                utils.debug("SQL Disconnect Error: No existing connection");
+            }
+        } catch (Exception e) {
+            if (message)
+                utils.debug("SQL Disconnect Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        con = null;
     }
 
     public boolean isConnected() {
@@ -100,10 +101,8 @@ public class MySQL {
         } catch (Exception e) {
             String message = e.getMessage();
             utils.debug("SQL Update Error: " + message);
-            if(e.getMessage().equals("Connection is closed"))
-                if(hikari != null)
-                    hikari.close();
         }
+        disconnect(false);
         //return result;
     }
 

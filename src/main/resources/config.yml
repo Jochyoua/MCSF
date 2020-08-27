@@ -24,8 +24,13 @@ settings:
     # Enable the above if you plan on whitelisting words
     replace word for word: false
     # Enable this if you plan on replacing words with another word, see replacements
+    filter reverse versions of swears: true
+    # Enable this if you want to filter the reverse saying of a word: E.G kcuf (fuck) would be filtered
     replacement: "&c*&r"
     # Basic replacement, repeats for each letter in the blacklisted word so E.G fuck would be ****
+    ignore special characters:
+      enabled: false
+      characters to ignore: "!@#$%^&*()_+-"
     punishments:
       punish players: false
       # Should players be punished for swearing?
@@ -34,12 +39,18 @@ settings:
         signs: true
         chat: true
       # Where would swearing be punishable?
+      flags:
+        reset every leave: true
+        reset every interval at: 10
       commands:
-        - "{EXECUTE_AS=CONSOLE}tellraw @a \"{prefix} &c{player} has swore! >:)\""
-        - "{EXECUTE_AS=PLAYER}me has been a bad boy ):"
-      # List of commands to be executed upon swearing
-    enable filter bypass: false
-    # Should MCSF.dontfilterme be enabled? This prevents the user with the permission from having words filtered
+        '1': # How many swear flags should trigger these commands?
+          commands:
+            - 'tell {PLAYER} {player} Swearing isn''t allowed. Swear again and you will be kicked.'
+          execute_as: "CONSOLE" # Who should execute this command?
+        '2': # How many swear flags should trigger these commands?
+          commands:
+            - 'kick {PLAYER} Swearing isn''t allowed on this server!'
+          execute_as: "CONSOLE" # Who should execute this command?
     filter checks:
       bookcheck: true
       # Should books be checked and filtered for swears?
@@ -72,7 +83,6 @@ settings:
     status: true
     remove: true
     reset: true
-    reload: true
     help: true
     toggle: true
     unset: true
@@ -90,6 +100,7 @@ mysql:
   port: "3306"
   ssl: false
   use_unicode: true
+  connection: "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL{ssl}"
 users:
   069a79f4-44e9-4726-a5be-fca90e38aaf5:
     enabled: true

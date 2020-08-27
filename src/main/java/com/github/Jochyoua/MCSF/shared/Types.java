@@ -9,7 +9,7 @@ public class Types {
     }
 
     public enum Arguments {
-        version("MCSF.version"), add("MCSF.modify"), whitelist("MCSF.modify"), status("MCSF.use"), remove("MCSF.modify"), reset("MCSF.modify"), reload("MCSF.modify"), help("MCSF.use"), toggle("MCSF.toggle"), unset("MCSF.modify");
+        version("MCSF.version"), add("MCSF.modify"), whitelist("MCSF.modify"), status("MCSF.use"), remove("MCSF.modify"), reset("MCSF.modify"), help("MCSF.use"), toggle("MCSF.toggle"), unset("MCSF.modify");
         String permission;
 
         Arguments(String s) {

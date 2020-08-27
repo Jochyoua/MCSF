@@ -34,7 +34,6 @@ variables:
     - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Modifie la liste blanche"
     - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifie les utilisateurs"
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Réinitialise la base de données aux données de configuration"
-    - "{PERMISSION=MCSF.modify}&6> /{command} reload - Recharger les fichiers de configuration du serveur"
     - "&6-------------------------"
   console motd:
     - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
@@ -45,7 +44,6 @@ variables:
   successful:
     added: "Le mot a été ajouté." ##Mot a été ajouté message
     removed: "La parole a été supprimé." ## Mot a été supprimé message
-    reloaded: "Plugin reloaded avec succès" # # Plugin a été rechargé
     reset: "La liste noire et les données utilisateur ont été définies dans la base de données"
     removed_players: "Suppression réussie des joueurs de la base de données et suppression de tous les utilisateurs de config"
     removed_player: "Suppression réussie de {target} de la base de données"

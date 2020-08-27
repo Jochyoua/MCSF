@@ -36,7 +36,7 @@ public class ProtocolLib implements Listener {
                     PacketContainer packet = event.getPacket();
                     StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                     for (WrappedChatComponent component : chatComponents.getValues()) {
-                        if (plugin.getConfig().getBoolean("settings.filtering.force") || utils.status(ID) && !player.hasPermission("MCSF.dontfilterme")) {
+                        if (plugin.getConfig().getBoolean("settings.filtering.force") || utils.status(ID)) {
                             plugin.reloadConfig();
                             if (component != null) {
                                 if (!component.getJson().isEmpty()) {

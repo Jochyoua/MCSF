@@ -112,13 +112,13 @@ public class MCSF extends JavaPlugin {
             if (!MySQL.isConnected())
                 MySQL.connect();
         }
-        if (!getConfig().getBoolean("settings.only_filter_players.enabled") && utils.supported("ProtocolLib"))
+        if (!getConfig().getBoolean("settings.only filter players.enabled") && utils.supported("ProtocolLib"))
             new ProtocolLib(this, utils);
-        if (getConfig().getBoolean("settings.punish_players"))
+        if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
             new PunishmentEvents(this, utils);
         if (getConfig().getBoolean("settings.filtering.filter checks.signcheck") && utils.supported("ProtocolLib"))
             new SignEvents(this, utils);
-        if (getConfig().getBoolean("settings.discordSRV.enabled"))
+        if (utils.supported("DiscordSRV"))
             new DiscordEvents(this, utils);
         utils.reload();
         final String test = getConfig().getStringList("swears").get((new Random()).nextInt(getConfig().getStringList("swears").size()));

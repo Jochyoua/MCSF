@@ -1,6 +1,6 @@
 name: MCSF
 main: com.github.Jochyoua.MCSF.MCSF
-version: 4.3
+version: 4.4
 description: simple toggleable swear filter
 authors: [Jochyoua]
 softdepend:
@@ -25,9 +25,6 @@ permissions:
       MCSF.modify: true
       MCSF.toggle: true
       MCSF.update: true
-  MCSF.dontfilterme:
-    description: Gives the player the option to not be filtered at all
-    default: false
   MCSF.modify:
     description: Gives the player the ability to modify the blacklist
     default: false

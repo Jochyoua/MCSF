@@ -44,6 +44,7 @@ public class Utils {
                 .expiration(plugin.getConfig().getInt("settings.cooldown", 5), TimeUnit.SECONDS)
                 .build();
     }
+
     public
     static String color(String message) {
         StringBuffer rgbBuilder = new StringBuffer();
@@ -403,10 +404,19 @@ public class Utils {
         return string;
     }
 
+
     public boolean isclean(String str) {
+        str = str.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
         plugin.reloadConfig();
         reloadPattern();
         List<String> array = getRegex();
+        if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+            for (String strs : str.split(" ")) {
+                if (getWhitelist().stream().anyMatch(strs::equalsIgnoreCase)) {
+                    str = str.replaceAll("(\\b" + strs + "\\b)", "");
+                }
+            }
+        }
         if (plugin.getConfig().getBoolean("custom_regex.enabled"))
             for (String str2 : plugin.getConfig().getStringList("custom_regex.regex")) {
                 str2 = str2.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
@@ -561,13 +571,53 @@ public class Utils {
             regex.clear();
             List<String> duh = new ArrayList<>();
             for (String str : getSwears()) {
-                str = str.replaceAll("\\s+", "");
-                StringBuilder omg = new StringBuilder();
-                for (String str2 : str.split("")) {
-                    str2 = Pattern.quote(str2);
-                    omg.append(str2).append("+\\s*");
+                if (!plugin.getConfig().getBoolean("settings.filtering.ignore special characters.enabled")) {
+                    str = str.replaceAll("\\s+", "");
+                    StringBuilder omg = new StringBuilder();
+                    for (String str2 : str.split("")) {
+                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)
+                        str2 = Pattern.quote(str2);
+                        omg.append(str2).append("+\\s*");
+                    }
+                    duh.add(omg.substring(0, omg.toString().length() - 4) + "+");
+                    if (plugin.getConfig().getBoolean("settings.filtering.filter reverse versions of swears", true)) {
+                        StringBuilder omg2 = new StringBuilder();
+                        for (String str3 : new StringBuilder(str).reverse().toString().split("")) {
+                            str3 = Pattern.quote(str3);
+                            omg2.append(str3).append("+\\s*");
+                        }
+                        duh.add(omg2.substring(0, omg2.toString().length() - 4) + "+");
+                    }
+                } else {
+                    str = str.replaceAll("\\s+", "");
+                    StringBuilder omg = new StringBuilder();
+                    int length = str.length();
+                    for (String str2 : str.split("")) {
+                        length = length - 1;
+                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
+                        str2 = Pattern.quote(str2);
+                        if (length <= 0) {
+                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-"))).append("]+").append(str2).append("+)");
+                        } else {
+                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-"))).append("]+").append(str2).append("+)");
+                        }
+                    }
+                    duh.add(omg.toString());
+                    if (plugin.getConfig().getBoolean("settings.filtering.filter reverse versions of swears", true)) {
+                        StringBuilder omg2 = new StringBuilder();
+                        int length2 = str.length();
+                        for (String str3 : new StringBuilder(str).reverse().toString().split("")) {
+                            length2 = length2 - 1;
+                            str3 = Pattern.quote(str3);
+                            if (length <= 0) {
+                                omg2.append("(").append(str3).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-"))).append("]+").append(str3).append("+)");
+                            } else {
+                                omg2.append("(").append(str3).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-"))).append("]+").append(str3).append("+)");
+                            }
+                        }
+                        duh.add(omg2.toString());
+                    }
                 }
-                duh.add(omg.toString().substring(0, omg.toString().length() - 4) + "+");
             }
             setRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));

@@ -299,15 +299,6 @@ public class CommandEvents {
                             }
                         }
                         break;
-                    case "reload":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                            break;
-                        }
-                        utils.reload();
-                        plugin.reloadLanguage();
-                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reloaded")));
-                        break;
                     case "status":
                         if (finalArgs.size() == 1 && (sender instanceof Player)) {
                             if (plugin.getConfig().getBoolean("settings.filtering.force")) {
