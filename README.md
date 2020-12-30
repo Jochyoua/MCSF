@@ -34,7 +34,7 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 * **/MCSF unset [all/player/uuid]** *(Permission:MCSF.modify)* Removes remove specific or all users from the config/database
 * **/MCSF whitelist [word]** *(Permission:MCSF.modify)* Adds/Removes word from the whitelist (Requires settings.whitelist to be true)
 * **/MCSF global [word]** *(Permission:MCSF.modify)* Adds/Removes word from the global list (Requires settings.global blacklist to be true)
-
+* **/MCSF reload [confirm]** *(Permission:MCSF.modify)* Reloads the configuration files and the database (can be dangerous)
 # PLACEHOLDERS:
 
 * {prefix}: gets the prefix set in config
@@ -48,6 +48,6 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 
 Download this plugin into your server's plugin folder
 
-**(OPTIONAL)** If you wish all messages to be filtered, you must install ProtocolLib aswell!
+**(OPTIONAL):** If you wish all messages to be filtered, you must install ProtocolLib aswell!
 
-**(OPTIONAL)** If you plan on using DiscordSRV you must first download the plugin and then add them to your server and then restart the server.
+**(OPTIONAL):** If you plan on using DiscordSRV you must first download the plugin and then add them to your server and then restart the server.
