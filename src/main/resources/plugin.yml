@@ -1,0 +1,39 @@
+name: MCSF
+main: io.github.Jochyoua.MyChristianSwearFilter.MCSF
+version: 5.0
+description: simple toggleable swear filter
+authors: [Jochyoua]
+softdepend:
+  - ProtocolLib
+  - DiscordSRV
+api-version: 1.13
+load: POSTWORLD
+commands:
+  mcsf:
+    description: Main command for MCSF
+    permission: MCSF.use
+    aliases:
+      - as
+      - antiswear
+permissions:
+  MCSF.use:
+    description: Should user be able to use MCSF commands?
+    default: true
+  MCSF.*:
+    description: Gives access to all MCSF commands
+    children:
+      MCSF.modify: true
+      MCSF.toggle: true
+      MCSF.update: true
+  MCSF.modify:
+    description: Gives the player the ability to modify the blacklist
+    default: false
+  MCSF.toggle:
+    description: Allows the player to enable/disable the swear filter
+    default: true
+  MCSF.version:
+    description: Permission for the version command
+    default: true
+  MCSF.update:
+    description: Permission for recieving update checks on join
+    default: false

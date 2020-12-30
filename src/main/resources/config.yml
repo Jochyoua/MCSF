@@ -1,0 +1,119 @@
+settings:
+  language: en_us
+  #Acceptable languages: en_us, de_de, es_es, fr_fr
+  debug: false
+  # Use the above for messages that help debug and show some nice information
+  console motd: true
+  # Use the above for receiving some info whenever the plugin is enabled
+  cooldown: 5
+  # Cool down for all MCSF commands, ignored if the player has the Permission MCSF.bypass
+  # Default value is 5, to disable set to 0 (Integer)
+  updating:
+    check for updates: true
+    # Whether or not to check for updates
+    update notification ingame: true
+    # Whether or not to notify admins about updates upon joiningd
+  filtering:
+    default: false
+    # Should the filter be enabled whenever the player first joins?
+    global blacklist:
+      enabled: true
+    # Should messages in the "global" field be flagged & blocked?
+    save messages:
+      enabled: true
+    # Should messages that are flagged be saved to a file? > Only messages in the global field will be logged
+    force: false
+    # Should the player have the filter forcefully enabled?
+    log filter changes: true
+    # Should filter changes be logged into console?
+    whitelist words: false
+    # Enable the above if you plan on whitelisting words
+    replace word for word: false
+    # Enable this if you plan on replacing words with another word, see replacements
+    filter reverse versions of swears: true
+    # Enable this if you want to filter the reverse saying of a word: E.G kcuf (fuck) would be filtered
+    replacement: "&c*&r"
+    # Basic replacement, repeats for each letter in the blacklisted word so E.G fuck would be ****
+    ignore special characters:
+      enabled: false
+      characters to ignore: "!@#$%^&*()_+-"
+    punishments:
+      punish players: false
+      # Should players be punished for swearing?
+      punish check:
+        books: true
+        signs: true
+        chat: true
+      # Where would swearing be punishable?
+      flags:
+        reset every leave: true
+        reset every interval at: 10
+      commands:
+        '1': # How many swear flags should trigger these commands?
+          commands:
+            - 'tell {PLAYER} {player} Swearing isn''t allowed. Swear again and you will be kicked.'
+          execute_as: "CONSOLE" # Who should execute this command?
+        '2': # How many swear flags should trigger these commands?
+          commands:
+            - 'kick {PLAYER} Swearing isn''t allowed on this server!'
+          execute_as: "CONSOLE" # Who should execute this command?
+    filter checks:
+      bookcheck: true
+      # Should books be checked and filtered for swears?
+      signcheck: false
+      # Should signs be checked and filtered for swears? *Could cause lag*
+  only filter players:
+    enabled: false
+    # Should only players be filtered? This prevents private messages or any message from another plugin from being filtered
+    log chat messages: true
+    # Should player messages be sent to console? Since the chat event is cancelled, console doesn't receive messages if this is disabled.
+    remove message on swear: false
+    # Removes messages that contain swears, only works for players!
+  discordSRV:
+    enabled: false
+    # Should discordSRV be enabled? IF so, all messages from the minecraft server would be filtered before being sent to Discord.
+    escape special chars:
+      escape swears: true
+      # Should special characters only be escaped for swears?
+      escape entire message: false
+      # Should special characters be escaped before sending the cleaned message to the Discord server? Can't be enabled in correlation with escape swears
+    spoilers:
+      enabled: false
+      # Should messages be contained in spoilers?
+      template: "||{swear}||"
+      # Template for swear replacement, E.G ||{swear}|| would show up as ||fuck|| if the message contained the word fuck
+  command args enabled:
+    version: true
+    add: true
+    whitelist: true
+    status: true
+    remove: true
+    reset: true
+    help: true
+    toggle: true
+    unset: true
+custom_regex:
+  enabled: false
+  regex:
+    - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
+    - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
+mysql:
+  enabled: false
+  driverClass: "org.mariadb.jdbc.Driver"
+  maxPoolSize: 5
+  host: "localhost"
+  username: "root"
+  password: "foobar"
+  database: "MCSF"
+  port: "3306"
+  ssl: false
+  use_unicode: true
+  connection: "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"
+users:
+  069a79f4-44e9-4726-a5be-fca90e38aaf5:
+    enabled: true
+    playername: Notch
+replacements:
+  all: "&c*&f"
+  fuck: "&cReally bad word!"
+swearcount: 0
