@@ -544,7 +544,7 @@ public class CommandEvents {
                                 utils.setTable("global");
                             }
                             String word = finalArgs.get(1).toLowerCase();
-                            local = plugin.getFile("global");
+                            local = plugin.getFile("swears");
                             List<String> swears = local.getStringList("swears");
                             switch (finalArgs.get(0)) {
                                 case "add":

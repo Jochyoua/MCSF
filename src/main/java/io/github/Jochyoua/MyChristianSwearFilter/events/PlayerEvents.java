@@ -140,8 +140,13 @@ public class PlayerEvents implements Listener {
             plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))));
 
         }
-        if (!use && !ProtocolLib.isEnabled())
+        try {
+            if (!use && !ProtocolLib.isEnabled())
+                use = true;
+        } catch (NoClassDefFoundError ignored) {
             use = true;
+            // ProtocolLib wasn't found!!
+        }
         if (e.isCancelled())
             return;
         if (use || !utils.supported("ProtocolLib")) {
