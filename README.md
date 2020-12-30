@@ -2,7 +2,7 @@
 
 This is my first plugin I've ever made and I'm going to try to keep it updated for as long as possible. Currently this plugin has been tested with Minecraft Java edition versions 1.8.8 through 1.15.2.
 
-Download latest version from Spigot
+Download latest version from [SpigotMC.org](https://www.spigotmc.org/resources/54115/)
 
 MCSF is a swear filter that enables your server to let users personally toggle their filter status. That means users who feel as if they don't need to have a swear filter could toggle it on/off whenever they please.
 # FEATURES:
@@ -48,6 +48,6 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 
 Download this plugin into your server's plugin folder
 
-**(OPTIONAL):** If you wish all messages to be filtered, you must install ProtocolLib aswell!
+**(OPTIONAL):** If you wish all messages to be filtered, you must install [ProtocolLib](https://www.spigotmc.org/resources/1997/) as-well!
 
-**(OPTIONAL):** If you plan on using DiscordSRV you must first download the plugin and then add them to your server and then restart the server.
+**(OPTIONAL):** If you plan on using [DiscordSRV](https://www.spigotmc.org/resources/18494/) you must first download the plugin and then add them to your server and then restart the server.
