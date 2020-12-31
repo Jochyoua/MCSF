@@ -1,8 +1,5 @@
 package io.github.Jochyoua.MyChristianSwearFilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -36,11 +33,11 @@ public class ProtocolLib implements Listener {
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
                             if (mcsf.getConfig().getBoolean("settings.filtering.force") || utils.status(ID)) { // user has swearing enabled or it is currently being forcefully toggled
-                                mcsf.saveConfig();
+                                mcsf.reloadConfig();
                                 if (component != null) {
                                     if (!component.getJson().isEmpty()) {
                                         if (!utils.isclean(component.getJson())) {
-                                            String string = utils.clean(component.getJson(), false, true, Types.Filters.ALL);
+                                            String string = utils.clean(component.getJson(), false, true, "both", Types.Filters.ALL);
                                             if (string == null) {
                                                 return;
                                             }

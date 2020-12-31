@@ -1,13 +1,10 @@
 package io.github.Jochyoua.MyChristianSwearFilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.api.Subscribe;
+import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
+import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
+import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -30,7 +27,7 @@ public class DiscordEvents implements Listener {
                     Bukkit.getPluginManager().registerEvents(new Listener() {
                         @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
                         public void asyncPlayerChatEvent(AsyncPlayerChatEvent e) {
-                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !plugin.getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
+                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, "both", Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !plugin.getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
                         }
                     }, plugin);
                 }
@@ -44,6 +41,6 @@ public class DiscordEvents implements Listener {
     @Subscribe
     public void DiscordGameMessage(
             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-        event.setProcessedMessage(utils.clean(event.getProcessedMessage(), true, false, Types.Filters.DISCORD));
+        event.setProcessedMessage(utils.clean(event.getProcessedMessage(), true, false, "both", Types.Filters.DISCORD));
     }
 }

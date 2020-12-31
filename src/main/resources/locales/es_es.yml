@@ -52,9 +52,10 @@ variables:
     failedtoconnect: "No se pudo conectar a través de MySQL. Vuelva a verificar las credenciales"
     incorrectargs: "Cantidad incorrecta de argumentos" ## Incorrecto acerca de los argumentos dados
     invalidtarget: "{target} no es un usuario válido." ## Target no es un usuario válido o no está en la base de datos / config
+    invalidtype: "{arg} no es un válido {type}." ## {arg} (E.G: test) {type} (E.G: boolean) no es un booleano válido
     alreadyexists: "Esa palabra ya existe." ## Word ya existe en la base de datos / config
     doesntexist: "Esa palabra no existe." ## Word no existe en la base de datos / config
     updatecheck: "No se pudo buscar una actualización. Vea el siguiente error para obtener más información:" ## No se pudo buscar actualizaciones. Seguido de un seguimiento de pila de cualquier error
     unsupported: "Lo sentimos, pero {feature} no es compatible con {serverversion} ):"
-    execute_failure: "No se pudo cargar{feature}!"
+    execute_failure: "No se pudo cargar {feature}!"
     execute_failure_link: "Si siente que esto es un error, publique un problema aquí: https://git.io/Jf5L8"

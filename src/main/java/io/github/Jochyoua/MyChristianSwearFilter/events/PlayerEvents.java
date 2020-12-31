@@ -34,10 +34,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Objects;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PlayerEvents implements Listener {
     MCSF plugin;
@@ -66,59 +66,15 @@ public class PlayerEvents implements Listener {
         // Message saving / global filtering
         utils.setTable("global");
         try {
-            boolean saveMessage = false;
-            StringBuffer out = new StringBuffer();
             if (!utils.getGlobal().isEmpty()) {
                 utils.reloadPattern();
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
-                    List<String> duh = new ArrayList<>();
-                    for (String str : utils.getGlobal()) {
-                        StringBuilder omg = new StringBuilder();
-                        int length = str.length();
-                        for (String str2 : str.split("")) {
-                            length = length - 1;
-                            //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
-                            str2 = Pattern.quote(str2);
-                            if (length <= 0) { // length is the end
-                                omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                            } else if (length == str.length() - 1) { // length is the beginning
-                                omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
-                            } else { // length is somewhere inbetween
-                                omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                            }
-                        }
-                        duh.add(omg.toString());
-                    }
-                    Pattern pattern = Pattern.compile(String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-                    Matcher matcher = pattern.matcher(new_message);
-                    if (matcher.find()) {
-                        if (matcher.find()) {
-                            saveMessage = true;
-                            String replacement = plugin.getConfig().getString("settings.filtering.replacement");
-                            try {
-                                String[] arr = matcher.toMatchResult().toString().split("=");
-                                String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                                if (plugin.getConfig().getBoolean("settings.replace word for word")) {
-                                    replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
-                                            (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
-                                }
-                            } catch (Exception ex) {
-                                utils.debug("Could not register replace_word_for_words: " + ex.getMessage());
-                            }
-                            if (replacement != null) {
-                                String r = plugin.getConfig().getBoolean("settings.replace word for word") ? replacement : matcher.group(0).replaceAll("(?s).", replacement);
-                                replacement = ChatColor.translateAlternateColorCodes('&', r);
-                                matcher.appendReplacement(out, replacement);
-                            }
-                        }
-                        matcher.appendTail(out);
-                        e.setMessage(out.toString());
-                        new_message = out.toString();
-                    }
+                    new_message = utils.clean(old_message, false, true, "only", Types.Filters.PLAYERS);
+                    e.setMessage(new_message);
                 }
             }
 
-            if (saveMessage && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
+            if (!utils.isclean(old_message) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
                 File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
                 File dir = new File(plugin.getDataFolder(), "logs");
                 if (!dir.exists()) {
@@ -158,7 +114,7 @@ public class PlayerEvents implements Listener {
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, Types.Filters.PLAYERS)));
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, "both", Types.Filters.PLAYERS)));
                 } else {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
                 }
@@ -256,7 +212,7 @@ public class PlayerEvents implements Listener {
                 }
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, Types.Filters.BOOKS));
+                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

@@ -6,6 +6,7 @@ import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.HikariCP;
 import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
 import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
@@ -18,6 +19,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,6 +82,9 @@ public class CommandEvents {
                                 List<String> users = utils.getUsers();
                                 StringUtil.copyPartialMatches(args[1], users, completions);
                                 break;
+                            case "parse":
+                                StringUtil.copyPartialMatches(args[1], Collections.singletonList("The quick brown fox jumped over the lazy dog"), completions);
+                                break;
                         }
                     }
 
@@ -120,7 +126,6 @@ public class CommandEvents {
                 utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                 return;
             }
-            plugin.saveConfig();
             if (!finalArgs.isEmpty()) {
                 if (plugin.getConfig().isSet("settings.command args enabled." + finalArgs.get(0))) {
                     if (!plugin.getConfig().getBoolean("settings.command args enabled." + finalArgs.get(0))) {
@@ -240,6 +245,49 @@ public class CommandEvents {
                         local = plugin.getFile("global");
                         local.set("global", global);
                         plugin.saveFile(local, "global");
+                        break;
+                    case "parse":
+                        if (!sender.hasPermission("MCSF.modify")) {
+                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
+                            break;
+                        }
+                        if (args.size() == 1 || args.size() == 2) {
+                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
+                            return;
+                        }
+                        boolean state;
+                        try {
+                            switch(args.get(1)){
+                                case "true":
+                                case "enable":
+                                case "enabled":
+                                case "1":
+                                    state = true;
+                                    break;
+                                case "false":
+                                case "disabled":
+                                case "disable":
+                                case "0":
+                                    state = false;
+                                    break;
+                                default:
+                                    throw new IllegalArgumentException(plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.invalidtype").replaceAll("(?i)\\{arg}|(?i)%arg%", args.get(1)).replaceAll("(?i)\\{type}|(?i)%type%", "boolean")));
+                            }
+                        } catch (IllegalArgumentException e) {
+                            utils.send(sender, e.getMessage());
+                            return;
+                        }
+                        StringBuilder message = new StringBuilder();
+                        for (int i = 2; i < args.size(); i++) {
+                            String arg = args.get(i) + " ";
+                            message.append(arg);
+                        }
+                        plugin.getLogger().info(message.toString());
+                        if (state)
+                            utils.send(sender, utils.clean(message.toString(), false, false, "both", Types.Filters.DEBUG));
+                        else {
+                            utils.send(sender, utils.clean(message.toString(), false, false, "only", Types.Filters.DEBUG));
+                        }
                         break;
                     case "whitelist":
                         if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {

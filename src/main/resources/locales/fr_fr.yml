@@ -52,6 +52,7 @@ variables:
     failedtoconnect: "Impossible de se connecter via MySQL. S'il vous plaît revérifier les informations d'identification."
     incorrectargs: "Quantité incorrecte d'arguments." ##Incorrect à propos des arguments donnés
     invalidtarget: "{target} n'est pas un utilisateur valide."# # Cible n'est pas un utilisateur valide ou n'est pas dans la base de données/config
+    invalidtype: "{arg} n’est pas valide {type}." ## {arg} (E.G: test) {type} (E.G: boolean) n’est pas un boolean valide
     alreadyexists: "Ce mot existe déjà."## Mot existe déjà dans la base de données/config
     doesntexist: "Ce mot n'existe pas." ## Mot n'existe pas dans la base de données/config
     updatecheck: "Impossible de vérifier une mise à jour. Voir erreur ci-dessous pour plus d'informations: " ## impossible de vérifier les mises à jour. Suivi d'une trace de pile de toutes les erreurs

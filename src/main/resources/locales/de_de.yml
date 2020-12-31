@@ -34,7 +34,7 @@ variables:
     - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> - Ändert Chatfilter-Wörter"
     - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Ändert die Whitelist"
     - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifiziert Benutzer"
-   - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Setzt Datenbank zurück"
+    - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Setzt Datenbank zurück"
     - "&6-------------------------"
   console motd:
     - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
@@ -52,6 +52,7 @@ variables:
     failedtoconnect: "Fehler bei der Verbindung über MySQL. Bitte überprüfe die Anmeldeinformationen."
     incorrectargs: "Ungültige Argumente." ## Nachricht bei ungültiger Argumente.
     invalidtarget: "{target} ist kein gültiger Benutzer." ## Target ist kein Gültiger Benutzer oder nicht in der Datenbank / Konfiguration
+    invalidtype: "{arg} ist kein gültiger {type}." ## {arg} (E.G: test) {type} (E.G: boolean) ist kein gültiger boolescher
     alreadyexists: "Dieses Wort existiert bereits." ## Wort existiert bereits in der Datenbank / Konfiguration
     doesntexist: "Dieses Wort existiert nicht." ## Wort existiert nicht in der Datenbank / Konfiguration
     updatecheck: "Es konnte nicht auf Updates geprüft werden. Unten finden sie den Fehler für weitere Informationen:" ## Konnte nicht auf Updates überprüfen. Gefolgt von einem stack-trace von Fehlern

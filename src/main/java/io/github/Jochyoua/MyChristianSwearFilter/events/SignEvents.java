@@ -171,7 +171,7 @@ public class SignEvents implements Listener {
                 String lines = String.join("_", event.getLines());
                 if (utils.status(event.getPlayer().getUniqueId())) {
                     if (!utils.isclean(lines)) {
-                        lines = utils.clean(lines, true, false, Types.Filters.SIGNS);
+                        lines = utils.clean(lines, true, false, "both", Types.Filters.SIGNS);
                     }
                 }
                 event.setLines(lines.split("_"));

@@ -52,6 +52,7 @@ variables:
     failedtoconnect: "Failed to connect through MySQL. Please re-check credentials."
     incorrectargs: "Incorrect amount of arguments." ## Incorrect about of arguments given
     invalidtarget: "{target} is not a valid user." ## Target isn't a valid user or isn't in the database/config
+    invalidtype: "{arg} is not a valid {type}." ## {arg} (E.G: test) {type} (E.G: boolean) isn't a valid boolean
     alreadyexists: "That word already exists." ## Word already exists in the database/config
     doesntexist: "That word doesn't exist." ## Word doesn't exist in the database/config
     updatecheck: "Couldn't check for an update. See below error for more information:" ## Couldn't check for updates. Followed by a stacktrace of any errors
