@@ -35,14 +35,23 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 * **/MCSF whitelist [word]** *(Permission:MCSF.modify)* Adds/Removes word from the whitelist (Requires settings.whitelist to be true)
 * **/MCSF global [word]** *(Permission:MCSF.modify)* Adds/Removes word from the global list (Requires settings.global blacklist to be true)
 * **/MCSF reload [confirm]** *(Permission:MCSF.modify)* Reloads the configuration files and the database (can be dangerous)
+
 # PLACEHOLDERS:
 
 * {prefix}: gets the prefix set in config
-* {command}: gets the command set in config
-* {player}: gets the user's name %message%: gets the failure/success value if applicable
+* {command}: gets the current command (MCSF)
+* {player}: gets the user's name 
+* {message}: gets the failure/success value if applicable
+* {current}: gets the current version of the plugin
+* {version}: gets the latest plugin verison
+* {serverversion}: gets the version of the server
+* {swearcount}: gets the amount of times a word was blacklisted
+* {wordcount}: gets the amount of swear words in the config
+
 # NOTES:
 
     If you have this plugin on your server, be sure to let me know so I can add it here.
+    This plugin is compiled with the latest Paper API and works with versions 1.8 - latest
 
 # Installation instructions:
 

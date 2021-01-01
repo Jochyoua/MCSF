@@ -95,8 +95,8 @@ public class MCSF extends JavaPlugin {
                 try {
                     String driverClass = getConfig().getString("mysql.driverClass");
                     String url = Objects.requireNonNull(getConfig().getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}")).replaceAll("(?i)\\{host}|(?i)%host%", Objects.requireNonNull(plugin.getConfig().getString("mysql.host")))
-                            .replaceAll("(?i)\\{port}|(?i)%port%", plugin.getConfig().getString("mysql.port", "3306"))
-                            .replaceAll("(?i)\\{database}|(?i)%database%", plugin.getConfig().getString("mysql.database", "MCSF"))
+                            .replaceAll("(?i)\\{port}|(?i)%port%", Objects.requireNonNull(plugin.getConfig().getString("mysql.port", "3306")))
+                            .replaceAll("(?i)\\{database}|(?i)%database%", Objects.requireNonNull(plugin.getConfig().getString("mysql.database", "MCSF")))
                             .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(plugin.getConfig().getBoolean("mysql.use_unicode", true)))
                             .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(plugin.getConfig().getBoolean("mysql.ssl", false)));
                     String username = getConfig().getString("mysql.username");
@@ -215,7 +215,7 @@ public class MCSF extends JavaPlugin {
         this.getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         if (getConfig().isSet("replacements.all")) {
-            if (Objects.requireNonNull(getConfig().getString("replacements.all")).equalsIgnoreCase("&c*&f") && !getConfig().getString("settings.filtering.replacement").equalsIgnoreCase("&c*&f")) {
+            if (Objects.requireNonNull(getConfig().getString("replacements.all")).equalsIgnoreCase("&c*&f") && !Objects.requireNonNull(getConfig().getString("settings.filtering.replacement")).equalsIgnoreCase("&c*&f")) {
                 getConfig().set("replacements.all", getConfig().getString("settings.filtering.replacement"));
             }
         }
@@ -253,12 +253,12 @@ public class MCSF extends JavaPlugin {
         }
         if (getConfig().getBoolean("settings.updating.check for updates")) {
             Bukkit.getScheduler().runTask(this, () -> {
-                utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.checking"));
+                utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
                 if (!utils.isUpToDate()) {
-                    utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
-                    utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));
+                    utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_available")));
+                    utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_link")));
                 } else {
-                    utils.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.no_new_version"));
+                    utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.no_new_version")));
                 }
             });
         }
