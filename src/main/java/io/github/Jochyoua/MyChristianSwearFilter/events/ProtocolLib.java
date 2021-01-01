@@ -33,10 +33,9 @@ public class ProtocolLib implements Listener {
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
                             if (mcsf.getConfig().getBoolean("settings.filtering.force") || utils.status(ID)) { // user has swearing enabled or it is currently being forcefully toggled
-                                mcsf.reloadConfig();
                                 if (component != null) {
                                     if (!component.getJson().isEmpty()) {
-                                        if (!utils.isclean(component.getJson())) {
+                                        if (!utils.isclean(component.getJson(), "both")) {
                                             String string = utils.clean(component.getJson(), false, true, "both", Types.Filters.ALL);
                                             if (string == null) {
                                                 return;

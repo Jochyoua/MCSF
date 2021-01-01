@@ -170,7 +170,7 @@ public class SignEvents implements Listener {
                     && event.getLine(3).equalsIgnoreCase("{\"text\":\"\"}"))) {
                 String lines = String.join("_", event.getLines());
                 if (utils.status(event.getPlayer().getUniqueId())) {
-                    if (!utils.isclean(lines)) {
+                    if (!utils.isclean(lines, "both")) {
                         lines = utils.clean(lines, true, false, "both", Types.Filters.SIGNS);
                     }
                 }

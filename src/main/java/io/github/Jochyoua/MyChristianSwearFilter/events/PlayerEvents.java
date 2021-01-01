@@ -49,11 +49,13 @@ public class PlayerEvents implements Listener {
     public PlayerEvents(MCSF plugin, Connector connector, Utils utils) {
         this.plugin = plugin;
         this.connector = connector;
-        try {
-            this.connection = connector.getConnection();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+
+        if (plugin.getConfig().getBoolean("mysql.enabled"))
+            try {
+                this.connection = connector.getConnection();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         this.utils = utils;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
@@ -74,7 +76,7 @@ public class PlayerEvents implements Listener {
                 }
             }
 
-            if (!utils.isclean(old_message) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
+            if (!utils.isclean(old_message, "both") && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
                 File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
                 File dir = new File(plugin.getDataFolder(), "logs");
                 if (!dir.exists()) {
@@ -107,7 +109,7 @@ public class PlayerEvents implements Listener {
             return;
         if (use || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
-            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage()) && e.getPlayer().hasPermission("MCSF.bypass"))
+            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), "both") && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
@@ -212,7 +214,7 @@ public class PlayerEvents implements Listener {
                 }
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    newmeta.addPage(utils.isclean(page) ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
+                    newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

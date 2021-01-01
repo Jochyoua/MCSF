@@ -50,11 +50,12 @@ public class Utils {
     public Utils(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
-        try {
-            this.connection = connector.getConnection();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+        if (plugin.getConfig().getBoolean("mysql.enabled"))
+            try {
+                this.connection = connector.getConnection();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         json.add("extra");
         json.add("italic");
         json.add("text");
@@ -510,7 +511,7 @@ public class Utils {
                         String r;
                         if (!whitelist.containsKey(str)) {
                             r = random();
-                            while (!isclean(r)) {
+                            while (!isclean(r, "both")) {
                                 debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
                                 r = random();
                             }
@@ -615,14 +616,63 @@ public class Utils {
     }
 
 
-    public boolean isclean(String str) {
-        str = str.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
+    public boolean isclean(String string, String global) {
+        List<String> array = new ArrayList<>();
+        if (global.equalsIgnoreCase("only")) {
+            if (getGlobal().isEmpty()) {
+                return true;
+            }
+            List<String> duh = new ArrayList<>();
+            for (String str : getGlobal()) {
+                StringBuilder omg = new StringBuilder();
+                int length = str.length();
+                for (String str2 : str.split("")) {
+                    length = length - 1;
+                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
+                    str2 = Pattern.quote(str2);
+                    if (length <= 0) { // length is the end
+                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                    } else if (length == str.length() - 1) { // length is the beginning
+                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                    } else { // length is somewhere inbetween
+                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                    }
+                }
+                duh.add(omg.toString());
+            }
+            array = duh;
+        } else if (global.equalsIgnoreCase("both")) {
+            if (!getGlobal().isEmpty()) {
+                List<String> duh = new ArrayList<>();
+                for (String str : getGlobal()) {
+                    StringBuilder omg = new StringBuilder();
+                    int length = str.length();
+                    for (String str2 : str.split("")) {
+                        length = length - 1;
+                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
+                        str2 = Pattern.quote(str2);
+                        if (length <= 0) { // length is the end
+                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                        } else if (length == str.length() - 1) { // length is the beginning
+                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                        } else { // length is somewhere inbetween
+                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                        }
+                    }
+                    duh.add(omg.toString());
+                }
+                array = duh;
+            }
+            array.addAll(getRegex());
+        } else {
+            array = getRegex();
+        }
+        string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
         reloadPattern();
-        List<String> array = getRegex();
         if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-            for (String strs : str.split(" ")) {
-                if (Stream.concat(getWhitelist().stream(), json.stream()).distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
-                    str = str.replaceAll("(\\b" + strs + "\\b)", "");
+            for (String strs : string.split(" ")) {
+                if (Stream.concat(getWhitelist().stream(), json.stream()).distinct().collect(Collectors.toList()).stream().anyMatch(string::equalsIgnoreCase)) {
+                    string = string.replaceAll("(\\b" + strs + "\\b)", "");
                 }
             }
         }
@@ -633,7 +683,7 @@ public class Utils {
                     array.add(str2);
                 }
             }
-        return !Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str).find();
+        return !Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(string).find();
     }
 
     public List<String> getUsers() {
@@ -726,48 +776,54 @@ public class Utils {
             setTable("users");
             setTable("whitelist");
             setTable("global");
-            ResultSet rs;
             try (Connection connection = connector.getConnection()) {
-                rs = connection.prepareStatement("SELECT * FROM swears;").executeQuery();
-                while (rs.next()) {
-                    swears.add(rs.getString("word"));
+                ResultSet rs1 = connection.prepareStatement("SELECT * FROM swears;").executeQuery();
+                while (rs1.next()) {
+                    swears.add(rs1.getString("word"));
                 }
-                rs = connection.prepareStatement("SELECT * FROM users;").executeQuery();
-                while (rs.next()) {
-                    String ID = rs.getObject("uuid").toString();
-                    String name = rs.getObject("name").toString();
-                    boolean status = Boolean.parseBoolean(rs.getObject("status").toString());
+                rs1.close();
+                ResultSet rs2 = connection.prepareStatement("SELECT * FROM users;").executeQuery();
+                while (rs2.next()) {
+                    String ID = rs2.getObject("uuid").toString();
+                    String name;
+                    if (!(rs2.getObject("name") == null)) {
+                        name = rs2.getObject("name").toString();
+                    } else {
+                        name = "undefined";
+                    }
+                    boolean status = Boolean.parseBoolean(rs2.getObject("status").toString());
                     plugin.getConfig().set("users." + ID + ".enabled", status);
                     plugin.getConfig().set("users." + ID + ".playername", name);
                     plugin.saveConfig();
                 }
-                rs = connection.prepareStatement("SELECT * FROM whitelist;").executeQuery();
-                while (rs.next()) {
-                    whitelist.add(rs.getString("word"));
+                rs2.close();
+                ResultSet rs3 = connection.prepareStatement("SELECT * FROM whitelist;").executeQuery();
+                while (rs3.next()) {
+                    whitelist.add(rs3.getString("word"));
                 }
-                rs = connection.prepareStatement("SELECT * FROM global;").executeQuery();
-                while (rs.next()) {
-                    global.add(rs.getString("word"));
+                rs3.close();
+                ResultSet rs4 = connection.prepareStatement("SELECT * FROM global;").executeQuery();
+                while (rs4.next()) {
+                    global.add(rs4.getString("word"));
                 }
-            } catch (Exception ignored) {
+                rs4.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-
             FileConfiguration local = plugin.getFile("swears");
-            if (!swears.isEmpty()) {
-                local.set("swears", swears);
-                plugin.saveFile(local, "swears");
-            }
+            local.set("swears", swears);
+            plugin.saveFile(local, "swears");
+            setSwears(swears);
+
             local = plugin.getFile("whitelist");
-            if (!whitelist.isEmpty()) {
-                local.set("whitelist", whitelist);
-                plugin.saveFile(local, "whitelist");
-            }
+            local.set("whitelist", whitelist);
+            plugin.saveFile(local, "whitelist");
+            setWhitelist(whitelist);
+
             local = plugin.getFile("global");
             local.set("global", global);
             plugin.saveFile(local, "global");
-        } else {
-            send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.failedtoconnect")));
+            setGlobal(global);
         }
         reloadPattern();
     }
@@ -902,7 +958,7 @@ public class Utils {
                 .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion()))
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
-                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getConfig().getStringList("swears").size())));
+                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("swears").getStringList("swears").size())));
         return supported("hex") ? color(message) : message;
     }
 

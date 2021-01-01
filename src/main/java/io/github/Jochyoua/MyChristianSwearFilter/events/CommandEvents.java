@@ -34,6 +34,7 @@ public class CommandEvents {
     public CommandEvents(MCSF plugin, DatabaseConnector connector, Utils utils) {
         this.plugin = plugin;
         this.connector = connector;
+        if (plugin.getConfig().getBoolean("mysql.enabled"))
         try {
             this.connection = connector.getConnection();
         } catch (SQLException throwables) {

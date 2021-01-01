@@ -17,10 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 
 public class MCSF extends JavaPlugin {
@@ -141,6 +138,54 @@ public class MCSF extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
+        FileConfiguration local = getFile("swears");
+        if (!getConfig().getStringList("swears").isEmpty()) {
+            getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
+            if (local.isSet("swears")) {
+                if (!local.getStringList("swears").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("swears"));
+                    Set<String> local2 = new HashSet<>(getConfig().getStringList("swears"));
+                    local1.addAll(local2);
+                    local.set("swears", local1);
+                    saveFile(local, "swears");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                }
+            }
+            getConfig().set("swears", null);
+            saveConfig();
+        }
+        local = getFile("whitelist");
+        if (!getConfig().getStringList("whitelist").isEmpty()) {
+            getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
+            if (local.isSet("whitelist")) {
+                if (!local.getStringList("whitelist").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
+                    Set<String> local2 = new HashSet<>(getConfig().getStringList("whitelist"));
+                    local1.addAll(local2);
+                    local.set("whitelist", local1);
+                    saveFile(local, "whitelist");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                }
+            }
+            getConfig().set("whitelist", null);
+            saveConfig();
+        }
+        local = getFile("global");
+        if (!getConfig().getStringList("global").isEmpty()) {
+            getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
+            if (local.isSet("global")) {
+                if (!local.getStringList("global").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("global"));
+                    Set<String> local2 = new HashSet<>(getConfig().getStringList("global"));
+                    local1.addAll(local2);
+                    local.set("global", local1);
+                    saveFile(local, "global");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                }
+            }
+            getConfig().set("global", null);
+            saveConfig();
+        }
         if (getConfig().getBoolean("mysql.enabled")) {
             boolean load = false;
             if (connector == null)
@@ -185,6 +230,7 @@ public class MCSF extends JavaPlugin {
                 lang.copyDefConfigIfNeeded();
             }
         }
+        utils.reload();
         new CommandEvents(this, connector, utils);
         new PlayerEvents(this, connector, utils);
         if (utils.supported("ProtocolLib"))
@@ -195,12 +241,10 @@ public class MCSF extends JavaPlugin {
             new SignEvents(this, utils);
         if (utils.supported("DiscordSRV"))
             new DiscordEvents(this, utils);
-
-        utils.reload();
         final List<String> swears = plugin.getFile("swears").getStringList("swears");
         if (!swears.isEmpty()) {
             final String test = swears.get((new Random()).nextInt(swears.size()));
-            String clean = utils.clean(test, true, false,"both", Types.Filters.DEBUG);
+            String clean = utils.clean(test, true, false, "both", Types.Filters.DEBUG);
             utils.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
         } else {
             utils.debug("Uh-oh! Swears seems to be empty.");
@@ -235,8 +279,9 @@ public class MCSF extends JavaPlugin {
             }
         }
     }
+
     @Override
-    public void onDisable(){
+    public void onDisable() {
         saveConfig();
     }
 }
