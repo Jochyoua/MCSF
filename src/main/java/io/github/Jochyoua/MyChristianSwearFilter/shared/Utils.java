@@ -832,31 +832,31 @@ public class Utils {
     }
 
     public void debug(String str) {
+        String message = prepare(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.debug").replaceAll("(?i)\\{message}|(?i)%message%", str));
         if (plugin.getConfig().getBoolean("settings.debug")) {
-            String message = prepare(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.debug").replaceAll("(?i)\\{message}|(?i)%message%", str));
             send(Bukkit.getConsoleSender(), message);
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                File file = new File(plugin.getDataFolder(), "/logs/debug.txt");
-                File dir = new File(plugin.getDataFolder(), "logs");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                if (!file.exists()) {
-                    try {
-                        file.createNewFile();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            File file = new File(plugin.getDataFolder(), "/logs/debug.txt");
+            File dir = new File(plugin.getDataFolder(), "logs");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            if (!file.exists()) {
                 try {
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
-                    bw.append("[").append(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date())).append("] ").append(ChatColor.stripColor(message)).append("\n");
-                    bw.close();
+                    file.createNewFile();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            });
-        }
+            }
+            try {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+                bw.append("[").append(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date())).append("] ").append(ChatColor.stripColor(message)).append("\n");
+                bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void reloadPattern() {
