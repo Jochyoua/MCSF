@@ -156,7 +156,7 @@ public class PlayerEvents implements Listener {
                         ps.setString(1, String.valueOf(player.getUniqueId()));
                         ResultSet rs = ps.executeQuery();
                         while (rs.next()) {
-                            result = Boolean.parseBoolean(rs.getString("status"));
+                            result = rs.getBoolean("status");
                         }
                         ps.close();
                     } catch (SQLException throwables) {
