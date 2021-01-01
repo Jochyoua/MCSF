@@ -283,7 +283,6 @@ public class CommandEvents {
                             String arg = args.get(i) + " ";
                             message.append(arg);
                         }
-                        plugin.getLogger().info(message.toString());
                         if (state)
                             utils.send(sender, utils.clean(message.toString(), false, false, "both", Types.Filters.DEBUG));
                         else {

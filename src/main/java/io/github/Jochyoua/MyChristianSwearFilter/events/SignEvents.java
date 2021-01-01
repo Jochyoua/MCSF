@@ -52,7 +52,7 @@ public class SignEvents implements Listener {
                             }
                         } catch (Exception e) {
                             FileConfiguration language = mcsf.getLanguage();
-                            plugin.getLogger().log(Level.SEVERE, "Failure: {message}"
+                            plugin.getLogger().log(Level.WARNING, "Failure: {message}"
                                     .replaceAll("(?i)\\{message}|(?i)%message%",
                                             Objects.requireNonNull(language.getString("variables.error.execute_failure"))
                                                     .replaceAll("(?i)\\{feature}", "Sign Filtering")), e);
@@ -145,7 +145,6 @@ public class SignEvents implements Listener {
                     }
                 }));
                 plugin.getServer().getPluginManager().registerEvents(this, plugin);
-                Bukkit.getConsoleSender().sendMessage("Support for SignCheck is just fine!");
             } catch (Exception e) {
                 FileConfiguration language = plugin.getLanguage();
                 plugin.getLogger().log(Level.SEVERE, "Failure: {message}"

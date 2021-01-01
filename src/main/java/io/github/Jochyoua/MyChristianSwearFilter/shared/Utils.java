@@ -309,7 +309,7 @@ public class Utils {
                 break;
             case "users":
                 if (!tableExists("users") || countRows("users") == 0) {
-                    plugin.getLogger().info("(MySQL) attempting to insert user data");
+                    debug("(MySQL) attempting to insert user data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
                         ps.execute();
                         ps.close();
@@ -349,7 +349,7 @@ public class Utils {
                 break;
             case "swears":
                 if (!tableExists("swears") || countRows("swears") == 0) {
-                    plugin.getLogger().info("(MySQL) attempting to insert swear data");
+                    debug("(MySQL) attempting to insert swear data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
                         ps.execute();
                         ps.close();
@@ -370,7 +370,7 @@ public class Utils {
                 break;
             case "whitelist":
                 if (!tableExists("whitelist") || countRows("whitelist") == 0) {
-                    plugin.getLogger().info("(MySQL) attempting to insert whitelist data");
+                    debug("(MySQL) attempting to insert whitelist data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
                         ps.execute();
                         ps.close();
@@ -418,8 +418,10 @@ public class Utils {
                     setTable("whitelist");
                     setTable("global");
                 } catch (Exception e) {
-                    Bukkit.getConsoleSender().sendMessage("Failed to set tables!:");
-                    e.printStackTrace();
+                    plugin.getLogger().log(Level.WARNING, "Failure: {message}"
+                            .replaceAll("(?i)\\{message}|(?i)%message%",
+                                    Objects.requireNonNull(plugin.getLanguage().getString("variables.error.execute_failure"))
+                                            .replaceAll("(?i)\\{feature}", "MYSQL tables")), e);
                 }
             } else {
                 plugin.getLogger().log(Level.WARNING, "Failed to use MYSQL, is it configured correctly?");
@@ -429,6 +431,7 @@ public class Utils {
 
     public boolean status(UUID ID) {
         // TODO: Fix issue with grabbing data not being correct if the file has been edited during server uptime
+        // TODO: Fix issue with status returning false information sometimes? Maybe the file is not insync with the sql database?
         return plugin.getConfig().getBoolean("settings.filtering.force") || plugin.getConfig().getBoolean("users." + ID + ".enabled");
     }
 
@@ -445,7 +448,7 @@ public class Utils {
         List<String> array = new ArrayList<>();
         if (global.equalsIgnoreCase("only")) {
             if (getGlobal().isEmpty()) {
-                Bukkit.getConsoleSender().sendMessage("getGlobal returned empty??");
+                debug("getGlobal returned empty??");
                 return string;
             }
             List<String> duh = new ArrayList<>();
@@ -784,14 +787,14 @@ public class Utils {
                 rs1.close();
                 ResultSet rs2 = connection.prepareStatement("SELECT * FROM users;").executeQuery();
                 while (rs2.next()) {
-                    String ID = rs2.getObject("uuid").toString();
+                    String ID = rs2.getString("uuid");
                     String name;
-                    if (!(rs2.getObject("name") == null)) {
-                        name = rs2.getObject("name").toString();
+                    if (!(rs2.getString("name") == null)) {
+                        name = rs2.getString("name");
                     } else {
                         name = "undefined";
                     }
-                    boolean status = Boolean.parseBoolean(rs2.getObject("status").toString());
+                    boolean status = rs2.getBoolean("status");
                     plugin.getConfig().set("users." + ID + ".enabled", status);
                     plugin.getConfig().set("users." + ID + ".playername", name);
                     plugin.saveConfig();

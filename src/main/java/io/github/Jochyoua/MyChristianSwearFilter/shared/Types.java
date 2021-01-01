@@ -29,7 +29,7 @@ public class Types {
             try {
                 Languages.valueOf(lan);
             } catch (Exception ignored) {
-                Bukkit.getConsoleSender().sendMessage("[MCSF]: Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
+                plugin.getLogger().warning("[MCSF]: Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
                 plugin.getConfig().set("settings.language", "en_us");
                 plugin.saveConfig();
                 lan = "en_us";

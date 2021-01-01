@@ -2,7 +2,6 @@ package io.github.Jochyoua.MyChristianSwearFilter;
 
 import be.dezijwegel.configapi.ConfigAPI;
 import be.dezijwegel.configapi.Settings;
-import be.dezijwegel.configapi.utility.Logger;
 import io.github.Jochyoua.MyChristianSwearFilter.events.*;
 import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.DatabaseConnector;
 import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
@@ -64,7 +63,7 @@ public class MCSF extends JavaPlugin {
                 utils.debug("No fret, the default values have been filled.");
                 utils.debug("Successfully saved " + language + ".yml!");
             } catch (IOException e) {
-                Logger.log("Failed to save " + language + ".yml!:\n" + e.getMessage());
+                getLogger().log(Level.WARNING, "Failed to save " + language + ".yml!:\n", e);
             }
         }
     }
@@ -92,7 +91,7 @@ public class MCSF extends JavaPlugin {
             if (connector == null)
                 connector = new DatabaseConnector();
             if (!connector.isWorking()) {
-                getLogger().info("(MYSQL) Loading database info....");
+                utils.debug("(MYSQL) Loading database info....");
                 try {
                     String driverClass = getConfig().getString("mysql.driverClass");
                     String url = Objects.requireNonNull(getConfig().getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}")).replaceAll("(?i)\\{host}|(?i)%host%", Objects.requireNonNull(plugin.getConfig().getString("mysql.host")))
@@ -103,7 +102,7 @@ public class MCSF extends JavaPlugin {
                     String username = getConfig().getString("mysql.username");
                     String password = getConfig().getString("mysql.password");
                     int maxPoolSize = getConfig().getInt("mysql.maxPoolSize");
-                    getLogger().info("(MYSQL) Using URL: " + url);
+                    utils.debug("(MYSQL) Using URL: " + url);
                     connector.setInfo(
                             new DatabaseConnector.Info(
                                     driverClass,
@@ -118,18 +117,18 @@ public class MCSF extends JavaPlugin {
                     return false;
                 }
 
-                getLogger().info("(MYSQL) Trying a database connection....");
+                utils.debug("(MYSQL) Trying a database connection....");
                 try {
                     connector.tryFirstConnection();
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
-                getLogger().info("(MYSQL) The connection has been established! Plugin is working.");
+                utils.debug("(MYSQL) The connection has been established! Plugin is working.");
 
 
             } else {
-                getLogger().info("(MYSQL) Database is already working.");
+                utils.debug("(MYSQL) Database is already working.");
             }
         }
         return true;
@@ -140,7 +139,7 @@ public class MCSF extends JavaPlugin {
         plugin = this;
         FileConfiguration local = getFile("swears");
         if (!getConfig().getStringList("swears").isEmpty()) {
-            getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
+            utils.debug("(CONFIG) Setting path `swears` into `data/swears.yml`");
             if (local.isSet("swears")) {
                 if (!local.getStringList("swears").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("swears"));
@@ -148,7 +147,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("swears", local1);
                     saveFile(local, "swears");
-                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
                 }
             }
             getConfig().set("swears", null);
@@ -156,7 +155,7 @@ public class MCSF extends JavaPlugin {
         }
         local = getFile("whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
-            getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
+            utils.debug("(CONFIG) Setting path `global` into `data/whitelist.yml`");
             if (local.isSet("whitelist")) {
                 if (!local.getStringList("whitelist").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
@@ -164,7 +163,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("whitelist", local1);
                     saveFile(local, "whitelist");
-                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
                 }
             }
             getConfig().set("whitelist", null);
@@ -172,7 +171,7 @@ public class MCSF extends JavaPlugin {
         }
         local = getFile("global");
         if (!getConfig().getStringList("global").isEmpty()) {
-            getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
+            utils.debug("(CONFIG) Setting path `global` into `data/global.yml`");
             if (local.isSet("global")) {
                 if (!local.getStringList("global").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("global"));
@@ -180,7 +179,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("global", local1);
                     saveFile(local, "global");
-                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
                 }
             }
             getConfig().set("global", null);
