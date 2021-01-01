@@ -91,7 +91,7 @@ public class MCSF extends JavaPlugin {
             if (connector == null)
                 connector = new DatabaseConnector();
             if (!connector.isWorking()) {
-                utils.debug("(MYSQL) Loading database info....");
+                getLogger().info("(MYSQL) Loading database info....");
                 try {
                     String driverClass = getConfig().getString("mysql.driverClass");
                     String url = Objects.requireNonNull(getConfig().getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}")).replaceAll("(?i)\\{host}|(?i)%host%", Objects.requireNonNull(plugin.getConfig().getString("mysql.host")))
@@ -102,7 +102,7 @@ public class MCSF extends JavaPlugin {
                     String username = getConfig().getString("mysql.username");
                     String password = getConfig().getString("mysql.password");
                     int maxPoolSize = getConfig().getInt("mysql.maxPoolSize");
-                    utils.debug("(MYSQL) Using URL: " + url);
+                    getLogger().info("(MYSQL) Using URL: " + url);
                     connector.setInfo(
                             new DatabaseConnector.Info(
                                     driverClass,
@@ -117,18 +117,18 @@ public class MCSF extends JavaPlugin {
                     return false;
                 }
 
-                utils.debug("(MYSQL) Trying a database connection....");
+                getLogger().info("(MYSQL) Trying a database connection....");
                 try {
                     connector.tryFirstConnection();
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
-                utils.debug("(MYSQL) The connection has been established! Plugin is working.");
+                getLogger().info("(MYSQL) The connection has been established! Plugin is working.");
 
 
             } else {
-                utils.debug("(MYSQL) Database is already working.");
+                getLogger().info("(MYSQL) Database is already working.");
             }
         }
         return true;
@@ -139,7 +139,7 @@ public class MCSF extends JavaPlugin {
         plugin = this;
         FileConfiguration local = getFile("swears");
         if (!getConfig().getStringList("swears").isEmpty()) {
-            utils.debug("(CONFIG) Setting path `swears` into `data/swears.yml`");
+            getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
             if (local.isSet("swears")) {
                 if (!local.getStringList("swears").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("swears"));
@@ -147,7 +147,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("swears", local1);
                     saveFile(local, "swears");
-                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
                 }
             }
             getConfig().set("swears", null);
@@ -155,7 +155,7 @@ public class MCSF extends JavaPlugin {
         }
         local = getFile("whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
-            utils.debug("(CONFIG) Setting path `global` into `data/whitelist.yml`");
+            getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
             if (local.isSet("whitelist")) {
                 if (!local.getStringList("whitelist").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
@@ -163,7 +163,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("whitelist", local1);
                     saveFile(local, "whitelist");
-                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
                 }
             }
             getConfig().set("whitelist", null);
@@ -171,7 +171,7 @@ public class MCSF extends JavaPlugin {
         }
         local = getFile("global");
         if (!getConfig().getStringList("global").isEmpty()) {
-            utils.debug("(CONFIG) Setting path `global` into `data/global.yml`");
+            getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
             if (local.isSet("global")) {
                 if (!local.getStringList("global").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("global"));
@@ -179,7 +179,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("global", local1);
                     saveFile(local, "global");
-                    utils.debug("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                    getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
                 }
             }
             getConfig().set("global", null);
