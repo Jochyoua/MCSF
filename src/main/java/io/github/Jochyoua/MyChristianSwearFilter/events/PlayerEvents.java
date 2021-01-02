@@ -116,7 +116,7 @@ public class PlayerEvents implements Listener {
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, "both", Types.Filters.PLAYERS)));
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, "asdfasdf", Types.Filters.PLAYERS)));
                 } else {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
                 }

@@ -186,6 +186,8 @@ public class Utils {
     }
 
     public int countRows(String table) {
+        if (!plugin.getConfig().getBoolean("mysql.enabled"))
+            return 0;
         int i = 0;
         try {
             PreparedStatement ps = connection.prepareStatement("SELECT * FROM " + table);
@@ -282,6 +284,8 @@ public class Utils {
 
     @SneakyThrows
     public void setTable(String table) {
+        if (!plugin.getConfig().getBoolean("mysql.enabled"))
+            return;
         switch (table) {
             case "global":
                 if (!tableExists("global") || countRows("global") == 0) {
@@ -430,8 +434,6 @@ public class Utils {
     }
 
     public boolean status(UUID ID) {
-        // TODO: Fix issue with grabbing data not being correct if the file has been edited during server uptime
-        // TODO: Fix issue with status returning false information sometimes? Maybe the file is not insync with the sql database?
         return plugin.getConfig().getBoolean("settings.filtering.force") || plugin.getConfig().getBoolean("users." + ID + ".enabled");
     }
 
