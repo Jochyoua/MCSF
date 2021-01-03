@@ -113,6 +113,7 @@ public class PlayerEvents implements Listener {
                 return;
             if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
+                Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
@@ -191,7 +192,7 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void openBook(PlayerInteractEvent e) {
         Player player = e.getPlayer();
-        if (plugin.getConfig().getBoolean("settings.filtering.filter checks.bookcheck") && utils.status(player.getUniqueId())) {
+        if (plugin.getConfig().getBoolean("settings.filtering.filter checks.bookcheck")) {
             if (player.getItemInHand().getType() == Material.WRITTEN_BOOK && (e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) {
                 if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
                     BlockState bs = Objects.requireNonNull(e.getClickedBlock()).getState();
@@ -214,7 +215,10 @@ public class PlayerEvents implements Listener {
                 }
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
+                    if (utils.status(player.getUniqueId()))
+                        newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
+                    else
+                        newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "only", Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

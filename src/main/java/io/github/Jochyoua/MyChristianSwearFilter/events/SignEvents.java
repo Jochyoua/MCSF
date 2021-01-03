@@ -1,10 +1,5 @@
 package io.github.Jochyoua.MyChristianSwearFilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
-import io.github.Jochyoua.MyChristianSwearFilter.signcheck.ProtocolUtils;
-import io.github.Jochyoua.MyChristianSwearFilter.signcheck.SignViewEvent;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -171,6 +166,10 @@ public class SignEvents implements Listener {
                 if (utils.status(event.getPlayer().getUniqueId())) {
                     if (!utils.isclean(lines, "both")) {
                         lines = utils.clean(lines, true, false, "both", Types.Filters.SIGNS);
+                    }
+                } else {
+                    if (!utils.isclean(lines, "only")) {
+                        lines = utils.clean(lines, true, false, "only", Types.Filters.SIGNS);
                     }
                 }
                 event.setLines(lines.split("_"));
