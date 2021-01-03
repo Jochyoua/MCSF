@@ -40,6 +40,7 @@ public class Utils {
     MCSF plugin;
     DatabaseConnector connector;
     List<String> regex = new ArrayList<>();
+    List<String> globalRegex = new ArrayList<>();
     List<String> localSwears = new ArrayList<>();
     List<String> localWhitelist = new ArrayList<>();
     List<String> globalSwears = new ArrayList<>();
@@ -449,55 +450,15 @@ public class Utils {
         reloadPattern();
         List<String> array = new ArrayList<>();
         if (global.equalsIgnoreCase("only")) {
-            if (getGlobal().isEmpty()) {
-                debug("getGlobal returned empty??");
-                return string;
-            }
-            List<String> duh = new ArrayList<>();
-            for (String str : getGlobal()) {
-                StringBuilder omg = new StringBuilder();
-                int length = str.length();
-                for (String str2 : str.split("")) {
-                    length = length - 1;
-                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
-                    str2 = Pattern.quote(str2);
-                    if (length <= 0) { // length is the end
-                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                    } else if (length == str.length() - 1) { // length is the beginning
-                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
-                    } else { // length is somewhere inbetween
-                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                    }
-                }
-                duh.add(omg.toString());
-            }
-            array = duh;
+            array = getGlobalRegex();
         } else if (global.equalsIgnoreCase("both")) {
-            if (!getGlobal().isEmpty()) {
-                List<String> duh = new ArrayList<>();
-                for (String str : getGlobal()) {
-                    StringBuilder omg = new StringBuilder();
-                    int length = str.length();
-                    for (String str2 : str.split("")) {
-                        length = length - 1;
-                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
-                        str2 = Pattern.quote(str2);
-                        if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                        } else if (length == str.length() - 1) { // length is the beginning
-                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
-                        } else { // length is somewhere inbetween
-                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                        }
-                    }
-                    duh.add(omg.toString());
-                }
-                array = duh;
-            }
+            array = getGlobalRegex();
             array.addAll(getRegex());
         } else {
             array = getRegex();
         }
+        if (array.isEmpty())
+            return string;
         String replacement = plugin.getConfig().getString("settings.filtering.replacement");
         if (string != null) {
             Map<String, String> whitelist = new HashMap<>();
@@ -620,58 +581,26 @@ public class Utils {
         return string;
     }
 
+    private List<String> getGlobalRegex() {
+        return this.globalRegex;
+    }
+
+    private void setGlobalRegex(List<String> collect) {
+        this.globalRegex = collect;
+    }
 
     public boolean isclean(String string, String global) {
         List<String> array = new ArrayList<>();
         if (global.equalsIgnoreCase("only")) {
-            if (getGlobal().isEmpty()) {
-                return true;
-            }
-            List<String> duh = new ArrayList<>();
-            for (String str : getGlobal()) {
-                StringBuilder omg = new StringBuilder();
-                int length = str.length();
-                for (String str2 : str.split("")) {
-                    length = length - 1;
-                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
-                    str2 = Pattern.quote(str2);
-                    if (length <= 0) { // length is the end
-                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                    } else if (length == str.length() - 1) { // length is the beginning
-                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
-                    } else { // length is somewhere inbetween
-                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                    }
-                }
-                duh.add(omg.toString());
-            }
-            array = duh;
+            array = getGlobalRegex();
         } else if (global.equalsIgnoreCase("both")) {
-            if (!getGlobal().isEmpty()) {
-                List<String> duh = new ArrayList<>();
-                for (String str : getGlobal()) {
-                    StringBuilder omg = new StringBuilder();
-                    int length = str.length();
-                    for (String str2 : str.split("")) {
-                        length = length - 1;
-                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
-                        str2 = Pattern.quote(str2);
-                        if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                        } else if (length == str.length() - 1) { // length is the beginning
-                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
-                        } else { // length is somewhere inbetween
-                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
-                        }
-                    }
-                    duh.add(omg.toString());
-                }
-                array = duh;
-            }
+            array = getGlobalRegex();
             array.addAll(getRegex());
         } else {
             array = getRegex();
         }
+        if (array.isEmpty())
+            return true;
         string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
         reloadPattern();
         if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
@@ -874,13 +803,33 @@ public class Utils {
             }
         }
         local = plugin.getFile("global");
-        if ((getGlobal().size() != local.getStringList("global").size())) {
+        if ((getGlobal().size() != local.getStringList("global").size()) || getGlobalRegex().isEmpty()) {
             debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
-
             local = plugin.getFile("global");
             List<String> s = local.getStringList("global");
             s.removeAll(json);
             setGlobal(s);
+            globalRegex.clear();
+            List<String> duh = new ArrayList<>();
+            for (String str : getGlobal()) {
+                StringBuilder omg = new StringBuilder();
+                int length = str.length();
+                for (String str2 : str.split("")) {
+                    length = length - 1;
+                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
+                    str2 = Pattern.quote(str2);
+                    if (length <= 0) { // length is the end
+                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                    } else if (length == str.length() - 1) { // length is the beginning
+                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                    } else { // length is somewhere inbetween
+                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                    }
+                }
+                duh.add(omg.toString());
+            }
+            setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
+                    .collect(Collectors.toList()));
             local.set("global", s);
             plugin.saveFile(local, "global");
         }
