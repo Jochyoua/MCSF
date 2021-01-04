@@ -25,11 +25,12 @@ public class SignUtils {
             for (int chunkZ = startZ; chunkZ <= endZ; chunkZ++) {
                 if (world.isChunkLoaded(chunkX, chunkZ)) {
                     Chunk chunk = world.getChunkAt(chunkX, chunkZ);
-                    for (BlockState tileEntity : chunk.getTileEntities()) {
-                        if (tileEntity != null)
-                            if (type.isInstance(tileEntity))
-                                tileEntities.add(type.cast(tileEntity));
-                    }
+                    if (chunk != null)
+                        for (BlockState tileEntity : chunk.getTileEntities()) {
+                            if (tileEntity != null)
+                                if (type.isInstance(tileEntity))
+                                    tileEntities.add(type.cast(tileEntity));
+                        }
                 }
             }
         }
