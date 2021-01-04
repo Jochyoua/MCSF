@@ -456,7 +456,7 @@ public class Utils {
             return string;
         List<String> custom = getCustomRegex();
         if (custom != null) {
-            if (plugin.getConfig().getBoolean("custom_regex.enabled") && !plugin.getConfig().getBoolean("custom_regex.global")) {
+            if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
                 for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
                     Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
                     str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
@@ -476,6 +476,10 @@ public class Utils {
                             }
                         }
                     }
+                }
+                if (!custom.isEmpty()) {
+                    Pattern pattern = Pattern.compile(String.join("|", custom), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
+                    string = pattern.matcher(string).replaceAll(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("custom_regex.replacement", "&c<ADVERTISEMENT>")));
                 }
             }
         }
@@ -510,9 +514,6 @@ public class Utils {
                         string = Pattern.compile("(\\b" + str + "\\b)").matcher(string).replaceAll(r);
                     }
                 }
-            }
-            if (custom != null) {
-                array.addAll(custom);
             }
             Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
             Matcher matcher = pattern.matcher(string);
