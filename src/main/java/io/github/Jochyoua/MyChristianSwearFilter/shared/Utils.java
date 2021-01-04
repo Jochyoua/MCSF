@@ -454,6 +454,7 @@ public class Utils {
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty())
             return string;
+        List<String> custom = new ArrayList<>();
         if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
             for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
                 Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
@@ -465,12 +466,12 @@ public class Utils {
                 if (found == null) {
                     debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
                     if (!array.contains(str)) {
-                        array.add(str);
+                        custom.add(str);
                     }
                 } else {
                     if (found.contains(type.toString()) || found.contains("ALL")) {
-                        if (!array.contains(str)) {
-                            array.add(str);
+                        if (!custom.contains(str)) {
+                            custom.add(str);
                         }
                     }
                 }
@@ -508,6 +509,7 @@ public class Utils {
                     }
                 }
             }
+            array.addAll(custom);
             Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
             Matcher matcher = pattern.matcher(string);
             StringBuffer out = new StringBuffer();
@@ -822,6 +824,9 @@ public class Utils {
                     }
                 }
                 duh.add(omg.toString());
+            }
+            if (!localCustomRegex.isEmpty()) {
+                duh.addAll(localCustomRegex);
             }
             setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
