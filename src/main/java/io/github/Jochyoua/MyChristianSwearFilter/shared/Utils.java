@@ -235,6 +235,8 @@ public class Utils {
         for (int i = size / 2; i < size; i++)
             second.add(nearbySigns.get(i));
         for (Sign sign : first) {
+            if(sign == null)
+                return;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.sendSignChange(sign.getLocation(), sign.getLines());
             }, 20);

@@ -26,8 +26,9 @@ public class SignUtils {
                 if (world.isChunkLoaded(chunkX, chunkZ)) {
                     Chunk chunk = world.getChunkAt(chunkX, chunkZ);
                     for (BlockState tileEntity : chunk.getTileEntities()) {
-                        if (type.isInstance(tileEntity))
-                            tileEntities.add(type.cast(tileEntity));
+                        if (tileEntity != null)
+                            if (type.isInstance(tileEntity))
+                                tileEntities.add(type.cast(tileEntity));
                     }
                 }
             }
