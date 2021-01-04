@@ -235,7 +235,7 @@ public class Utils {
         for (int i = size / 2; i < size; i++)
             second.add(nearbySigns.get(i));
         for (Sign sign : first) {
-            if(sign == null)
+            if (sign == null)
                 return;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.sendSignChange(sign.getLocation(), sign.getLines());
@@ -454,6 +454,28 @@ public class Utils {
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty())
             return string;
+        if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
+            for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
+                Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
+                str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
+                String found = null;
+                while (match.find()) {
+                    found = match.group(1);
+                }
+                if (found == null) {
+                    debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
+                    if (!array.contains(str)) {
+                        array.add(str);
+                    }
+                } else {
+                    if (found.contains(type.toString()) || found.contains("ALL")) {
+                        if (!array.contains(str)) {
+                            array.add(str);
+                        }
+                    }
+                }
+            }
+        }
         String replacement = plugin.getConfig().getString("settings.filtering.replacement");
         if (string != null) {
             Map<String, String> whitelist = new HashMap<>();
@@ -483,28 +505,6 @@ public class Utils {
                             whitelist.put(str, r);
                         }
                         string = Pattern.compile("(\\b" + str + "\\b)").matcher(string).replaceAll(r);
-                    }
-                }
-            }
-            if (plugin.getConfig().getBoolean("custom_regex.enabled") && !plugin.getConfig().getBoolean("custom_regex.global")) {
-                for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
-                    Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
-                    str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                    String found = null;
-                    while (match.find()) {
-                        found = match.group(1);
-                    }
-                    if (found == null) {
-                        debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
-                        if (!array.contains(str)) {
-                            array.add(str);
-                        }
-                    } else {
-                        if (found.contains(type.toString()) || found.contains("ALL")) {
-                            if (!array.contains(str)) {
-                                array.add(str);
-                            }
-                        }
                     }
                 }
             }
