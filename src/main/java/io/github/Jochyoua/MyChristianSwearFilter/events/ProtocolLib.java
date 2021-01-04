@@ -38,7 +38,10 @@ public class ProtocolLib implements Listener {
                                         if (!utils.isclean(component.getJson(), utils.getBoth())) {
                                             utils.reloadPattern();
                                             String string;
-                                            string = utils.clean(component.getJson(), false, true, utils.getBoth(), Types.Filters.ALL);
+                                            if (utils.status(ID))
+                                                string = utils.clean(component.getJson(), false, true, utils.getBoth(), Types.Filters.ALL);
+                                            else
+                                                string = utils.clean(component.getJson(), false, true, utils.getGlobalRegex(), Types.Filters.ALL);
                                             if (string == null) {
                                                 return;
                                             }

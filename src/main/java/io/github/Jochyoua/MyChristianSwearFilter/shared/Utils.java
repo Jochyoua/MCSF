@@ -484,7 +484,7 @@ public class Utils {
                     }
                 }
             }
-            if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
+            if (plugin.getConfig().getBoolean("custom_regex.enabled") && !plugin.getConfig().getBoolean("custom_regex.global")) {
                 for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
                     Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
                     str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
@@ -776,6 +776,15 @@ public class Utils {
 
     public void reloadPattern() {
         FileConfiguration local = plugin.getFile("whitelist");
+        List<String> localCustomRegex = new ArrayList<>();
+        if (plugin.getConfig().getBoolean("custom_regex.enabled") && plugin.getConfig().getBoolean("custom_regex.global")) {
+            for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
+                str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
+                if (!localCustomRegex.contains(str)) {
+                    localCustomRegex.add(str);
+                }
+            }
+        }
         if ((getWhitelist().size() != local.getStringList("whitelist").size())) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             local = plugin.getFile("whitelist");
