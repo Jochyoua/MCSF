@@ -26,8 +26,9 @@ public class DiscordEvents implements Listener {
                     utils.debug("DiscordSRV is installed, attempting to override chat event");
                     Bukkit.getPluginManager().registerEvents(new Listener() {
                         @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-                        public void asyncPlayerChatEvent(AsyncPlayerChatEvent e) {
-                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, "both", Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !plugin.getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
+                        public void asyncPlayerChatEvent(AsyncPlayerChatEvent e) {utils.reloadPattern();
+                            utils.reloadPattern();
+                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, utils.getBoth(), Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !plugin.getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
                         }
                     }, plugin);
                 }
@@ -41,6 +42,7 @@ public class DiscordEvents implements Listener {
     @Subscribe
     public void DiscordGameMessage(
             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-        event.setProcessedMessage(utils.clean(event.getProcessedMessage(), true, false, "both", Types.Filters.DISCORD));
+        utils.reloadPattern();
+        event.setProcessedMessage(utils.clean(event.getProcessedMessage(), true, false, utils.getBoth(), Types.Filters.DISCORD));
     }
 }

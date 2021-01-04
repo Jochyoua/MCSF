@@ -26,7 +26,7 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines()), "both") || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines()), utils.getBoth()) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
             return;
         }
         punishPlayers(event.getPlayer());
@@ -74,14 +74,14 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !utils.isclean(message, "both") && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
+        if (!player.hasPermission("MCSF.bypass") && !utils.isclean(message, utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages()), "both") || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages()), utils.getBoth()) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
             return;
         }
         punishPlayers(event.getPlayer());

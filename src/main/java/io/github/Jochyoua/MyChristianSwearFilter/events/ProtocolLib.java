@@ -32,11 +32,13 @@ public class ProtocolLib implements Listener {
                         PacketContainer packet = event.getPacket();
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
-                            if (mcsf.getConfig().getBoolean("settings.filtering.force") || utils.status(ID)) { // user has swearing enabled or it is currently being forcefully toggled
+                            if (mcsf.getConfig().getBoolean("settings.filtering.force")) { // user has swearing enabled or it is currently being forcefully toggled
                                 if (component != null) {
                                     if (!component.getJson().isEmpty()) {
-                                        if (!utils.isclean(component.getJson(), "both")) {
-                                            String string = utils.clean(component.getJson(), false, true, "both", Types.Filters.ALL);
+                                        if (!utils.isclean(component.getJson(), utils.getBoth())) {
+                                            utils.reloadPattern();
+                                            String string;
+                                            string = utils.clean(component.getJson(), false, true, utils.getBoth(), Types.Filters.ALL);
                                             if (string == null) {
                                                 return;
                                             }

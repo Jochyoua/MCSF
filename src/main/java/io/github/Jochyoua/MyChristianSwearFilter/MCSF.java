@@ -243,7 +243,8 @@ public class MCSF extends JavaPlugin {
         final List<String> swears = plugin.getFile("swears").getStringList("swears");
         if (!swears.isEmpty()) {
             final String test = swears.get((new Random()).nextInt(swears.size()));
-            String clean = utils.clean(test, true, false, "both", Types.Filters.DEBUG);
+            utils.reloadPattern();
+            String clean = utils.clean(test, true, false, utils.getSwears(), Types.Filters.DEBUG);
             utils.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
         } else {
             utils.debug("Uh-oh! Swears seems to be empty.");

@@ -283,10 +283,11 @@ public class CommandEvents {
                             String arg = args.get(i) + " ";
                             message.append(arg);
                         }
+                        utils.reloadPattern();
                         if (state)
-                            utils.send(sender, utils.clean(message.toString(), false, false, "both", Types.Filters.DEBUG));
+                            utils.send(sender, utils.clean(message.toString(), false, false, utils.getGlobalRegex(), Types.Filters.DEBUG));
                         else {
-                            utils.send(sender, utils.clean(message.toString(), false, false, "only", Types.Filters.DEBUG));
+                            utils.send(sender, utils.clean(message.toString(), false, false, utils.getBoth(), Types.Filters.DEBUG));
                         }
                         break;
                     case "whitelist":

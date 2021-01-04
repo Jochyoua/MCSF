@@ -71,12 +71,13 @@ public class PlayerEvents implements Listener {
             if (!utils.getGlobal().isEmpty()) {
                 utils.reloadPattern();
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
-                    new_message = utils.clean(old_message, false, true, "only", Types.Filters.PLAYERS);
+                    utils.reloadPattern();
+                    new_message = utils.clean(old_message, false, true, utils.getGlobalRegex(), Types.Filters.PLAYERS);
                     e.setMessage(new_message);
                 }
             }
 
-            if (!utils.isclean(old_message, "both") && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
+            if (!utils.isclean(old_message, utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
                 File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
                 File dir = new File(plugin.getDataFolder(), "logs");
                 if (!dir.exists()) {
@@ -109,15 +110,17 @@ public class PlayerEvents implements Listener {
             return;
         if (use || !utils.supported("ProtocolLib")) {
             e.setCancelled(true);
-            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), "both") && e.getPlayer().hasPermission("MCSF.bypass"))
+            utils.reloadPattern();
+            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), utils.getBoth()) && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
             }
+            utils.reloadPattern();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, "asdfasdf", Types.Filters.PLAYERS)));
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getSwears(), Types.Filters.PLAYERS)));
                 } else {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
                 }
@@ -175,6 +178,7 @@ public class PlayerEvents implements Listener {
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }
+            utils.signCheck(player.getUniqueId());
         });
     }
 
@@ -213,12 +217,13 @@ public class PlayerEvents implements Listener {
                 if (newmeta == null || meta == null) {
                     return;
                 }
+                utils.reloadPattern();
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
                     if (utils.status(player.getUniqueId()))
-                        newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "both", Types.Filters.BOOKS));
+                        newmeta.addPage(utils.isclean(page, utils.getBoth()) ? page : utils.clean(page, true, false, utils.getBoth(), Types.Filters.BOOKS));
                     else
-                        newmeta.addPage(utils.isclean(page, "both") ? page : utils.clean(page, true, false, "only", Types.Filters.BOOKS));
+                        newmeta.addPage(utils.isclean(page, utils.getGlobalRegex()) ? page : utils.clean(page, true, false, utils.getGlobalRegex(), Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

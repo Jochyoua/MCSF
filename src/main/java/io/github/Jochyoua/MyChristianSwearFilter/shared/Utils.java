@@ -212,7 +212,8 @@ public class Utils {
         return isuptodate;
     }
 
-    private void signCheck(Player player) {
+    public void signCheck(UUID ID) {
+        Player player = (Player) Bukkit.getOfflinePlayer(ID);
         if (!plugin.getConfig().getBoolean("settings.filtering.filter checks.signcheck") || !supported("SignCheck"))
             return;
         if (player == null) {
@@ -221,12 +222,7 @@ public class Utils {
         if (!player.isOnline()) {
             return;
         }
-        int distance;
-        try {
-            distance = player.getClientViewDistance();
-        } catch (Exception e) {
-            distance = Bukkit.getViewDistance();
-        }
+        int distance = Bukkit.getViewDistance();
         List<Sign> nearbySigns = SignUtils.getNearbyTileEntities(player.getLocation(), distance, Sign.class);
         if (nearbySigns.size() == 0) {
             return;
@@ -239,14 +235,14 @@ public class Utils {
         for (int i = size / 2; i < size; i++)
             second.add(nearbySigns.get(i));
         for (Sign sign : first) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.sendSignChange(sign.getLocation(), sign.getLines());
-            });
+            }, 20);
         }
         for (Sign sign : second) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.sendSignChange(sign.getLocation(), sign.getLines());
-            });
+            }, 20);
         }
         if (status(player.getUniqueId())) {
             debug("Filtering " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
@@ -442,21 +438,18 @@ public class Utils {
         return UUID.randomUUID().toString();
     }
 
+    public List<String> getBoth() {
+        List<String> array = new ArrayList<>();
+        array.addAll(regex);
+        array.addAll(globalRegex);
+        return array;
+    }
+
     public String escape(String str) {
         return Pattern.compile("[{}()\\[\\].+*?\"'^$\\\\|]").matcher(str).replaceAll("\\$0");
     }
 
-    public String clean(String string, boolean strip, boolean log, String global, Types.Filters type) {
-        reloadPattern();
-        List<String> array = new ArrayList<>();
-        if (global.equalsIgnoreCase("only")) {
-            array = getGlobalRegex();
-        } else if (global.equalsIgnoreCase("both")) {
-            array = getGlobalRegex();
-            array.addAll(getRegex());
-        } else {
-            array = getRegex();
-        }
+    public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty())
             return string;
         String replacement = plugin.getConfig().getString("settings.filtering.replacement");
@@ -477,7 +470,7 @@ public class Utils {
                         String r;
                         if (!whitelist.containsKey(str)) {
                             r = random();
-                            while (!isclean(r, "both")) {
+                            while (!isclean(r, getBoth())) {
                                 debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
                                 r = random();
                             }
@@ -581,7 +574,7 @@ public class Utils {
         return string;
     }
 
-    private List<String> getGlobalRegex() {
+    public List<String> getGlobalRegex() {
         return this.globalRegex;
     }
 
@@ -589,16 +582,7 @@ public class Utils {
         this.globalRegex = collect;
     }
 
-    public boolean isclean(String string, String global) {
-        List<String> array = new ArrayList<>();
-        if (global.equalsIgnoreCase("only")) {
-            array = getGlobalRegex();
-        } else if (global.equalsIgnoreCase("both")) {
-            array = getGlobalRegex();
-            array.addAll(getRegex());
-        } else {
-            array = getRegex();
-        }
+    public boolean isclean(String string, List<String> array) {
         if (array.isEmpty())
             return true;
         string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
@@ -697,7 +681,7 @@ public class Utils {
             value = !value;
         }
         plugin.saveConfig();
-        Bukkit.getScheduler().runTask(plugin, () -> signCheck(Bukkit.getPlayer(ID)));
+        Bukkit.getScheduler().runTask(plugin, () -> signCheck(ID));
         return value;
     }
 
@@ -811,7 +795,7 @@ public class Utils {
             setGlobal(s);
             globalRegex.clear();
             List<String> duh = new ArrayList<>();
-            for (String str : getGlobal()) {
+            for (String str : s) {
                 StringBuilder omg = new StringBuilder();
                 int length = str.length();
                 for (String str2 : str.split("")) {
