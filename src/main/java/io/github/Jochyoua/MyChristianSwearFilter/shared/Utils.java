@@ -47,6 +47,7 @@ public class Utils {
     List<String> json = new ArrayList<>();
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
+    List<String> localCustomRegex = new ArrayList<>();
 
     public Utils(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
@@ -117,7 +118,6 @@ public class Utils {
     public void setSwears(List<String> str) {
         this.localSwears = sortArray(str);
     }
-
 
     public List<String> sortArray(List<String> str) {
         return str.stream()
@@ -212,6 +212,8 @@ public class Utils {
         return isuptodate;
     }
 
+    // Filter methods
+
     public void signCheck(UUID ID) {
         Player player = (Player) Bukkit.getOfflinePlayer(ID);
         if (!plugin.getConfig().getBoolean("settings.filtering.filter checks.signcheck") || !supported("SignCheck"))
@@ -252,8 +254,6 @@ public class Utils {
             debug("Resetting " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
         }
     }
-
-    // Filter methods
 
     public void showHelp(CommandSender sender) {
         StringBuilder message = new StringBuilder();
@@ -454,24 +454,26 @@ public class Utils {
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty())
             return string;
-        List<String> custom = new ArrayList<>();
-        if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
-            for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
-                Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
-                str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                String found = null;
-                while (match.find()) {
-                    found = match.group(1);
-                }
-                if (found == null) {
-                    debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
-                    if (!array.contains(str)) {
-                        custom.add(str);
+        List<String> custom = getCustomRegex();
+        if (custom != null) {
+            if (plugin.getConfig().getBoolean("custom_regex.enabled") && !plugin.getConfig().getBoolean("custom_regex.global")) {
+                for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
+                    Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
+                    str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
+                    String found = null;
+                    while (match.find()) {
+                        found = match.group(1);
                     }
-                } else {
-                    if (found.contains(type.toString()) || found.contains("ALL")) {
-                        if (!custom.contains(str)) {
+                    if (found == null) {
+                        debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
+                        if (!array.contains(str)) {
                             custom.add(str);
+                        }
+                    } else {
+                        if (found.contains(type.toString()) || found.contains("ALL")) {
+                            if (!custom.contains(str)) {
+                                custom.add(str);
+                            }
                         }
                     }
                 }
@@ -509,7 +511,9 @@ public class Utils {
                     }
                 }
             }
-            array.addAll(custom);
+            if (custom != null) {
+                array.addAll(custom);
+            }
             Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
             Matcher matcher = pattern.matcher(string);
             StringBuffer out = new StringBuffer();
@@ -780,15 +784,17 @@ public class Utils {
 
     public void reloadPattern() {
         FileConfiguration local = plugin.getFile("whitelist");
-        List<String> localCustomRegex = new ArrayList<>();
-        if (plugin.getConfig().getBoolean("custom_regex.enabled") && plugin.getConfig().getBoolean("custom_regex.global")) {
-            for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
-                str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                if (!localCustomRegex.contains(str)) {
-                    localCustomRegex.add(str);
+        if (plugin.getConfig().getBoolean("custom_regex.enabled"))
+            if (plugin.getConfig().getStringList("custom_regex.regex").size() != getCustomRegex().size()) {
+                debug("Regex doesn't equal local parameters, filling variables.");
+                for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
+                    str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
+                    if (!localCustomRegex.contains(str)) {
+                        localCustomRegex.add(str);
+                    }
                 }
+                setCustomRegex(localCustomRegex);
             }
-        }
         if ((getWhitelist().size() != local.getStringList("whitelist").size())) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             local = plugin.getFile("whitelist");
@@ -824,9 +830,6 @@ public class Utils {
                     }
                 }
                 duh.add(omg.toString());
-            }
-            if (!localCustomRegex.isEmpty()) {
-                duh.addAll(localCustomRegex);
             }
             setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
@@ -902,6 +905,14 @@ public class Utils {
             setRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
         }
+    }
+
+    private List<String> getCustomRegex() {
+        return this.localCustomRegex;
+    }
+
+    private void setCustomRegex(List<String> localCustomRegex) {
+        this.localCustomRegex = localCustomRegex;
     }
 
     public String prepare(CommandSender player, String message) {
