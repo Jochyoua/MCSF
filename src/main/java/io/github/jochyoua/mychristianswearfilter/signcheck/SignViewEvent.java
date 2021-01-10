@@ -1,4 +1,4 @@
-package io.github.Jochyoua.MyChristianSwearFilter.signcheck;
+package io.github.jochyoua.mychristianswearfilter.signcheck;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

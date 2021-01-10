@@ -1,8 +1,6 @@
-package io.github.Jochyoua.MyChristianSwearFilter.shared;
+package io.github.jochyoua.mychristianswearfilter.shared;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import org.bukkit.Bukkit;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
 
 public class Types {
     public enum Filters {

@@ -1,11 +1,11 @@
-package io.github.Jochyoua.MyChristianSwearFilter;
+package io.github.jochyoua.mychristianswearfilter;
 
 import be.dezijwegel.configapi.ConfigAPI;
 import be.dezijwegel.configapi.Settings;
-import io.github.Jochyoua.MyChristianSwearFilter.events.*;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.DatabaseConnector;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.events.*;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -253,20 +253,21 @@ public class MCSF extends JavaPlugin {
         if (getConfig().getBoolean("settings.console motd")) {
             utils.send(Bukkit.getConsoleSender(), String.join("\n", getLanguage().getStringList("variables.console motd")));
         }
-        if (getConfig().getBoolean("settings.updating.check for updates")) {
-            Bukkit.getScheduler().runTask(this, () -> {
+        final Metrics metrics = new Metrics(this, 4345);
+        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
+
+        Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
+            if (getConfig().getBoolean("settings.updating.check for updates")) {
                 utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
-                if (!utils.isUpToDate()) {
+                if (utils.needsUpdate()) {
                     utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_available")));
                     utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_link")));
                 } else {
                     utils.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.no_new_version")));
                 }
-            });
-        }
-        final Metrics metrics = new Metrics(this, 4345);
-        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
-        utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
+            }
+            utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
+        }, 1L);
 
         if (Bukkit.getOnlinePlayers().size() != 0) {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -284,6 +285,7 @@ public class MCSF extends JavaPlugin {
     @Override
     public void onDisable() {
         saveConfig();
+        Bukkit.getScheduler().cancelTasks(this);
     }
 
     public void setLocal(String name, int size) {

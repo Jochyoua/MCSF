@@ -1,4 +1,4 @@
-package io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP;
+package io.github.jochyoua.mychristianswearfilter.shared.HikariCP;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

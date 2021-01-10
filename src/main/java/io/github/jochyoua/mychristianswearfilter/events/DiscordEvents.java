@@ -1,10 +1,10 @@
-package io.github.Jochyoua.MyChristianSwearFilter.events;
+package io.github.jochyoua.mychristianswearfilter.events;
 
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.api.Subscribe;
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

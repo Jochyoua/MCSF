@@ -1,7 +1,7 @@
-package io.github.Jochyoua.MyChristianSwearFilter.events;
+package io.github.jochyoua.mychristianswearfilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

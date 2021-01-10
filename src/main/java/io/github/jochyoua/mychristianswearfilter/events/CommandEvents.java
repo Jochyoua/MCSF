@@ -1,12 +1,11 @@
-package io.github.Jochyoua.MyChristianSwearFilter.events;
+package io.github.jochyoua.mychristianswearfilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.DatabaseConnector;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.HikariCP;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
@@ -19,8 +18,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,9 +79,6 @@ public class CommandEvents {
                             case "unset":
                                 List<String> users = utils.getUsers();
                                 StringUtil.copyPartialMatches(args[1], users, completions);
-                                break;
-                            case "parse":
-                                StringUtil.copyPartialMatches(args[1], Collections.singletonList("The quick brown fox jumped over the lazy dog"), completions);
                                 break;
                         }
                     }

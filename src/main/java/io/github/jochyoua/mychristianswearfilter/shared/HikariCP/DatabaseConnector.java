@@ -1,4 +1,4 @@
-package io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP;
+package io.github.jochyoua.mychristianswearfilter.shared.HikariCP;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

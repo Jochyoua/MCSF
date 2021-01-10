@@ -1,9 +1,9 @@
-package io.github.Jochyoua.MyChristianSwearFilter.shared;
+package io.github.jochyoua.mychristianswearfilter.shared;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.DatabaseConnector;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.HikariCP;
-import io.github.Jochyoua.MyChristianSwearFilter.signcheck.SignUtils;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
+import io.github.jochyoua.mychristianswearfilter.signcheck.SignUtils;
 import lombok.SneakyThrows;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
@@ -185,10 +185,6 @@ public class Utils {
         return Double.parseDouble(version);
     }
 
-    public boolean tableExists(String table) {
-        return true;
-    }
-
     public int countRows(String table) {
         if (!plugin.getConfig().getBoolean("mysql.enabled"))
             return 0;
@@ -204,15 +200,15 @@ public class Utils {
         return i;
     }
 
-    public boolean isUpToDate() {
+    public boolean needsUpdate() {
         boolean isuptodate = true;
         try {
             isuptodate = !(Double.parseDouble(plugin.getDescription().getVersion()) < this.getVersion());
         } catch (NumberFormatException e) {
-            send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.updatecheck")));
+            send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.failure")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.error.updatecheck"))));
             e.printStackTrace();
         }
-        return isuptodate;
+        return !isuptodate;
     }
 
     // Filter methods
@@ -236,14 +232,14 @@ public class Utils {
             first.add(nearbySigns.get(i));
         for (int i = size / 2; i < size; i++)
             second.add(nearbySigns.get(i));
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (Sign sign : first) {
                 if (sign == null)
                     return;
                 SignUtils.update(sign, player);
             }
         }, 20);
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (Sign sign : second) {
                 if (sign == null)
                     return;
@@ -289,7 +285,7 @@ public class Utils {
             return;
         switch (table) {
             case "global":
-                if (!tableExists("global") || countRows("global") == 0) {
+                if (countRows("global") == 0) {
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.create)) {
                         ps.execute();
                         ps.close();
@@ -313,7 +309,7 @@ public class Utils {
                 }
                 break;
             case "users":
-                if (!tableExists("users") || countRows("users") == 0) {
+                if (countRows("users") == 0) {
                     debug("(MySQL) attempting to insert user data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
                         ps.execute();
@@ -353,7 +349,7 @@ public class Utils {
                 }
                 break;
             case "swears":
-                if (!tableExists("swears") || countRows("swears") == 0) {
+                if (countRows("swears") == 0) {
                     debug("(MySQL) attempting to insert swear data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
                         ps.execute();
@@ -374,7 +370,7 @@ public class Utils {
                 }
                 break;
             case "whitelist":
-                if (!tableExists("whitelist") || countRows("whitelist") == 0) {
+                if (countRows("whitelist") == 0) {
                     debug("(MySQL) attempting to insert whitelist data");
                     try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
                         ps.execute();
@@ -447,10 +443,6 @@ public class Utils {
         array.addAll(regex);
         array.addAll(globalRegex);
         return array;
-    }
-
-    public String escape(String str) {
-        return Pattern.compile("[{}()\\[\\].+*?\"'^$\\\\|]").matcher(str).replaceAll("\\$0");
     }
 
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
@@ -790,9 +782,9 @@ public class Utils {
         if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             setWhitelist(local.getStringList("whitelist"));
-            if (getWhitelist().isEmpty()) {
+            if (local.getStringList("whitelist").isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
-                        .replaceAll("(?i)\\{message}|(?i)%message%", "/data/whitelist.yml is empty in config, please fix this ASAP; Using `class, hello` as placeholders"));
+                        .replaceAll("(?i)\\{message}|(?i)%message%", "File /data/whitelist.yml is empty, please fix this ASAP; Using `class, hello` as placeholders"));
                 setWhitelist(Arrays.asList("class", "hello"));
             }
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
@@ -836,14 +828,14 @@ public class Utils {
             local.set("swears", s);
             plugin.saveFile(local, "swears");
             setSwears(s);
-            if (getSwears().isEmpty()) {
+            if (s.isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
-                        .replaceAll("(?i)\\{message}|(?i)%message%", "/data/swears.yml, please fix this ASAP; Using `fuck, shit` as placeholders"));
+                        .replaceAll("(?i)\\{message}|(?i)%message%", "File /data/swears.yml, please fix this ASAP; Using `fuck, shit` as placeholders"));
                 setSwears(Arrays.asList("fuck", "shit"));
             }
             regex.clear();
             List<String> duh = new ArrayList<>();
-            for (String str : getSwears()) {
+            for (String str : s) {
                 if (!plugin.getConfig().getBoolean("settings.filtering.ignore special characters.enabled")) {
                     str = str.replaceAll("\\s+", "");
                     StringBuilder omg = new StringBuilder();

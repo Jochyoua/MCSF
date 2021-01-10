@@ -1,9 +1,9 @@
-package io.github.Jochyoua.MyChristianSwearFilter.events;
+package io.github.jochyoua.mychristianswearfilter.events;
 
-import io.github.Jochyoua.MyChristianSwearFilter.MCSF;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.Connector;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Types;
-import io.github.Jochyoua.MyChristianSwearFilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.Connector;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -174,7 +174,7 @@ public class PlayerEvents implements Listener {
 
             }
 
-            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && !utils.isUpToDate()) {
+            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && utils.needsUpdate()) {
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }
@@ -187,7 +187,6 @@ public class PlayerEvents implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (plugin.getConfig().getBoolean("settings.filtering.punishments.flags.reset every leave")) {
                 plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".flags", 0);
-
                 plugin.saveConfig();
             }
         });

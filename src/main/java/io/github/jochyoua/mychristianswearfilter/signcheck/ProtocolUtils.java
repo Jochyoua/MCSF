@@ -1,4 +1,4 @@
-package io.github.Jochyoua.MyChristianSwearFilter.signcheck;
+package io.github.jochyoua.mychristianswearfilter.signcheck;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
