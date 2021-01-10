@@ -38,7 +38,6 @@ public class CommandEvents {
             throwables.printStackTrace();
         }
         this.utils = utils;
-        //plugin.getServer().getPluginManager().registerEvents(this, plugin);
         PluginCommand cmd = plugin.getCommand("mcsf");
         try {
             if (cmd != null) {

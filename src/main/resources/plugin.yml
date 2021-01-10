@@ -1,6 +1,6 @@
 name: MCSF
 main: io.github.jochyoua.mychristianswearfilter.MCSF
-version: 5.0
+version: 5.1
 description: simple toggleable swear filter
 authors: [Jochyoua]
 softdepend:
