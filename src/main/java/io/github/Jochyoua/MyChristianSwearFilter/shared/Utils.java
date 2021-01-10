@@ -218,9 +218,6 @@ public class Utils {
         Player player = (Player) Bukkit.getOfflinePlayer(ID);
         if (!plugin.getConfig().getBoolean("settings.filtering.filter checks.signcheck") || !supported("SignCheck"))
             return;
-        if (player == null) {
-            return;
-        }
         if (!player.isOnline()) {
             return;
         }
@@ -236,18 +233,20 @@ public class Utils {
             first.add(nearbySigns.get(i));
         for (int i = size / 2; i < size; i++)
             second.add(nearbySigns.get(i));
-        for (Sign sign : first) {
-            if (sign == null)
-                return;
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendSignChange(sign.getLocation(), sign.getLines());
-            }, 20);
-        }
-        for (Sign sign : second) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendSignChange(sign.getLocation(), sign.getLines());
-            }, 20);
-        }
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            for (Sign sign : first) {
+                if (sign == null)
+                    return;
+                SignUtils.update(sign, player);
+            }
+        }, 20);
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            for (Sign sign : second) {
+                if (sign == null)
+                    return;
+                SignUtils.update(sign, player);
+            }
+        }, 20);
         if (status(player.getUniqueId())) {
             debug("Filtering " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
         } else {
@@ -460,21 +459,9 @@ public class Utils {
                 for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
                     Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
                     str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                    String found = null;
                     while (match.find()) {
-                        found = match.group(1);
-                    }
-                    if (found == null) {
-                        debug("Custom regex is missing {TYPE=} parameters. Adding it with the parameters ALL.");
-                        if (!array.contains(str)) {
+                        if (custom.contains(str))
                             custom.add(str);
-                        }
-                    } else {
-                        if (found.contains(type.toString()) || found.contains("ALL")) {
-                            if (!custom.contains(str)) {
-                                custom.add(str);
-                            }
-                        }
                     }
                 }
                 if (!custom.isEmpty()) {
@@ -784,32 +771,32 @@ public class Utils {
     }
 
     public void reloadPattern() {
-        FileConfiguration local = plugin.getFile("whitelist");
         if (plugin.getConfig().getBoolean("custom_regex.enabled"))
-            if (plugin.getConfig().getStringList("custom_regex.regex").size() != getCustomRegex().size()) {
-                debug("Regex doesn't equal local parameters, filling variables.");
+            if (plugin.getConfig().getStringList("custom_regex.regex").size() != plugin.getLocal("custom_regex")) {
+                localCustomRegex.clear();
+                debug("Custom Regex doesn't equal local parameters, filling variables.");
                 for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
                     str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                    if (!localCustomRegex.contains(str)) {
+                    if (!localCustomRegex.contains(str))
                         localCustomRegex.add(str);
-                    }
                 }
+                plugin.setLocal("custom_regex", plugin.getConfig().getStringList("custom_regex.regex").size());
                 setCustomRegex(localCustomRegex);
             }
-        if ((getWhitelist().size() != local.getStringList("whitelist").size())) {
+        FileConfiguration local = plugin.getFile("whitelist");
+        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
-            local = plugin.getFile("whitelist");
             setWhitelist(local.getStringList("whitelist"));
             if (getWhitelist().isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
-                        .replaceAll("(?i)\\{message}|(?i)%message%", "PATH `whitelist` is empty in config, please fix this ASAP; Using `class, hello` as placeholders"));
+                        .replaceAll("(?i)\\{message}|(?i)%message%", "/data/whitelist.yml is empty in config, please fix this ASAP; Using `class, hello` as placeholders"));
                 setWhitelist(Arrays.asList("class", "hello"));
             }
+            plugin.setLocal("whitelist", local.getStringList("whitelist").size());
         }
         local = plugin.getFile("global");
-        if ((getGlobal().size() != local.getStringList("global").size()) || getGlobalRegex().isEmpty()) {
+        if ((local.getStringList("global").size() != plugin.getLocal("global")) || getGlobalRegex().isEmpty()) {
             debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
-            local = plugin.getFile("global");
             List<String> s = local.getStringList("global");
             s.removeAll(json);
             setGlobal(s);
@@ -836,9 +823,10 @@ public class Utils {
                     .collect(Collectors.toList()));
             local.set("global", s);
             plugin.saveFile(local, "global");
+            plugin.setLocal("global", s.size());
         }
         local = plugin.getFile("swears");
-        if ((getSwears().size() != local.getStringList("swears").size()) || getRegex().isEmpty()) {
+        if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || getRegex().isEmpty()) {
             debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("swears");
             s.removeAll(json);
@@ -847,7 +835,7 @@ public class Utils {
             setSwears(s);
             if (getSwears().isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
-                        .replaceAll("(?i)\\{message}|(?i)%message%", "PATH `swears` is empty in config, please fix this ASAP; Using `fuck, shit` as placeholders"));
+                        .replaceAll("(?i)\\{message}|(?i)%message%", "/data/swears.yml, please fix this ASAP; Using `fuck, shit` as placeholders"));
                 setSwears(Arrays.asList("fuck", "shit"));
             }
             regex.clear();
@@ -905,6 +893,7 @@ public class Utils {
             }
             setRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
+            plugin.setLocal("swears", s.size());
         }
     }
 

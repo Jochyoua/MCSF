@@ -23,6 +23,7 @@ public class MCSF extends JavaPlugin {
     public MCSF plugin;
     public Utils utils;
     ConfigAPI lang = null;
+    HashMap<String, Integer> localSizes = new HashMap<>();
     private DatabaseConnector connector;
 
     public YamlConfiguration getFile(String fileName) {
@@ -283,5 +284,13 @@ public class MCSF extends JavaPlugin {
     @Override
     public void onDisable() {
         saveConfig();
+    }
+
+    public void setLocal(String name, int size) {
+        localSizes.put(name, size);
+    }
+
+    public int getLocal(String value) {
+        return localSizes.getOrDefault(value, 0);
     }
 }

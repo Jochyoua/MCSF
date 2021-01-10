@@ -133,7 +133,7 @@ public class SignEvents implements Listener {
                         }
                     }
 
-                    private SignViewEvent callSignEvent(Player player, Location location, String[] rawLines) {
+                    public SignViewEvent callSignEvent(Player player, Location location, String[] rawLines) {
                         SignViewEvent signSendEvent = new SignViewEvent(player, location, rawLines);
                         Bukkit.getPluginManager().callEvent(signSendEvent);
                         return signSendEvent;

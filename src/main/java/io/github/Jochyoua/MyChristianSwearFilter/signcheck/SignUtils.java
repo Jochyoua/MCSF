@@ -4,12 +4,17 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class SignUtils {
+    public static void update(Sign sign, Player player) {
+        player.sendSignChange(sign.getLocation(), sign.getLines());
+    }
 
     public static <T extends BlockState> List<T> getNearbyTileEntities(Location location, int chunkRadius, Class<T> type) {
         if (location == null || location.getWorld() == null || chunkRadius <= 0 || type == null)
