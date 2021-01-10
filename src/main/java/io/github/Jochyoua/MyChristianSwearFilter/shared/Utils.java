@@ -5,6 +5,7 @@ import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.DatabaseConnect
 import io.github.Jochyoua.MyChristianSwearFilter.shared.HikariCP.HikariCP;
 import io.github.Jochyoua.MyChristianSwearFilter.signcheck.SignUtils;
 import lombok.SneakyThrows;
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -167,6 +168,8 @@ public class Utils {
             case "mysql":
                 statement = plugin.getConfig().getBoolean("mysql.enabled");
                 break;
+            case "placeholderapi":
+                statement = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null && plugin.getConfig().getBoolean("settings.enable placeholder api");
         }
         return statement;
     }
@@ -914,6 +917,8 @@ public class Utils {
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
                 .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("swears").getStringList("swears").size())));
+        if (supported("PlaceholderAPI") && player instanceof Player)
+            message = PlaceholderAPI.setPlaceholders((Player) player, message);
         return supported("hex") ? color(message) : message;
     }
 

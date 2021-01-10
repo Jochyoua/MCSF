@@ -6,6 +6,7 @@ authors: [Jochyoua]
 softdepend:
   - ProtocolLib
   - DiscordSRV
+  - PlaceholderAPI
 api-version: 1.13
 load: POSTWORLD
 commands:
