@@ -160,7 +160,7 @@ public class Utils {
                 statement = Integer.parseInt(Bukkit.getBukkitVersion().split("[.\\-]")[1]) >= 9;
                 break;
             case "discordsrv":
-                statement = plugin.getConfig().getBoolean("settings.discordSRV.enabled") && plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null;
+                statement = plugin.getConfig().getBoolean("settings.discordSRV.enabled") && (plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null);
                 break;
             case "protocollib":
                 statement = plugin.getServer().getPluginManager().getPlugin("ProtocolLib") != null;
@@ -169,7 +169,7 @@ public class Utils {
                 statement = plugin.getConfig().getBoolean("mysql.enabled");
                 break;
             case "placeholderapi":
-                statement = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null && plugin.getConfig().getBoolean("settings.enable placeholder api");
+                statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
         }
         return statement;
     }
