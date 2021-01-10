@@ -12,7 +12,7 @@ settings:
     check for updates: true
     # Whether or not to check for updates
     update notification ingame: true
-    # Whether or not to notify admins about updates upon joiningd
+    # Whether or not to notify admins about updates upon joining
   filtering:
     default: false
     # Should the filter be enabled whenever the player first joins?
