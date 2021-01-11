@@ -604,14 +604,6 @@ public class Utils {
     }
 
 
-    /**
-     * This method toggles the user based on their UUID
-     * If there is no user tied to that UUID, a new entry will be made into mysql and the config,
-     * and the UUID's default setting will be referred to from Config under path "settings.filtering.default"
-     *
-     * @param ID The UUID that will be affected by the toggling
-     * @return returns the value that has been set for that specific UUID
-     */
     public boolean toggle(UUID ID) {
         plugin.reloadConfig();
         if (plugin.getConfig().getBoolean("settings.filtering.force"))
