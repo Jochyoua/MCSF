@@ -19,13 +19,28 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
+/**
+ * The type Mcsf.
+ */
 public class MCSF extends JavaPlugin {
+    /**
+     * The Plugin.
+     */
     public MCSF plugin;
+    /**
+     * The Utils.
+     */
     public Utils utils;
     ConfigAPI lang = null;
     HashMap<String, Integer> localSizes = new HashMap<>();
     private DatabaseConnector connector;
 
+    /**
+     * Gets file.
+     *
+     * @param fileName the file name
+     * @return the file
+     */
     public YamlConfiguration getFile(String fileName) {
         ConfigAPI config;
         Settings settings = new Settings();
@@ -35,6 +50,12 @@ public class MCSF extends JavaPlugin {
         return config.getLiveConfiguration();
     }
 
+    /**
+     * Save file.
+     *
+     * @param file     the file
+     * @param fileName the file name
+     */
     public void saveFile(FileConfiguration file, String fileName) {
         try {
             file.save(new File(plugin.getDataFolder(), "data/" + fileName + ".yml"));
@@ -43,6 +64,9 @@ public class MCSF extends JavaPlugin {
         }
     }
 
+    /**
+     * Load language.
+     */
     public void loadLanguage() {
         String language = Types.Languages.getLanguage(this);
         Settings settings = new Settings();
@@ -69,6 +93,9 @@ public class MCSF extends JavaPlugin {
         }
     }
 
+    /**
+     * Reload language.
+     */
     public void reloadLanguage() {
         if (lang == null)
             loadLanguage();
@@ -78,6 +105,11 @@ public class MCSF extends JavaPlugin {
         lang.reloadContents();
     }
 
+    /**
+     * Gets language.
+     *
+     * @return the language
+     */
     public YamlConfiguration getLanguage() {
         if (lang == null)
             reloadLanguage();
@@ -87,6 +119,11 @@ public class MCSF extends JavaPlugin {
         return conf;
     }
 
+    /**
+     * Reload sql boolean.
+     *
+     * @return the boolean
+     */
     public boolean reloadSQL() {
         if (getConfig().getBoolean("mysql.enabled")) {
             if (connector == null)
@@ -288,10 +325,22 @@ public class MCSF extends JavaPlugin {
         Bukkit.getScheduler().cancelTasks(this);
     }
 
+    /**
+     * Sets local.
+     *
+     * @param name the name
+     * @param size the size
+     */
     public void setLocal(String name, int size) {
         localSizes.put(name, size);
     }
 
+    /**
+     * Gets local.
+     *
+     * @param value the value
+     * @return the local
+     */
     public int getLocal(String value) {
         return localSizes.getOrDefault(value, 0);
     }

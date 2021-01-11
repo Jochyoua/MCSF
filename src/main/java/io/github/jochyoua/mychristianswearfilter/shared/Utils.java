@@ -603,6 +603,15 @@ public class Utils {
         return users;
     }
 
+
+    /**
+     * This method toggles the user based on their UUID
+     * If there is no user tied to that UUID, a new entry will be made into mysql and the config,
+     * and the UUID's default setting will be referred to from Config under path "settings.filtering.default"
+     *
+     * @param ID The UUID that will be affected by the toggling
+     * @return returns the value that has been set for that specific UUID
+     */
     public boolean toggle(UUID ID) {
         plugin.reloadConfig();
         if (plugin.getConfig().getBoolean("settings.filtering.force"))
@@ -900,17 +909,17 @@ public class Utils {
         this.localCustomRegex = localCustomRegex;
     }
 
-    public String prepare(CommandSender player, String message) {
+    public String prepare(CommandSender sender, String message) {
         message = ChatColor.translateAlternateColorCodes('&', message.replaceAll("(?i)\\{prefix}|(?i)%prefix%", Objects.requireNonNull(plugin.getLanguage().getString("variables.prefix")))
                 .replaceAll("(?i)\\{command}|(?i)%command%", "mcsf")
-                .replaceAll("(?i)\\{player}|(?i)%player%", player.getName())
+                .replaceAll("(?i)\\{player}|(?i)%player%", sender.getName())
                 .replaceAll("(?i)\\{current}|(?i)%current%", plugin.getDescription().getVersion())
                 .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion()))
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
                 .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("swears").getStringList("swears").size())));
-        if (supported("PlaceholderAPI") && player instanceof Player)
-            message = PlaceholderAPI.setPlaceholders((Player) player, message);
+        if (supported("PlaceholderAPI") && sender instanceof Player)
+            message = PlaceholderAPI.setPlaceholders((Player) sender, message);
         return supported("hex") ? color(message) : message;
     }
 
