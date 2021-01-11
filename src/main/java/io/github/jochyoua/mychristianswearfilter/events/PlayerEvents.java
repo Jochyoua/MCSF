@@ -115,7 +115,6 @@ public class PlayerEvents implements Listener {
                 return;
             if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
-                Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
             }
             utils.reloadPattern();
             for (Player player : Bukkit.getOnlinePlayers()) {

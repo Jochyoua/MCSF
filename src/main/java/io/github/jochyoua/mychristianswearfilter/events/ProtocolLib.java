@@ -32,22 +32,20 @@ public class ProtocolLib implements Listener {
                         PacketContainer packet = event.getPacket();
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
-                            if (mcsf.getConfig().getBoolean("settings.filtering.force")) { // user has swearing enabled or it is currently being forcefully toggled
-                                if (component != null) {
-                                    if (!component.getJson().isEmpty()) {
-                                        if (!utils.isclean(component.getJson(), utils.getBoth())) {
-                                            utils.reloadPattern();
-                                            String string;
-                                            if (utils.status(ID))
-                                                string = utils.clean(component.getJson(), false, true, utils.getBoth(), Types.Filters.ALL);
-                                            else
-                                                string = utils.clean(component.getJson(), false, true, utils.getGlobalRegex(), Types.Filters.ALL);
-                                            if (string == null) {
-                                                return;
-                                            }
-                                            component.setJson(string);
-                                            chatComponents.writeSafely(0, component);
+                            if (component != null) {
+                                if (!component.getJson().isEmpty()) {
+                                    if (!utils.isclean(component.getJson(), utils.getBoth())) {
+                                        utils.reloadPattern();
+                                        String string;
+                                        if (utils.status(ID) || mcsf.getConfig().getBoolean("settings.filtering.force"))
+                                            string = utils.clean(component.getJson(), false, true, utils.getBoth(), Types.Filters.ALL);
+                                        else
+                                            string = utils.clean(component.getJson(), false, true, utils.getGlobalRegex(), Types.Filters.ALL);
+                                        if (string == null) {
+                                            return;
                                         }
+                                        component.setJson(string);
+                                        chatComponents.writeSafely(0, component);
                                     }
                                 }
                             }
