@@ -1,4 +1,4 @@
-package be.dezijwegel.configapi.utility;
+package io.github.jochyoua.mychristianswearfilter.dependencies.configapi.utility;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

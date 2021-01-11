@@ -1,7 +1,7 @@
 package io.github.jochyoua.mychristianswearfilter;
 
-import be.dezijwegel.configapi.ConfigAPI;
-import be.dezijwegel.configapi.Settings;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
 import io.github.jochyoua.mychristianswearfilter.events.*;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;

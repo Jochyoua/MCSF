@@ -1,6 +1,6 @@
-package be.dezijwegel.configapi;
+package io.github.jochyoua.mychristianswearfilter.dependencies.configapi;
 
-import be.dezijwegel.configapi.utility.Logger;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.utility.Logger;
 
 import java.util.HashMap;
 import java.util.Map;

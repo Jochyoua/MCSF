@@ -1,6 +1,6 @@
-package be.dezijwegel.configapi;
+package io.github.jochyoua.mychristianswearfilter.dependencies.configapi;
 
-import be.dezijwegel.configapi.utility.Logger;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.utility.Logger;
 import org.bukkit.*;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
