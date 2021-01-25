@@ -23,7 +23,7 @@ public class Types {
         en_us(), de_de(), es_es(), fr_fr();
 
         public static String getLanguage(MCSF plugin) {
-            String lan = plugin.getConfig().getString("settings.language").replaceAll(".yml", "");
+            String lan = plugin.getString("settings.language").replaceAll(".yml", "");
             try {
                 Languages.valueOf(lan);
             } catch (Exception ignored) {

@@ -15,8 +15,8 @@ public class PunishmentEvents implements Listener {
     Utils utils;
 
 
-    public PunishmentEvents(MCSF plugin, Utils utils) {
-        this.plugin = plugin;
+    public PunishmentEvents(Utils utils) {
+        this.plugin = utils.getProvider();
         this.utils = utils;
         if (!plugin.getConfig().getBoolean("settings.filtering.punishments.punish players")) {
             return;
@@ -43,7 +43,7 @@ public class PunishmentEvents implements Listener {
             try {
                 if (Integer.parseInt(str) == player_flags || Integer.parseInt(str) == 0) {
                     String path = "settings.filtering.punishments.commands." + str;
-                    String executor = plugin.getConfig().getString(path + ".executor", "CONSOLE");
+                    String executor = plugin.getString(path + ".executor", "CONSOLE");
                     for (String command : plugin.getConfig().getStringList(path + ".commands")) {
                         command = utils.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(player_flags));
                         String finalCommand = command;

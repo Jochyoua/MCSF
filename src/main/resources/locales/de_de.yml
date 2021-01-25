@@ -1,6 +1,6 @@
 variables:
   command: "mcsf" ## Befehl für dieses Plugin
-  prefix: "&6[MCSF]&f" ## Prefix für alle MCSF-Nachrichten
+  prefix: "&d&lMCSF >" ## Prefix für alle MCSF-Nachrichten
   noperm: "{prefix} Du hast keine Rechte für diesen Befehl." ## Keine Rechte Nachricht.
   toggle: "{prefix} Der Chatfilter wurde {value}" ## Wert (aktiviert/deaktiviert)
   targetToggle: "{prefix} Der Chatfilter von {target} wurde {value}" ## Ziel (Name des Spielers) / Wert (aktiviert/deaktiviert)
@@ -10,7 +10,8 @@ variables:
   success: "{prefix} &aErfolg: {message}" ## Nachricht bei erfolgreicher Durchführung. Können unter "variables.success" eingesehen werden.
   activated: "aktiviert"
   deactivated: "deaktiviert"
-  debug: "{prefix} &dDEBUG: &f{message}"
+  debug: "{prefix} &d&lDEBUG > &f{message}"
+  parse: "{prefix} &d&lPARSE > &f{message}"
   reset: "{prefix} Möchtest du die Datenbank wirklich zurücksetzen? Dies ist irreversibel. Zur Bestätigung gib /{command} reset confirm zur Bestätigung ein"
   cooldown: "{prefix} Du musst &c{duration}s&f warten, um diesen Befehl zu verwenden!"
   version:

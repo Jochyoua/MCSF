@@ -1,6 +1,6 @@
 variables:
   command: "mcsf" ## Comando para el complemento
-  prefix: "&6[MCSF]&f" ## Prefijo para todos los mensajes MCSF
+  prefix: "&d&lMCSF >" ## Prefijo para todos los mensajes MCSF
   noperm: "{prefix} Te falta permiso." ## No hay mensaje de permiso
   toggle: "{prefix} El filtro de jurar ha sido {value}" ## Valor (habilitado/deshabilitado)
   targetToggle: "{prefix} El filtro de jurado de {target} está {value}" ## Objetivo (nombre del jugador) / Valor (habilitado/deshabilitado)
@@ -10,7 +10,8 @@ variables:
   success: "{prefix} &aÉxito: {message}" ## Mensajes para respuestas exitosas, los mensajes se pueden ver en variables.successful
   activated: "permitir"
   deactivated: "discapacitado"
-  debug: "{prefix} &dDEBUG: &f{message}"
+  debug: "{prefix} &d&lDEBUG > &f{message}"
+  parse: "{prefix} &d&lPARSE > &f{message}"
   reset: "{prefix} ¿Está seguro de que desea restablecer la base de datos? Esto es irreversible. Para confirmar, por favor escriba /{command} reset confirm"
   cooldown: "{prefix} ¡Necesita esperar &c{duration}s&f para usar este comando!"
   version:

@@ -1,0 +1,12 @@
+mysql:
+  enabled: false
+  driverClass: "org.mariadb.jdbc.Driver"
+  maxPoolSize: 5
+  host: "localhost"
+  username: "root"
+  password: "foobar"
+  database: "MCSF"
+  port: "3306"
+  ssl: false
+  use_unicode: true
+  connection: "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"

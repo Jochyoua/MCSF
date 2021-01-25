@@ -4,6 +4,7 @@ import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
 import io.github.jochyoua.mychristianswearfilter.signcheck.SignUtils;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
@@ -23,11 +24,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +48,14 @@ public class Utils {
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
     List<String> localCustomRegex = new ArrayList<>();
+    Connection userConnection;
+    @Getter
+    Map<String, String> whitelistMap = new HashMap<>();
 
     public Utils(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
+        reloadUserData();
         if (plugin.getConfig().getBoolean("mysql.enabled"))
             try {
                 this.connection = connector.getConnection();
@@ -74,6 +77,55 @@ public class Utils {
         cooldowns = ExpiringMap.builder()
                 .expiration(plugin.getConfig().getInt("settings.cooldown", 5), TimeUnit.SECONDS)
                 .build();
+        for (String str : plugin.getFile("whitelist").getStringList("whitelist")) {
+            String r;
+            if (!getWhitelistMap().containsKey(str)) {
+                r = random();
+                while (!isclean(r, getBoth())) {
+                    debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
+                    r = random();
+                }
+            } else {
+                r = getWhitelistMap().get(str);
+            }
+            if (!getWhitelistMap().containsKey(str)) {
+                putWhitelistMap(str, r);
+            }
+        }
+
+    }
+
+    public void reloadUserData() {
+        String url = "jdbc:sqlite:" + plugin.getDataFolder() + File.separator + "data/users.db";
+        if (userConnection == null) {
+            try {
+                userConnection = DriverManager.getConnection(url);
+                plugin.getLogger().info("Connection to the SQLite database has been established!");
+            } catch (SQLException throwables) {
+                userConnection = null;
+                plugin.getLogger().warning(String.format("Unable to connect to the SQLite database!\n%s", throwables.getMessage()));
+            }
+        }
+        try {
+            PreparedStatement ps = userConnection.prepareStatement(HikariCP.Query.USERS.create);
+            ps.execute();
+            ps.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
+    public void shutDown() {
+        try {
+            userConnection.close();
+            if (supported("mysql"))
+                connector.getConnection().close();
+        } catch (SQLException ignored) {
+        }
+    }
+
+    public void putWhitelistMap(String str1, String str2) {
+        whitelistMap.put(str1, str2);
     }
 
     public String color(String message) {
@@ -200,6 +252,8 @@ public class Utils {
         return i;
     }
 
+    // Filter methods
+
     public boolean needsUpdate() {
         boolean isuptodate = true;
         try {
@@ -210,8 +264,6 @@ public class Utils {
         }
         return !isuptodate;
     }
-
-    // Filter methods
 
     public void signCheck(UUID ID) {
         Player player = (Player) Bukkit.getOfflinePlayer(ID);
@@ -246,11 +298,23 @@ public class Utils {
                 SignUtils.update(sign, player);
             }
         }, 20);
-        if (status(player.getUniqueId())) {
+        if (new User(this, player.getUniqueId()).status()) {
             debug("Filtering " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
         } else {
             debug("Resetting " + nearbySigns.size() + (nearbySigns.size() == 1 ? " sign" : " signs") + " for " + player.getName());
         }
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public DatabaseConnector getConnector() {
+        return connector;
+    }
+
+    public MCSF getProvider() {
+        return plugin;
     }
 
     public void showHelp(CommandSender sender) {
@@ -316,25 +380,17 @@ public class Utils {
                         ps.close();
                     }
                     List<String> user_list = new ArrayList<>();
-
                     StringBuilder query = new StringBuilder("INSERT INTO users(uuid, name, status) VALUES ");
-                    for (final String ID : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-                        String playername = plugin.getConfig().getString("users." + ID + ".playername");
-                        boolean status = status(UUID.fromString(ID));
-                        user_list.add(ID);
-                        user_list.add(playername);
+                    PreparedStatement userData = userConnection.prepareStatement("SELECT * FROM users");
+                    ResultSet rs = userData.executeQuery();
+                    while (rs.next()) {
+                        UUID ID = UUID.fromString(rs.getString("uuid"));
+                        String name = rs.getString("name");
+                        boolean status = rs.getBoolean("status");
+                        user_list.add(ID.toString());
+                        user_list.add(name);
                         user_list.add(String.valueOf(status));
                         query.append("(?,?,?), ");
-                        /*try (
-                             PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.insert)) {
-                            ps.setString(1, ID);
-                            ps.setString(2, playername);
-                            ps.setBoolean(3, status);
-                            ps.setBoolean(4, status);
-                            ps.execute();
-                        } catch (SQLException throwables) {
-                            throwables.printStackTrace();
-                        }*/
                     }
                     if (user_list.isEmpty()) {
                         debug("Cannot set user data because it is empty!");
@@ -430,10 +486,6 @@ public class Utils {
         }
     }
 
-    public boolean status(UUID ID) {
-        return plugin.getConfig().getBoolean("settings.filtering.force") || plugin.getConfig().getBoolean("users." + ID + ".enabled");
-    }
-
     String random() {
         return UUID.randomUUID().toString();
     }
@@ -461,37 +513,31 @@ public class Utils {
                 }
                 if (!custom.isEmpty()) {
                     Pattern pattern = Pattern.compile(String.join("|", custom), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-                    string = pattern.matcher(string).replaceAll(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("custom_regex.replacement", "&c<ADVERTISEMENT>")));
+                    string = pattern.matcher(string).replaceAll(ChatColor.translateAlternateColorCodes('&', plugin.getString("custom_regex.replacement", "&c<ADVERTISEMENT>")));
                 }
             }
         }
-        String replacement = plugin.getConfig().getString("settings.filtering.replacement");
+        String replacement = plugin.getString("settings.filtering.replacement");
         if (string != null) {
-            Map<String, String> whitelist = new HashMap<>();
             if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-                String lstring = string.trim();
-                if (type.equals(Types.Filters.SIGNS)) {
-                    lstring = string.trim().replaceAll("(\\{\"extra\":\\[\\{\"text\":\"|\"}],\"text\":|}_\\{\"text\":|})", " ").trim().replaceAll("\"", "");
-                } else {
-                    lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                }
+                String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
                 for (String str : lstring.split(" ")) {
                     if (type.equals(Types.Filters.ALL)) {
                         str = str.trim().replaceAll("[\"{}\\]]", "").replace(",text:", "");
                     }
                     if (Stream.concat(getWhitelist().stream(), json.stream()).distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
                         String r;
-                        if (!whitelist.containsKey(str)) {
+                        if (!getWhitelistMap().containsKey(str)) {
                             r = random();
                             while (!isclean(r, getBoth())) {
                                 debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
                                 r = random();
                             }
                         } else {
-                            r = whitelist.get(str);
+                            r = getWhitelistMap().get(str);
                         }
-                        if (!whitelist.containsKey(str)) {
-                            whitelist.put(str, r);
+                        if (!getWhitelistMap().containsKey(str)) {
+                            putWhitelistMap(str, r);
                         }
                         string = Pattern.compile("(\\b" + str + "\\b)").matcher(string).replaceAll(r);
                     }
@@ -506,8 +552,8 @@ public class Utils {
                     String[] arr = matcher.toMatchResult().toString().split("=");
                     String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
                     if (plugin.getConfig().getBoolean("settings.replace word for word")) {
-                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
-                                (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
+                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getString("replacements." + str) :
+                                (plugin.getConfig().isSet("replacements.all") ? plugin.getString("replacements.all") : plugin.getString("settings.filtering.replacement")));
                     }
                 } catch (Exception e) {
                     debug("Could not register replace_word_for_words: " + e.getMessage());
@@ -535,7 +581,7 @@ public class Utils {
                     }
                     try {
                         if (plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled", false))
-                            r = Objects.requireNonNull(plugin.getConfig().getString("settings.discordSRV.spoilers.template", "||{swear}||"))
+                            r = Objects.requireNonNull(plugin.getString("settings.discordSRV.spoilers.template", "||{swear}||"))
                                     .replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).replaceAll("\\*", "\\\\*")
                                             .replaceAll("_", "\\_")
                                             .replaceAll("\\|", "\\\\|")
@@ -558,7 +604,7 @@ public class Utils {
             }
             matcher.appendTail(out);
             string = out.toString();
-            for (Map.Entry<String, String> str : whitelist.entrySet()) {
+            for (Map.Entry<String, String> str : getWhitelistMap().entrySet()) {
                 string = Pattern.compile(str.getValue()).matcher(string).replaceAll(str.getKey());
             }
         }
@@ -595,86 +641,26 @@ public class Utils {
         return !Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(string).find();
     }
 
-    public List<String> getUsers() {
+    public List<String> getUsers(boolean name) {
         List<String> users = new ArrayList<>();
-        for (final String ID : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-            users.add(plugin.getConfig().getString("users." + ID + ".playername"));
+        try {
+            PreparedStatement ps = userConnection.prepareStatement("SELECT * FROM users");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                if (name)
+                    users.add(rs.getString("name"));
+                else
+                    users.add(rs.getString("uuid"));
+            }
+            ps.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
         return users;
     }
 
-
-    public boolean toggle(UUID ID) {
-        plugin.reloadConfig();
-        if (plugin.getConfig().getBoolean("settings.filtering.force"))
-            return true;
-        Boolean value = null;
-        if (supported("mysql")) {
-            setTable("users");
-            boolean exists = false;
-            try {
-                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.exists);
-                ps.setString(1, ID.toString());
-                if (ps.executeQuery().next()) {
-                    exists = true;
-                }
-                ps.close();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-                exists = false;
-            }
-            if (!exists) {
-                value = plugin.getConfig().getBoolean("settings.filtering.default");
-                try (
-                        PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.insert)) {
-                    ps.setString(1, ID.toString());
-                    ps.setString(2, "placeholder");
-                    ps.setBoolean(3, value);
-                    ps.setBoolean(4, value);
-                    ps.execute();
-                    ps.close();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
-            } else {
-                boolean result = false;
-                try (
-                        PreparedStatement ps = connection.prepareStatement("SELECT status FROM users WHERE uuid=?")) {
-                    ps.setString(1, String.valueOf(ID));
-                    ResultSet rs = ps.executeQuery();
-                    while (rs.next()) {
-                        result = rs.getBoolean("status");
-                    }
-                    ps.close();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                    result = plugin.getConfig().getBoolean("settings.filtering.default");
-                }
-                value = !result;
-                try (
-                        PreparedStatement ps = connection.prepareStatement("UPDATE users SET status=? WHERE uuid=?")) {
-                    ps.setBoolean(1, value);
-                    ps.setString(2, String.valueOf(ID));
-                    ps.execute();
-                    ps.close();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
-            }
-            plugin.getConfig().set("users." + ID + ".enabled", value);
-            plugin.saveConfig();
-        } else if (!plugin.getConfig().isSet("users." + ID + ".enabled")) { // If enabled value doesn't exist, set to default value
-            value = plugin.getConfig().getBoolean("settings.filtering.default");
-            plugin.getConfig().set("users." + ID + ".enabled", value);
-        }
-        if (value == null) {
-            value = plugin.getConfig().getBoolean("users." + ID + ".enabled");
-            plugin.getConfig().set("users." + ID + ".enabled", !value);
-            value = !value;
-        }
-        plugin.saveConfig();
-        Bukkit.getScheduler().runTask(plugin, () -> signCheck(ID));
-        return value;
+    public Connection getUserConnection() {
+        return userConnection;
     }
 
     public void reload() {
@@ -695,6 +681,7 @@ public class Utils {
                 ResultSet rs2 = connection.prepareStatement("SELECT * FROM users;").executeQuery();
                 while (rs2.next()) {
                     String ID = rs2.getString("uuid");
+                    User user = new User(this, UUID.fromString(ID));
                     String name;
                     if (!(rs2.getString("name") == null)) {
                         name = rs2.getString("name");
@@ -702,9 +689,12 @@ public class Utils {
                         name = "undefined";
                     }
                     boolean status = rs2.getBoolean("status");
-                    plugin.getConfig().set("users." + ID + ".enabled", status);
-                    plugin.getConfig().set("users." + ID + ".playername", name);
-                    plugin.saveConfig();
+                    if (user.exists()) {
+                        user.set(status);
+                        user.playerName(name);
+                    } else {
+                        user.create(name, status);
+                    }
                 }
                 rs2.close();
                 ResultSet rs3 = connection.prepareStatement("SELECT * FROM whitelist;").executeQuery();
@@ -780,7 +770,7 @@ public class Utils {
                 setCustomRegex(localCustomRegex);
             }
         FileConfiguration local = plugin.getFile("whitelist");
-        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
+        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.whitelist words")) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             setWhitelist(local.getStringList("whitelist"));
             if (local.getStringList("whitelist").isEmpty()) {
@@ -806,11 +796,11 @@ public class Utils {
                     //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
                     str2 = Pattern.quote(str2);
                     if (length <= 0) { // length is the end
-                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                        omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
                     } else if (length == str.length() - 1) { // length is the beginning
-                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                        omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
                     } else { // length is somewhere inbetween
-                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                        omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
                     }
                 }
                 duh.add(omg.toString());
@@ -863,11 +853,11 @@ public class Utils {
                         //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
                         str2 = Pattern.quote(str2);
                         if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
                         } else if (length == str.length() - 1) { // length is the beginning
-                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
                         } else { // length is somewhere inbetween
-                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
                         }
                     }
                     duh.add(omg.toString());
@@ -878,9 +868,9 @@ public class Utils {
                             length2 = length2 - 1;
                             str3 = Pattern.quote(str3);
                             if (length <= 0) {
-                                omg2.append("(").append(str3).append("+\\s*+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str3).append("+)");
+                                omg2.append("(").append(str3).append("+\\s*+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str3).append("+)");
                             } else {
-                                omg2.append("(").append(str3).append("+|[").append(Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str3).append("+)");
+                                omg2.append("(").append(str3).append("+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str3).append("+)");
                             }
                         }
                         duh.add(omg2.toString());

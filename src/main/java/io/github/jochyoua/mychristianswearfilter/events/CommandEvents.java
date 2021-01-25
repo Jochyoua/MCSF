@@ -4,7 +4,12 @@ import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
+import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
+import io.github.jochyoua.mychristianswearfilter.shared.exceptions.IllegalArgumentException;
+import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -28,14 +33,11 @@ public class CommandEvents {
     Utils utils;
 
 
-    public CommandEvents(MCSF plugin, DatabaseConnector connector, Utils utils) {
-        this.plugin = plugin;
-        this.connector = connector;
-        if (plugin.getConfig().getBoolean("mysql.enabled"))
-        try {
-            this.connection = connector.getConnection();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+    public CommandEvents(Utils utils) {
+        this.plugin = utils.getProvider();
+        if (plugin.getConfig().getBoolean("mysql.enabled")) {
+            this.connector = utils.getConnector();
+            this.connection = utils.getConnection();
         }
         this.utils = utils;
         PluginCommand cmd = plugin.getCommand("mcsf");
@@ -76,7 +78,7 @@ public class CommandEvents {
                             case "status":
                             case "toggle":
                             case "unset":
-                                List<String> users = utils.getUsers();
+                                List<String> users = utils.getUsers(true);
                                 StringUtil.copyPartialMatches(args[1], users, completions);
                                 break;
                         }
@@ -116,142 +118,134 @@ public class CommandEvents {
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (!sender.hasPermission("MCSF.use")) {
-                utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                return;
-            }
-            if (!finalArgs.isEmpty()) {
-                if (plugin.getConfig().isSet("settings.command args enabled." + finalArgs.get(0))) {
-                    if (!plugin.getConfig().getBoolean("settings.command args enabled." + finalArgs.get(0))) {
-                        utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
-                        return;
-                    }
+            try {
+                if (!sender.hasPermission("MCSF.use")) {
+                    throw new NoPermissionException(plugin.getLanguage());
                 }
-                switch (finalArgs.get(0).toLowerCase()) {
-                    case "help":
-                    default:
-                        if (!plugin.getConfig().getBoolean("settings.command args enabled.help")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
-                            break;
+                if (!finalArgs.isEmpty()) {
+                    if (plugin.getConfig().isSet("settings.command args enabled." + finalArgs.get(0))) {
+                        if (!plugin.getConfig().getBoolean("settings.command args enabled." + finalArgs.get(0))) {
+                            throw new CommandDisabledException(plugin.getLanguage());
                         }
-                        utils.showHelp(sender);
-                        break;
-                    case "reload":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                            break;
-                        }
-                        sender.sendMessage("Reload succeeded!");
-                        if (utils.supported("mysql")) {
-                            sender.sendMessage("Reloading databases:");
-                            try {
-                                if (!plugin.reloadSQL())
-                                    throw new Exception("Database was reloaded incorrectly");
-                                sender.sendMessage("Successfully reloaded database information!");
-                            } catch (Exception e) {
-                                sender.sendMessage("Failed to reload database: " + e.getMessage());
-                                e.printStackTrace();
+                    }
+                    switch (finalArgs.get(0).toLowerCase()) {
+                        case "help":
+                        default:
+                            if (!plugin.getConfig().getBoolean("settings.command args enabled.help")) {
+                                throw new CommandDisabledException(plugin.getLanguage());
                             }
-                        }
-                        sender.sendMessage("Resetting Swears, Global swears and whitelist:");
-                        try {
-                            utils.reloadPattern();
-                            sender.sendMessage("Successfully reloaded swear, global swears and whitelist information!");
-                        } catch (Exception e) {
-                            sender.sendMessage("Failed to reload: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                        sender.sendMessage("Reloading configuration data:");
-                        try {
-                            plugin.reloadLanguage();
-                            plugin.reloadConfig();
-                            sender.sendMessage("Successfully reloaded configuration information!");
-                        } catch (Exception e) {
-                            sender.sendMessage("Failed to reload configuration data: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "global":
-                        utils.setTable("global");
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
+                            utils.showHelp(sender);
                             break;
-                        }
-                        if (finalArgs.size() != 2) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
-                            break;
-                        }
-                        String glo = finalArgs.get(1).toLowerCase();
-                        FileConfiguration local = plugin.getFile("global");
-                        List<String> global = local.getStringList("global");
-                        if (utils.supported("mysql")) {
-                            if (!connector.isWorking())
-                                plugin.reloadSQL();
-                            boolean sqlexists = false;
-                            try {
-
-                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.exists);
-                                ps.setString(1, glo);
-                                if (ps.executeQuery().next()) {
-                                    sqlexists = true;
-                                }
-                                ps.close();
-                            } catch (SQLException throwables) {
-                                throwables.printStackTrace();
-                                sqlexists = false;
+                        case "reload":
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
                             }
-                            if (sqlexists && global.contains(glo)) {
-                                global.remove(glo);
-                                try (
-                                        PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.delete)) {
-                                    ps.setString(1, glo);
-                                    ps.execute();
-                                    ps.close();
-                                } catch (SQLException e) {
+                            sender.sendMessage("Reload succeeded!");
+                            if (utils.supported("mysql")) {
+                                sender.sendMessage("Reloading databases:");
+                                try {
+                                    if (!plugin.reloadSQL())
+                                        throw new Exception("Database was reloaded incorrectly");
+                                    sender.sendMessage("Successfully reloaded database information!");
+                                } catch (Exception e) {
+                                    sender.sendMessage("Failed to reload database: " + e.getMessage());
                                     e.printStackTrace();
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
-                            } else {
-                                if (!global.contains(glo))
-                                    global.add(glo);
-                                if (!sqlexists) {
+                            }
+                            sender.sendMessage("Resetting Swears, Global swears and whitelist:");
+                            try {
+                                utils.reloadPattern();
+                                sender.sendMessage("Successfully reloaded swear, global swears and whitelist information!");
+                            } catch (Exception e) {
+                                sender.sendMessage("Failed to reload: " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                            sender.sendMessage("Reloading configuration data:");
+                            try {
+                                plugin.reloadLanguage();
+                                plugin.reloadConfig();
+                                sender.sendMessage("Successfully reloaded configuration information!");
+                            } catch (Exception e) {
+                                sender.sendMessage("Failed to reload configuration data: " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                            break;
+                        case "global":
+                            utils.setTable("global");
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
+                            }
+                            if (finalArgs.size() != 2) {
+                                throw new IllegalArgumentException(plugin.getLanguage());
+                            }
+                            String glo = finalArgs.get(1).toLowerCase();
+                            FileConfiguration local = plugin.getFile("global");
+                            List<String> global = local.getStringList("global");
+                            if (utils.supported("mysql")) {
+                                if (!connector.isWorking())
+                                    plugin.reloadSQL();
+                                boolean sqlexists = false;
+                                try {
+
+                                    PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.exists);
+                                    ps.setString(1, glo);
+                                    if (ps.executeQuery().next()) {
+                                        sqlexists = true;
+                                    }
+                                    ps.close();
+                                } catch (SQLException throwables) {
+                                    throwables.printStackTrace();
+                                    sqlexists = false;
+                                }
+                                if (sqlexists && global.contains(glo)) {
+                                    global.remove(glo);
                                     try (
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.insert)) {
+                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.delete)) {
                                         ps.setString(1, glo);
                                         ps.execute();
                                         ps.close();
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                     }
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                } else {
+                                    if (!global.contains(glo))
+                                        global.add(glo);
+                                    if (!sqlexists) {
+                                        try (
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.insert)) {
+                                            ps.setString(1, glo);
+                                            ps.execute();
+                                            ps.close();
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
-                            }
-                        } else {
-                            if (global.contains(glo)) {
-                                global.remove(glo);
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
                             } else {
-                                if (!global.contains(glo))
-                                    global.add(glo);
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                if (global.contains(glo)) {
+                                    global.remove(glo);
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                } else {
+                                    if (!global.contains(glo))
+                                        global.add(glo);
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                }
                             }
-                        }
-                        local = plugin.getFile("global");
-                        local.set("global", global);
-                        plugin.saveFile(local, "global");
-                        break;
-                    case "parse":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
+                            local = plugin.getFile("global");
+                            local.set("global", global);
+                            plugin.saveFile(local, "global");
                             break;
-                        }
-                        if (args.size() == 1 || args.size() == 2) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
-                            return;
-                        }
-                        boolean state;
-                        try {
-                            switch(args.get(1)){
+                        case "parse":
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
+                            }
+                            if (args.size() == 1 || args.size() == 2) {
+                                throw new IllegalArgumentException(plugin.getLanguage());
+                            }
+                            boolean state;
+                            switch (args.get(1)) {
                                 case "true":
                                 case "enable":
                                 case "enabled":
@@ -265,137 +259,115 @@ public class CommandEvents {
                                     state = false;
                                     break;
                                 default:
-                                    throw new IllegalArgumentException(plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.invalidtype").replaceAll("(?i)\\{arg}|(?i)%arg%", args.get(1)).replaceAll("(?i)\\{type}|(?i)%type%", "boolean")));
+                                    throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.invalidtype").replaceAll("(?i)\\{arg}|(?i)%arg%", args.get(1)).replaceAll("(?i)\\{type}|(?i)%type%", "boolean"));
                             }
-                        } catch (IllegalArgumentException e) {
-                            utils.send(sender, e.getMessage());
-                            return;
-                        }
-                        StringBuilder message = new StringBuilder();
-                        for (int i = 2; i < args.size(); i++) {
-                            String arg = args.get(i) + " ";
-                            message.append(arg);
-                        }
-                        utils.reloadPattern();
-                        if (state)
-                            utils.send(sender, utils.clean(message.toString(), false, false, utils.getGlobalRegex(), Types.Filters.DEBUG));
-                        else {
-                            utils.send(sender, utils.clean(message.toString(), false, false, utils.getBoth(), Types.Filters.DEBUG));
-                        }
-                        break;
-                    case "whitelist":
-                        if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
+                            StringBuilder message = new StringBuilder();
+                            for (int i = 2; i < args.size(); i++) {
+                                String arg = args.get(i) + " ";
+                                message.append(arg);
+                            }
+                            utils.reloadPattern();
+                            utils.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", utils.clean(message.toString(), false, false, state ? utils.getBoth() : utils.getGlobalRegex(), Types.Filters.DEBUG)));
                             break;
-                        }
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                            break;
-                        }
-                        if (finalArgs.size() != 2) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
-                            break;
-                        }
-                        String white = finalArgs.get(1).toLowerCase();
-                        local = plugin.getFile("whitelist");
-                        List<String> whitelist = local.getStringList("whitelist");
-                        if (utils.supported("mysql")) {
-                            if (!connector.isWorking())
-                                plugin.reloadSQL();
-                            boolean sqlexists = false;
-                            try {
+                        case "whitelist":
+                            if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+                                throw new CommandDisabledException(plugin.getLanguage());
+                            }
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
+                            }
+                            if (finalArgs.size() != 2) {
+                                throw new IllegalArgumentException(plugin.getLanguage());
+                            }
+                            String white = finalArgs.get(1).toLowerCase();
+                            local = plugin.getFile("whitelist");
+                            List<String> whitelist = local.getStringList("whitelist");
+                            if (utils.supported("mysql")) {
+                                if (!connector.isWorking())
+                                    plugin.reloadSQL();
+                                boolean sqlexists = false;
+                                try {
 
-                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.exists);
-                                ps.setString(1, white);
-                                if (ps.executeQuery().next()) {
-                                    sqlexists = true;
-                                }
-                                ps.close();
-                            } catch (SQLException throwables) {
-                                throwables.printStackTrace();
-                                sqlexists = false;
-                            }
-                            if (sqlexists && whitelist.contains(white)) {
-                                whitelist.remove(white);
-                                try (
-                                        PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.delete)) {
+                                    PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.exists);
                                     ps.setString(1, white);
-                                    ps.execute();
-
+                                    if (ps.executeQuery().next()) {
+                                        sqlexists = true;
+                                    }
                                     ps.close();
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
+                                } catch (SQLException throwables) {
+                                    throwables.printStackTrace();
+                                    sqlexists = false;
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
-                            } else {
-                                if (!whitelist.contains(white))
-                                    whitelist.add(white);
-                                if (!sqlexists) {
+                                if (sqlexists && whitelist.contains(white)) {
+                                    whitelist.remove(white);
                                     try (
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.insert)) {
+                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.delete)) {
                                         ps.setString(1, white);
                                         ps.execute();
                                         ps.close();
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                     }
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                } else {
+                                    if (!whitelist.contains(white))
+                                        whitelist.add(white);
+                                    if (!sqlexists) {
+                                        try (
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.insert)) {
+                                            ps.setString(1, white);
+                                            ps.execute();
+                                            ps.close();
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
-                            }
-                        } else {
-                            if (whitelist.contains(white)) {
-                                whitelist.remove(white);
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
                             } else {
-                                if (!whitelist.contains(white))
-                                    whitelist.add(white);
-                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                if (whitelist.contains(white)) {
+                                    whitelist.remove(white);
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                } else {
+                                    if (!whitelist.contains(white))
+                                        whitelist.add(white);
+                                    utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                }
                             }
-                        }
-                        local.set("whitelist", whitelist);
-                        plugin.saveFile(local, "whitelist");
-                        break;
-                    case "unset":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
+                            local.set("whitelist", whitelist);
+                            plugin.saveFile(local, "whitelist");
                             break;
-                        }
-                        if (finalArgs.size() == 1) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.error.incorrectargs"))));
-                            break;
-                        }
-                        if (finalArgs.get(1).equalsIgnoreCase("all")) {
-                            plugin.getConfig().set("users", null);
-                            plugin.getConfig().set("users.069a79f4-44e9-4726-a5be-fca90e38aaf5.enabled", true);
-                            plugin.getConfig().set("users.069a79f4-44e9-4726-a5be-fca90e38aaf5.playername", "Notch");
-                            plugin.saveConfig();
-                            try (
-                                    PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.reset)) {
-                                ps.execute();
-                                ps.close();
-                                utils.createTable(false);
-                            } catch (SQLException e) {
-                                e.printStackTrace();
+                        case "unset":
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
                             }
-                            utils.send(sender,
-                                    Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).
-                                            replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed_players"))));
-                        } else {
+                            if (finalArgs.size() == 1) {
+                                throw new IllegalArgumentException(plugin.getLanguage());
+                            }
                             UUID targetid = null;
-                            for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-                                if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(finalArgs.get(1))) {
-                                    targetid = UUID.fromString(key);
-                                } else if (key.equalsIgnoreCase(finalArgs.get(1))) {
-                                    targetid = UUID.fromString(key);
+                            if (utils.supported("mysql"))
+                                for (final String key : utils.getUsers(false)) {
+                                    User user = new User(utils, UUID.fromString(key));
+                                    if (user.exists()) {
+                                        if (user.playerName().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        } else if (user.getId().toString().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        }
+                                    }
                                 }
-                            }
                             if (targetid == null) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
-                                break;
+                                throw new FailureException(plugin.getLanguage(),
+                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             } else {
-                                plugin.getConfig().set("users." + targetid, null);
-                                plugin.saveConfig();
+                                try (
+                                        PreparedStatement ps = utils.getUserConnection().prepareStatement(HikariCP.Query.USERS.delete)) {
+                                    ps.setString(1, targetid.toString());
+                                    ps.execute();
+                                    ps.close();
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
                                 if (utils.supported("mysql"))
                                     try (
                                             PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.delete)) {
@@ -406,290 +378,305 @@ public class CommandEvents {
                                         e.printStackTrace();
                                     }
                             }
-                            if (!plugin.getConfig().isSet("users." + targetid)) {
+                            if (!new User(utils, targetid).exists()) {
                                 utils.send(sender,
                                         Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).
                                                 replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed_player"))).
                                                 replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             } else {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
+                                throw new FailureException(plugin.getLanguage(),
+                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             }
-                        }
-                        break;
-                    case "toggle":
-                        boolean value;
-                        if (finalArgs.size() == 1 && (sender instanceof Player)) {
-                            if (!sender.hasPermission("MCSF.toggle")) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                                break;
-                            }
-                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
-                                break;
-                            }
-                            if (sender.hasPermission("MCSF.bypass")) {
-                                value = utils.toggle(((Player) sender).getUniqueId());
-                                if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                    utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
-                                            replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                            break;
+                        case "toggle":
+                            boolean value;
+                            if (finalArgs.size() == 1 && (sender instanceof Player)) {
+                                User user = new User(utils, ((Player) sender).getUniqueId());
+                                if (!user.exists()) {
+                                    user.create(sender.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
+                                }
+                                if (!sender.hasPermission("MCSF.toggle")) {
+                                    throw new NoPermissionException(plugin.getLanguage());
+                                }
+                                if (plugin.getConfig().getBoolean("settings.filtering.force")) {
+                                    throw new CommandDisabledException(plugin.getLanguage());
+                                }
+                                if (sender.hasPermission("MCSF.bypass")) {
+                                    value = user.toggle();
+                                    if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
+                                        utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
+                                                replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                    utils.send(sender, plugin.getLanguage().getString("variables.toggle")
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+
+                                    break;
+                                }
+                                value = user.toggle();
                                 utils.send(sender, plugin.getLanguage().getString("variables.toggle")
                                         .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
+                                    utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                            } else {
+                                if (finalArgs.size() != 2) {
+                                    throw new FailureException(plugin.getLanguage(),
+                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
 
-                                break;
-                            }
-                            value = utils.toggle(((Player) sender).getUniqueId());
-                            utils.send(sender, plugin.getLanguage().getString("variables.toggle")
-                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
-                            if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                        .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
-                        } else {
-                            if (finalArgs.size() != 2) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName())));
-                                break;
-                            }
-                            if (!sender.hasPermission("MCSF.modify")) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                                break;
-                            } else if (sender.hasPermission("MCSF.bypass")) {
-                                UUID targetid = null;
-                                for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-                                    if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(finalArgs.get(1))) {
-                                        targetid = UUID.fromString(key);
-                                    } else if (key.equalsIgnoreCase(finalArgs.get(1))) {
-                                        targetid = UUID.fromString(key);
+                                }
+                                if (!sender.hasPermission("MCSF.modify")) {
+                                    throw new NoPermissionException(plugin.getLanguage());
+                                } else if (sender.hasPermission("MCSF.bypass")) {
+                                    targetid = null;
+                                    for (final String key : utils.getUsers(false)) {
+                                        User user = new User(utils, UUID.fromString(key));
+                                        if (user.exists()) {
+                                            if (user.playerName().equalsIgnoreCase(finalArgs.get(1))) {
+                                                targetid = UUID.fromString(key);
+                                            } else if (user.getId().toString().equalsIgnoreCase(finalArgs.get(1))) {
+                                                targetid = UUID.fromString(key);
+                                            }
+                                        }
+                                    }
+                                    if (targetid == null) {
+                                        throw new FailureException(plugin.getLanguage(),
+                                                plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+
+                                    } else {
+                                        value = new User(utils, ((Player) sender).getUniqueId()).toggle();
+                                        if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
+                                            utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
+                                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                    }
+                                    break;
+                                }
+                                if (plugin.getConfig().getBoolean("settings.filtering.force")) {
+                                    throw new CommandDisabledException(plugin.getLanguage());
+
+                                }
+                                targetid = null;
+
+
+                                for (final String key : utils.getUsers(false)) {
+                                    User user = new User(utils, UUID.fromString(key));
+                                    if (user.exists()) {
+                                        if (user.playerName().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        } else if (user.getId().toString().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        }
                                     }
                                 }
                                 if (targetid == null) {
-                                    utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
-                                    break;
+                                    throw new FailureException(plugin.getLanguage(),
+                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+
                                 } else {
-                                    value = utils.toggle(targetid);
+                                    new User(utils, targetid).toggle();
                                     if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                        utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                                .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
-                                    utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
-                                }
-                                break;
-                            }
-                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
-                                break;
-                            }
-                            UUID targetid = null;
-                            for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-                                if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(finalArgs.get(1))) {
-                                    targetid = UUID.fromString(key);
+                                        utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", new User(utils, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                    utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (new User(utils, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                 }
                             }
-                            if (targetid == null) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
-                                break;
-                            } else {
-                                utils.toggle(targetid);
-                                if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                    utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
-                                utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (utils.status(targetid) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
-                            }
-                        }
-                        break;
-                    case "status":
-                        if (finalArgs.size() == 1 && (sender instanceof Player)) {
-                            if (plugin.getConfig().getBoolean("settings.filtering.force")) {
-                                value = true;
-                            } else {
-                                value = utils.status(((Player) sender).getUniqueId());
-                            }
-                            utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                             break;
-                        } else {
-                            if (finalArgs.size() != 2) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName())));
-                                break;
-                            }
-                            if (!sender.hasPermission("MCSF.status")) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                                break;
-                            }
-                            UUID targetid = null;
-                            for (final String key : plugin.getConfig().getConfigurationSection("users").getKeys(false)) {
-                                if (plugin.getConfig().getString("users." + key + ".playername").equalsIgnoreCase(finalArgs.get(1))) {
-                                    targetid = UUID.fromString(key);
-                                } else if (key.equalsIgnoreCase(finalArgs.get(1))) {
-                                    targetid = UUID.fromString(key);
-                                }
-                            }
-                            if (targetid == null) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%",
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1))));
-                                break;
-                            } else {
+                        case "status":
+                            if (finalArgs.size() == 1 && (sender instanceof Player)) {
                                 if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                     value = true;
                                 } else {
-                                    value = utils.status(targetid);
+                                    value = new User(utils, ((Player) sender).getUniqueId()).status();
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                break;
+                            } else {
+                                if (finalArgs.size() != 2) {
+                                    throw new FailureException(plugin.getLanguage(),
+                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+
+                                }
+                                if (!sender.hasPermission("MCSF.status")) {
+                                    throw new NoPermissionException(plugin.getLanguage());
+
+                                }
+                                targetid = null;
+                                for (final String key : utils.getUsers(false)) {
+                                    User user = new User(utils, UUID.fromString(key));
+                                    if (user.exists()) {
+                                        if (user.playerName().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        } else if (user.getId().toString().equalsIgnoreCase(finalArgs.get(1))) {
+                                            targetid = UUID.fromString(key);
+                                        }
+                                    }
+                                }
+                                if (targetid == null) {
+                                    throw new FailureException(plugin.getLanguage(),
+                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+
+                                } else {
+                                    if (plugin.getConfig().getBoolean("settings.filtering.force")) {
+                                        value = true;
+                                    } else {
+                                        value = new User(utils, targetid).status();
+                                    }
+                                    utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                }
                             }
-                        }
-                        break;
-                    case "reset":
-                        if (!sender.hasPermission("MCSF.modify")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
                             break;
-                        }
-                        if (!utils.supported("mysql")) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.disabled"));
+                        case "reset":
+                            if (!sender.hasPermission("MCSF.modify")) {
+                                throw new NoPermissionException(plugin.getLanguage());
+
+                            }
+                            if (!utils.supported("mysql")) {
+                                throw new CommandDisabledException(plugin.getLanguage());
+
+                            }
+                            if (finalArgs.size() != 2) {
+                                utils.send(sender, plugin.getLanguage().getString("variables.reset"));
+
+                            } else {
+                                if (finalArgs.get(1).equalsIgnoreCase("confirm")) {
+                                    try {
+                                        utils.createTable(true);
+                                    } catch (SQLException throwables) {
+                                        throwables.printStackTrace();
+                                    }
+                                } else {
+                                    utils.send(sender, plugin.getLanguage().getString("variables.reset"));
+                                    break;
+                                }
+                            }
+                            utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reset")));
                             break;
-                        }
-                        if (finalArgs.size() != 2) {
-                            utils.send(sender, plugin.getLanguage().getString("variables.reset"));
-                            break;
-                        } else {
-                            if (finalArgs.get(1).equalsIgnoreCase("confirm")) {
-                                try {
-                                    utils.createTable(true);
-                                } catch (SQLException throwables) {
-                                    throwables.printStackTrace();
+                        case "version":
+                            if (sender.hasPermission("MCSF.version")) {
+                                for (String str : plugin.getLanguage().getStringList("variables.version")) {
+                                    utils.send(sender, str);
                                 }
                             } else {
-                                utils.send(sender, plugin.getLanguage().getString("variables.reset"));
-                                break;
+                                throw new NoPermissionException(plugin.getLanguage());
                             }
-                        }
-                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reset")));
-                        break;
-                    case "version":
-                        if (sender.hasPermission("MCSF.version")) {
-                            for (String str : plugin.getLanguage().getStringList("variables.version")) {
-                                utils.send(sender, str);
-                            }
-                        } else {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                        }
-                        break;
-                    case "add":
-                    case "remove":
-                        if (sender.hasPermission("MCSF.modify")) {
-                            if (finalArgs.size() != 2) {
-                                utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.incorrectargs")));
-                                break;
-                            }
-                            if (utils.supported("mysql")) {
-                                utils.setTable("swears");
-                                utils.setTable("whitelist");
-                                utils.setTable("global");
-                            }
-                            String word = finalArgs.get(1).toLowerCase();
-                            local = plugin.getFile("swears");
-                            List<String> swears = local.getStringList("swears");
-                            switch (finalArgs.get(0)) {
-                                case "add":
-                                    if (utils.supported("mysql")) {
-                                        if (!connector.isWorking())
-                                            plugin.reloadSQL();
-                                        boolean exists = false;
-                                        try {
+                            break;
+                        case "add":
+                        case "remove":
+                            if (sender.hasPermission("MCSF.modify")) {
+                                if (finalArgs.size() != 2) {
+                                    throw new IllegalArgumentException(plugin.getLanguage());
 
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.exists);
-                                            ps.setString(1, word);
-                                            if (ps.executeQuery().next()) {
-                                                exists = true;
+                                }
+                                if (utils.supported("mysql")) {
+                                    utils.setTable("swears");
+                                    utils.setTable("whitelist");
+                                    utils.setTable("global");
+                                }
+                                String word = finalArgs.get(1).toLowerCase();
+                                local = plugin.getFile("swears");
+                                List<String> swears = local.getStringList("swears");
+                                switch (finalArgs.get(0)) {
+                                    case "add":
+                                        if (utils.supported("mysql")) {
+                                            if (!connector.isWorking())
+                                                plugin.reloadSQL();
+                                            boolean exists = false;
+                                            try {
+
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.exists);
+                                                ps.setString(1, word);
+                                                if (ps.executeQuery().next()) {
+                                                    exists = true;
+                                                }
+                                                ps.close();
+                                            } catch (SQLException throwables) {
+                                                throwables.printStackTrace();
+                                                exists = false;
                                             }
-                                            ps.close();
-                                        } catch (SQLException throwables) {
-                                            throwables.printStackTrace();
-                                            exists = false;
-                                        }
-                                        if (exists) {
-                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.alreadyexists")));
-                                            break;
-                                        }
-                                        if (!swears.contains(word))
-                                            swears.add(word);
+                                            if (exists) {
+                                                throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.alreadyexists"));
 
-                                        try {
+                                            }
+                                            if (!swears.contains(word))
+                                                swears.add(word);
 
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.insert);
-                                            ps.setString(1, word);
-                                            ps.execute();
-                                            ps.close();
-                                        } catch (SQLException throwables) {
-                                            throwables.printStackTrace();
-                                        }
-                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                            try {
 
-                                    } else {
-                                        if (!swears.contains(word)) {
-                                            swears.add(word);
-                                            utils.debug(sender.getName() + " has added `" + word + "` to the config");
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.insert);
+                                                ps.setString(1, word);
+                                                ps.execute();
+                                                ps.close();
+                                            } catch (SQLException throwables) {
+                                                throwables.printStackTrace();
+                                            }
                                             utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+
                                         } else {
-                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.alreadyexists")));
-                                        }
-                                    }
-                                    break;
-                                case "remove":
-                                    if (utils.supported("mysql")) {
-                                        if (!connector.isWorking())
-                                            plugin.reloadSQL();
-                                        boolean exists = false;
-                                        try {
-
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.exists);
-                                            ps.setString(1, word);
-                                            if (ps.executeQuery().next()) {
-                                                exists = true;
+                                            if (!swears.contains(word)) {
+                                                swears.add(word);
+                                                utils.debug(sender.getName() + " has added `" + word + "` to the config");
+                                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                            } else {
+                                                throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.alreadyexists"));
                                             }
-                                            ps.close();
-                                        } catch (SQLException throwables) {
-                                            throwables.printStackTrace();
-                                            exists = false;
                                         }
-                                        if (!exists) {
-                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.doesntexist")));
-                                            break;
-                                        }
-                                        swears.remove(word);
-                                        try {
+                                        break;
+                                    case "remove":
+                                        if (utils.supported("mysql")) {
+                                            if (!connector.isWorking())
+                                                plugin.reloadSQL();
+                                            boolean exists = false;
+                                            try {
 
-                                            PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.delete);
-                                            ps.setString(1, word);
-                                            ps.execute();
-                                            ps.close();
-                                        } catch (SQLException throwables) {
-                                            throwables.printStackTrace();
-                                        }
-                                        utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
-                                    } else {
-                                        boolean modified = swears.remove(word);
-                                        if (modified) {
-                                            utils.debug(sender.getName() + " has removed `" + word + "` from config");
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.exists);
+                                                ps.setString(1, word);
+                                                if (ps.executeQuery().next()) {
+                                                    exists = true;
+                                                }
+                                                ps.close();
+                                            } catch (SQLException throwables) {
+                                                throwables.printStackTrace();
+                                                exists = false;
+                                            }
+                                            if (!exists) {
+                                                throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.doesntexist"));
+
+                                            }
+                                            swears.remove(word);
+                                            try {
+
+                                                PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.delete);
+                                                ps.setString(1, word);
+                                                ps.execute();
+                                                ps.close();
+                                            } catch (SQLException throwables) {
+                                                throwables.printStackTrace();
+                                            }
                                             utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
                                         } else {
-                                            utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.doesntexist")));
+                                            boolean modified = swears.remove(word);
+                                            if (modified) {
+                                                utils.debug(sender.getName() + " has removed `" + word + "` from config");
+                                                utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                            } else {
+                                                throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.doesntexist"));
+                                            }
                                         }
-                                    }
-                                    break;
-                                default:
-                                    utils.send(sender, plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%value%", plugin.getLanguage().getString("variables.error.incorrectargs")));
-                                    break;
+                                        break;
+                                    default:
+                                        throw new IllegalArgumentException(plugin.getLanguage());
+                                }
+                                local = plugin.getFile("swears");
+                                local.set("swears", swears);
+                                plugin.saveFile(local, "swears");
+                            } else {
+                                throw new NoPermissionException(plugin.getLanguage());
                             }
-                            local = plugin.getFile("swears");
-                            local.set("swears", swears);
-                            plugin.saveFile(local, "swears");
-                        } else {
-                            utils.send(sender, plugin.getLanguage().getString("variables.noperm"));
-                        }
-                        break;
+                            break;
+                    }
+                } else {
+                    utils.showHelp(sender);
                 }
-            } else {
-                utils.showHelp(sender);
+            } catch (CommandDisabledException | NoPermissionException | IllegalArgumentException | FailureException ex) {
+                utils.send(sender, ex.getMessage());
             }
         });
     }

@@ -100,22 +100,6 @@ custom_regex:
     - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
     - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
   replacement: "&c<ADVERTISMENT>"
-mysql:
-  enabled: false
-  driverClass: "org.mariadb.jdbc.Driver"
-  maxPoolSize: 5
-  host: "localhost"
-  username: "root"
-  password: "foobar"
-  database: "MCSF"
-  port: "3306"
-  ssl: false
-  use_unicode: true
-  connection: "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"
-users:
-  069a79f4-44e9-4726-a5be-fca90e38aaf5:
-    enabled: true
-    playername: Notch
 replacements:
   all: "&c*&f"
   fuck: "&cReally bad word!"

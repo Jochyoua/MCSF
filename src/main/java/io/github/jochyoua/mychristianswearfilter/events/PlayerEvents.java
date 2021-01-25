@@ -3,6 +3,7 @@ package io.github.jochyoua.mychristianswearfilter.events;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.Connector;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -46,10 +47,9 @@ public class PlayerEvents implements Listener {
     Connection connection;
 
 
-    public PlayerEvents(MCSF plugin, Connector connector, Utils utils) {
-        this.plugin = plugin;
-        this.connector = connector;
-
+    public PlayerEvents(Utils utils) {
+        this.plugin = utils.getProvider();
+        this.connector = utils.getConnector();
         if (plugin.getConfig().getBoolean("mysql.enabled"))
             try {
                 this.connection = connector.getConnection();
@@ -77,7 +77,7 @@ public class PlayerEvents implements Listener {
                 }
             }
 
-            if (!utils.isclean(old_message, utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
+            if (!utils.isclean(old_message, plugin.getConfig().getBoolean("settings.filtering.save messages.only global messages", true) ? utils.getGlobalRegex() : utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
                 File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
                 File dir = new File(plugin.getDataFolder(), "logs");
                 if (!dir.exists()) {
@@ -118,7 +118,7 @@ public class PlayerEvents implements Listener {
             }
             utils.reloadPattern();
             for (Player player : Bukkit.getOnlinePlayers()) {
-                if (utils.status(player.getUniqueId()) || plugin.getConfig().getBoolean("settings.filtering.force")) {
+                if (new User(utils, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getSwears(), Types.Filters.PLAYERS)));
                 } else {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
@@ -130,20 +130,22 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void Join(PlayerJoinEvent e) {
         Player player = e.getPlayer();
+        User user = new User(utils, player.getUniqueId());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             Plugin pl = Bukkit.getPluginManager().getPlugin("DiscordSRV");
             if (pl != null && (plugin.getConfig().getBoolean("settings.discordSRV.enabled") && utils.supported("DiscordSRV")))
                 new AsyncPlayerChatEvent(true, player, "", Collections.singleton(player)).getHandlers().unregister(pl);
-            plugin.getConfig().set("users." + player.getUniqueId() + ".playername", player.getName().toLowerCase());
-            plugin.saveConfig();
-            if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".playername")) {
-                utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
-            } else {
-                utils.debug("Successfully added " + player.getName() + "'s name to the config.");
+            if(user.exists()) {
+                user.playerName(player.getName().toLowerCase());
+                if (!user.playerName().equalsIgnoreCase(player.getName())) {
+                    utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+                } else {
+                    utils.debug("Successfully added " + player.getName() + "'s name to the config.");
+                }
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.force")) {
-                if (!plugin.getConfig().isSet("users." + player.getUniqueId() + ".enabled"))
-                    utils.toggle(player.getUniqueId());
+                if (!user.exists())
+                    new User(utils, player.getUniqueId()).toggle();
                 if (utils.supported("mysql")) {
                     utils.setTable("users");
                     try (PreparedStatement ps = connection.prepareStatement("UPDATE users SET name=? WHERE uuid=?")) {
@@ -166,10 +168,10 @@ public class PlayerEvents implements Listener {
                         throwables.printStackTrace();
                         result = plugin.getConfig().getBoolean("settings.filtering.default");
                     }
-                    plugin.getConfig().set("users." + player.getUniqueId() + ".enabled", result);
+                    user.set(result);
                     plugin.saveConfig();
                 }
-                utils.debug("Player " + player.getName() + "'s swear filter is " + (utils.status(player.getUniqueId()) ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
+                utils.debug("Player " + player.getName() + "'s swear filter is " + (new User(utils, player.getUniqueId()).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
 
             }
 
@@ -218,7 +220,7 @@ public class PlayerEvents implements Listener {
                 utils.reloadPattern();
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    if (utils.status(player.getUniqueId()))
+                    if (new User(utils, player.getUniqueId()).status())
                         newmeta.addPage(utils.isclean(page, utils.getBoth()) ? page : utils.clean(page, true, false, utils.getBoth(), Types.Filters.BOOKS));
                     else
                         newmeta.addPage(utils.isclean(page, utils.getGlobalRegex()) ? page : utils.clean(page, true, false, utils.getGlobalRegex(), Types.Filters.BOOKS));

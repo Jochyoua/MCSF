@@ -10,6 +10,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import io.github.jochyoua.mychristianswearfilter.signcheck.ProtocolUtils;
 import io.github.jochyoua.mychristianswearfilter.signcheck.SignViewEvent;
@@ -31,12 +32,12 @@ public class SignEvents implements Listener {
     MCSF mcsf;
     Utils utils;
 
-    public SignEvents(MCSF plugin, Utils utils) {
-        this.mcsf = plugin;
+    public SignEvents(Utils utils) {
+        this.mcsf = utils.getProvider();
         this.utils = utils;
         if (utils.supported("signcheck")) {
             try {
-                ProtocolLibrary.getProtocolManager().addPacketListener((new PacketAdapter(plugin, PacketType.Play.Server.TILE_ENTITY_DATA, PacketType.Play.Server.MAP_CHUNK) {
+                ProtocolLibrary.getProtocolManager().addPacketListener((new PacketAdapter(utils.getProvider(), PacketType.Play.Server.TILE_ENTITY_DATA, PacketType.Play.Server.MAP_CHUNK) {
                     @Override
                     public void onPacketSending(PacketEvent event) {
                         try {
@@ -139,18 +140,18 @@ public class SignEvents implements Listener {
                         return signSendEvent;
                     }
                 }));
-                plugin.getServer().getPluginManager().registerEvents(this, plugin);
+                utils.getProvider().getServer().getPluginManager().registerEvents(this, utils.getProvider());
             } catch (Exception e) {
-                FileConfiguration language = plugin.getLanguage();
-                plugin.getLogger().log(Level.SEVERE, "Failure: {message}"
+                FileConfiguration language = utils.getProvider().getLanguage();
+                utils.getProvider().getLogger().log(Level.SEVERE, "Failure: {message}"
                         .replaceAll("(?i)\\{message}|(?i)%message%",
                                 Objects.requireNonNull(language.getString("variables.error.execute_failure"))
                                         .replaceAll("(?i)\\{feature}", "Sign Filtering")), e);
-                plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))));
+                utils.getProvider().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))));
                 HandlerList.unregisterAll(this);
             }
         } else {
-            utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.error.unsupported")).replaceAll("(?i)\\{feature}", "Sign Filtering"));
+            utils.send(Bukkit.getConsoleSender(), utils.getProvider().getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", utils.getProvider().getLanguage().getString("variables.error.unsupported")).replaceAll("(?i)\\{feature}", "Sign Filtering"));
         }
     }
 
@@ -164,7 +165,7 @@ public class SignEvents implements Listener {
                     && event.getLine(3).equalsIgnoreCase("{\"text\":\"\"}"))) {
                 String lines = String.join("_", event.getLines());
                 utils.reloadPattern();
-                if (utils.status(event.getPlayer().getUniqueId())) {
+                if (new User(utils, event.getPlayer().getUniqueId()).status()) {
                     if (!utils.isclean(lines, utils.getBoth())) {
                         lines = utils.clean(lines, true, false, utils.getBoth(), Types.Filters.SIGNS);
                     }

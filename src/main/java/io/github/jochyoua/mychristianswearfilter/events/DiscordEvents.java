@@ -15,9 +15,9 @@ import org.bukkit.plugin.Plugin;
 public class DiscordEvents implements Listener {
     private final Utils utils;
 
-    public DiscordEvents(MCSF plugin, Utils utils) {
+    public DiscordEvents(Utils utils) {
         this.utils = utils;
-        if (plugin.getConfig().getBoolean("settings.discordSRV.enabled") && utils.supported("DiscordSRV")) {
+        if (utils.getProvider().getConfig().getBoolean("settings.discordSRV.enabled") && utils.supported("DiscordSRV")) {
             try {
                 DiscordSRV.api.subscribe(this);
                 utils.debug("Registered DiscordSRV hook successfully!");
@@ -28,9 +28,9 @@ public class DiscordEvents implements Listener {
                         @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
                         public void asyncPlayerChatEvent(AsyncPlayerChatEvent e) {utils.reloadPattern();
                             utils.reloadPattern();
-                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, utils.getBoth(), Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !plugin.getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
+                            DiscordSRV.getPlugin().processChatMessage(e.getPlayer(), utils.clean(e.getMessage(), true, false, utils.getBoth(), Types.Filters.DISCORD), DiscordSRV.getPlugin().getChannels().size() == 1 ? null : "global", !utils.getProvider().getConfig().getBoolean("settings.discordSRV.ignore cancelled") || e.isCancelled());
                         }
-                    }, plugin);
+                    }, utils.getProvider());
                 }
             } catch (Exception e) {
                 String message = e.getMessage();

@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class SignUtils {
-    public static void update(Sign sign, Player player) {
+    public synchronized static void update(Sign sign, Player player) {
         player.sendSignChange(sign.getLocation(), sign.getLines());
     }
 
