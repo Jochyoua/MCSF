@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Utils {
+    public Map<UUID, Integer> userFlags = new HashMap<>();
     MCSF plugin;
     DatabaseConnector connector;
     List<String> regex = new ArrayList<>();
@@ -44,10 +45,10 @@ public class Utils {
     List<String> localSwears = new ArrayList<>();
     List<String> localWhitelist = new ArrayList<>();
     List<String> globalSwears = new ArrayList<>();
+    List<String> localCustomRegex = new ArrayList<>();
     List<String> json = new ArrayList<>();
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
-    List<String> localCustomRegex = new ArrayList<>();
     Connection userConnection;
     @Getter
     Map<String, String> whitelistMap = new HashMap<>();
@@ -252,8 +253,6 @@ public class Utils {
         return i;
     }
 
-    // Filter methods
-
     public boolean needsUpdate() {
         boolean isuptodate = true;
         try {
@@ -266,7 +265,12 @@ public class Utils {
     }
 
     public void signCheck(UUID ID) {
-        Player player = (Player) Bukkit.getOfflinePlayer(ID);
+        Player player;
+        try {
+            player = (Player) Bukkit.getOfflinePlayer(ID);
+        } catch (ClassCastException ex) {
+            return;
+        }
         if (!plugin.getConfig().getBoolean("settings.filtering.filter checks.signcheck") || !supported("SignCheck"))
             return;
         if (!player.isOnline()) {
@@ -498,19 +502,11 @@ public class Utils {
     }
 
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
-        if (array.isEmpty())
+        if (array.isEmpty() || string == null)
             return string;
         List<String> custom = getCustomRegex();
         if (custom != null) {
             if (plugin.getConfig().getBoolean("custom_regex.enabled")) {
-                for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
-                    Matcher match = Pattern.compile("(?i)\\{TYPE=(.*?)}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(str);
-                    str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                    while (match.find()) {
-                        if (custom.contains(str))
-                            custom.add(str);
-                    }
-                }
                 if (!custom.isEmpty()) {
                     Pattern pattern = Pattern.compile(String.join("|", custom), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
                     string = pattern.matcher(string).replaceAll(ChatColor.translateAlternateColorCodes('&', plugin.getString("custom_regex.replacement", "&c<ADVERTISEMENT>")));
@@ -518,95 +514,93 @@ public class Utils {
             }
         }
         String replacement = plugin.getString("settings.filtering.replacement");
-        if (string != null) {
-            if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-                String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                for (String str : lstring.split(" ")) {
-                    if (type.equals(Types.Filters.ALL)) {
-                        str = str.trim().replaceAll("[\"{}\\]]", "").replace(",text:", "");
-                    }
-                    if (Stream.concat(getWhitelist().stream(), json.stream()).distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
-                        String r;
-                        if (!getWhitelistMap().containsKey(str)) {
+        if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+            String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
+            for (String str : lstring.split(" ")) {
+                if (type.equals(Types.Filters.ALL)) {
+                    str = str.trim().replaceAll("[\"{}\\]]", "").replace(",text:", "");
+                }
+                if (Stream.concat(getWhitelist().stream(), json.stream()).distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
+                    String r;
+                    if (!getWhitelistMap().containsKey(str)) {
+                        r = random();
+                        while (!isclean(r, getBoth())) {
+                            debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
                             r = random();
-                            while (!isclean(r, getBoth())) {
-                                debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
-                                r = random();
-                            }
-                        } else {
-                            r = getWhitelistMap().get(str);
                         }
-                        if (!getWhitelistMap().containsKey(str)) {
-                            putWhitelistMap(str, r);
-                        }
-                        string = Pattern.compile("(\\b" + str + "\\b)").matcher(string).replaceAll(r);
+                    } else {
+                        r = getWhitelistMap().get(str);
                     }
+                    if (!getWhitelistMap().containsKey(str)) {
+                        putWhitelistMap(str, r);
+                    }
+                    string = Pattern.compile("(\\b" + str + "\\b)").matcher(string).replaceAll(r);
                 }
             }
-            Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-            Matcher matcher = pattern.matcher(string);
-            StringBuffer out = new StringBuffer();
-            int swearcount = plugin.getConfig().getInt("swearcount");
-            while (matcher.find()) {
+        }
+        Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
+        Matcher matcher = pattern.matcher(string);
+        StringBuffer out = new StringBuffer();
+        int swearcount = plugin.getConfig().getInt("swearcount");
+        while (matcher.find()) {
+            try {
+                String[] arr = matcher.toMatchResult().toString().split("=");
+                String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
+                if (plugin.getConfig().getBoolean("settings.replace word for word")) {
+                    replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getString("replacements." + str) :
+                            (plugin.getConfig().isSet("replacements.all") ? plugin.getString("replacements.all") : plugin.getString("settings.filtering.replacement")));
+                }
+            } catch (Exception e) {
+                debug("Could not register replace_word_for_words: " + e.getMessage());
+            }
+            if (replacement != null) {
+                replacement = ChatColor.translateAlternateColorCodes('&', replacement);
+            }
+            if (strip) {
+                replacement = ChatColor.stripColor(replacement);
+            }
+            String r = plugin.getConfig().getBoolean("settings.replace word for word") ? replacement : matcher.group(0).replaceAll("(?s).", replacement);
+            if (type.equals(Types.Filters.DISCORD)) {
+                if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true))
+                    r = r.replaceAll("\\*", "\\\\*")
+                            .replaceAll("_", "\\_")
+                            .replaceAll("\\|", "\\\\|")
+                            .replaceAll("~", "\\~")
+                            .replaceAll("`", "\\\\`");
+                else if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape entire message", false)) {
+                    string = string.replaceAll("\\*", "\\\\*")
+                            .replaceAll("_", "\\_")
+                            .replaceAll("\\|", "\\\\|")
+                            .replaceAll("~", "\\~")
+                            .replaceAll("`", "\\\\`");
+                }
                 try {
-                    String[] arr = matcher.toMatchResult().toString().split("=");
-                    String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                    if (plugin.getConfig().getBoolean("settings.replace word for word")) {
-                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getString("replacements." + str) :
-                                (plugin.getConfig().isSet("replacements.all") ? plugin.getString("replacements.all") : plugin.getString("settings.filtering.replacement")));
-                    }
-                } catch (Exception e) {
-                    debug("Could not register replace_word_for_words: " + e.getMessage());
+                    if (plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled", false))
+                        r = Objects.requireNonNull(plugin.getString("settings.discordSRV.spoilers.template", "||{swear}||"))
+                                .replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).replaceAll("\\*", "\\\\*")
+                                        .replaceAll("_", "\\_")
+                                        .replaceAll("\\|", "\\\\|")
+                                        .replaceAll("~", "\\~")
+                                        .replaceAll("`", "\\\\`") : matcher.group(0)));
+                } catch (IllegalArgumentException ignored) {
                 }
-                if (replacement != null) {
-                    replacement = ChatColor.translateAlternateColorCodes('&', replacement);
-                }
-                if (strip) {
-                    replacement = ChatColor.stripColor(replacement);
-                }
-                String r = plugin.getConfig().getBoolean("settings.replace word for word") ? replacement : matcher.group(0).replaceAll("(?s).", replacement);
-                if (type.equals(Types.Filters.DISCORD)) {
-                    if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true))
-                        r = r.replaceAll("\\*", "\\\\*")
-                                .replaceAll("_", "\\_")
-                                .replaceAll("\\|", "\\\\|")
-                                .replaceAll("~", "\\~")
-                                .replaceAll("`", "\\\\`");
-                    else if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape entire message", false)) {
-                        string = string.replaceAll("\\*", "\\\\*")
-                                .replaceAll("_", "\\_")
-                                .replaceAll("\\|", "\\\\|")
-                                .replaceAll("~", "\\~")
-                                .replaceAll("`", "\\\\`");
-                    }
-                    try {
-                        if (plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled", false))
-                            r = Objects.requireNonNull(plugin.getString("settings.discordSRV.spoilers.template", "||{swear}||"))
-                                    .replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).replaceAll("\\*", "\\\\*")
-                                            .replaceAll("_", "\\_")
-                                            .replaceAll("\\|", "\\\\|")
-                                            .replaceAll("~", "\\~")
-                                            .replaceAll("`", "\\\\`") : matcher.group(0)));
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-                r = r.replaceAll("\\*", "\\\\*")
-                        .replaceAll("_", "\\_")
-                        .replaceAll("\\|", "\\\\|")
-                        .replaceAll("~", "\\~")
-                        .replaceAll("`", "\\\\`");
-                matcher.appendReplacement(out, r);
-                swearcount++;
             }
-            if (log) {
-                plugin.getConfig().set("swearcount", swearcount);
-                plugin.saveConfig();
-            }
-            matcher.appendTail(out);
-            string = out.toString();
-            for (Map.Entry<String, String> str : getWhitelistMap().entrySet()) {
-                string = Pattern.compile(str.getValue()).matcher(string).replaceAll(str.getKey());
-            }
+            r = r.replaceAll("\\*", "\\\\*")
+                    .replaceAll("_", "\\_")
+                    .replaceAll("\\|", "\\\\|")
+                    .replaceAll("~", "\\~")
+                    .replaceAll("`", "\\\\`");
+            matcher.appendReplacement(out, r);
+            swearcount++;
+        }
+        if (log) {
+            plugin.getConfig().set("swearcount", swearcount);
+            plugin.saveConfig();
+        }
+        matcher.appendTail(out);
+        string = out.toString();
+        for (Map.Entry<String, String> str : getWhitelistMap().entrySet()) {
+            string = Pattern.compile(str.getValue()).matcher(string).replaceAll(str.getKey());
         }
         return string;
     }
@@ -850,14 +844,16 @@ public class Utils {
                     int length = str.length();
                     for (String str2 : str.split("")) {
                         length = length - 1;
-                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+) = fuck
+                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)                                                                               = fuck
+                        //(f+\s*+|+[!@#$%^&*()_+-"]+\s*+)(u+\s*+|[!@#$%^&*()_+-"]+u+\s*+)(c+\s*+|[!@#$%^&*()_+-"]+c+\s*+)(k+\s*+|[!@#$%^&*()_+-"]+k+\s*+)   = fuck with special chars
                         str2 = Pattern.quote(str2);
+                        String special = Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
                         if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                            omg.append("(").append(str2).append("+\\s*+|[").append(special).append("]\\s*+").append(str2).append("+\\s*+)");
                         } else if (length == str.length() - 1) { // length is the beginning
-                            omg.append("(").append(str2).append("+|").append(str2).append("+[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+)");
+                            omg.append("(").append(str2).append("+\\s*+|").append(str2).append("[").append(Pattern.quote(special)).append("]+\\s*+)");
                         } else { // length is somewhere inbetween
-                            omg.append("(").append(str2).append("+\\s*+|[").append(Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""))).append("]+").append(str2).append("+)");
+                            omg.append("(").append(str2).append("+\\s*+|[").append(special).append("]\\s*+").append(str2).append("+\\s*+)");
                         }
                     }
                     duh.add(omg.toString());

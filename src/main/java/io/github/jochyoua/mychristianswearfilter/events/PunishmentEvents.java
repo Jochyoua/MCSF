@@ -1,6 +1,7 @@
 package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -33,19 +34,20 @@ public class PunishmentEvents implements Listener {
     }
 
     public void punishPlayers(Player player) {
-        if (plugin.getConfig().isSet("users." + player.getUniqueId() + ".flags"))
-            plugin.getConfig().set("users." + player.getUniqueId() + ".flags", plugin.getConfig().getInt("users." + player.getUniqueId() + ".flags") + 1);
+        User user = new User(utils, player.getUniqueId());
+        int flags = user.getFlags();
+        if (flags != 0)
+            flags = flags + 1;
         else
-            plugin.getConfig().set("users." + player.getUniqueId() + ".flags", 1);
-        plugin.saveConfig();
+            flags = 1;
+        user.setFlags(flags);
         for (String str : plugin.getConfig().getConfigurationSection("settings.filtering.punishments.commands").getKeys(false)) {
-            int player_flags = plugin.getConfig().getInt("users." + player.getUniqueId() + ".flags");
             try {
-                if (Integer.parseInt(str) == player_flags || Integer.parseInt(str) == 0) {
+                if (Integer.parseInt(str) == flags || Integer.parseInt(str) == 0) {
                     String path = "settings.filtering.punishments.commands." + str;
                     String executor = plugin.getString(path + ".executor", "CONSOLE");
                     for (String command : plugin.getConfig().getStringList(path + ".commands")) {
-                        command = utils.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(player_flags));
+                        command = utils.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(flags));
                         String finalCommand = command;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             if (executor.equalsIgnoreCase("CONSOLE")) {
@@ -61,10 +63,8 @@ public class PunishmentEvents implements Listener {
                 e.printStackTrace();
             }
             if (plugin.getConfig().getInt("settings.filtering.punishments.flags.reset every interval at") != 0) {
-                if (player_flags >= plugin.getConfig().getInt("settings.filtering.punishments.flags.reset every interval at")) {
-                    player_flags = 1;
-                    plugin.getConfig().set("users." + player.getUniqueId() + ".flags", player_flags);
-                    plugin.saveConfig();
+                if (flags >= plugin.getConfig().getInt("settings.filtering.punishments.flags.reset every interval at")) {
+                    user.setFlags(0);
                 }
             }
         }

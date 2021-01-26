@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -109,8 +110,8 @@ public class MCSF extends JavaPlugin {
                 throwables.printStackTrace();
             }
         if (getConfig().isSet("replacements.all")) {
-            if (Objects.requireNonNull(getConfig().getString("replacements.all")).equalsIgnoreCase("&c*&f") && !Objects.requireNonNull(getConfig().getString("settings.filtering.replacement")).equalsIgnoreCase("&c*&f")) {
-                getConfig().set("replacements.all", getConfig().getString("settings.filtering.replacement"));
+            if (Objects.requireNonNull(plugin.getString("replacements.all")).equalsIgnoreCase("&c*&f") && !Objects.requireNonNull(plugin.getString("settings.filtering.replacement")).equalsIgnoreCase("&c*&f")) {
+                getConfig().set("replacements.all", plugin.getString("settings.filtering.replacement"));
             }
         }
         if (getConfig().isSet("users")) {
@@ -118,10 +119,11 @@ public class MCSF extends JavaPlugin {
             for (String ID : getConfig().getConfigurationSection("users").getKeys(false)) {
                 User user = new User(utils, UUID.fromString(ID));
                 if (!user.exists()) {
-                    user.create(getConfig().getString("users." + ID + ".playername"), getConfig().getBoolean("users." + ID + ".enabled"));
+                    user.create(plugin.getString("users." + ID + ".playername"), getConfig().getBoolean("users." + ID + ".enabled"));
                 }
             }
             getConfig().set("users", null);
+            saveConfig();
         }
         loadLanguage();
         // Loop through each language file that isn't the selected one and add it to /locales/ folder
@@ -178,7 +180,7 @@ public class MCSF extends JavaPlugin {
                 if (!user.exists()) {
                     user.toggle();
                 }
-                user.playerName(player.getName().toLowerCase());
+                user.playerName(player.getName());
                 if (!user.playerName().equalsIgnoreCase(player.getName())) {
                     utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
                 } else {
@@ -256,14 +258,14 @@ public class MCSF extends JavaPlugin {
             if (!connector.isWorking()) {
                 getLogger().info("(MYSQL) Loading database info....");
                 try {
-                    String driverClass = getConfig().getString("mysql.driverClass");
-                    String url = getConfig().getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", plugin.getString("mysql.host"))
+                    String driverClass = plugin.getString("mysql.driverClass");
+                    String url = plugin.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", plugin.getString("mysql.host"))
                             .replaceAll("(?i)\\{port}|(?i)%port%", plugin.getString("mysql.port", "3306"))
                             .replaceAll("(?i)\\{database}|(?i)%database%", plugin.getString("mysql.database", "MCSF"))
                             .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(plugin.getConfig().getBoolean("mysql.use_unicode", true)))
                             .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(plugin.getConfig().getBoolean("mysql.ssl", false)));
-                    String username = getConfig().getString("mysql.username");
-                    String password = getConfig().getString("mysql.password");
+                    String username = plugin.getString("mysql.username");
+                    String password = plugin.getString("mysql.password");
                     int maxPoolSize = getConfig().getInt("mysql.maxPoolSize");
                     getLogger().info("(MYSQL) Using URL: " + url);
                     connector.setInfo(
@@ -287,11 +289,7 @@ public class MCSF extends JavaPlugin {
                     e.printStackTrace();
                     return false;
                 }
-                getLogger().info("(MYSQL) The connection has been established! Plugin is working.");
-
-
-            } else {
-                getLogger().info("(MYSQL) Database is already working.");
+                getLogger().info("(MYSQL) The connection has been established!");
             }
         }
         return true;

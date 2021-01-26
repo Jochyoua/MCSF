@@ -405,23 +405,22 @@ public class CommandEvents {
                                     value = user.toggle();
                                     if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
                                         utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
-                                                replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                                replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                                     utils.send(sender, plugin.getLanguage().getString("variables.toggle")
-                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
 
                                     break;
                                 }
                                 value = user.toggle();
                                 utils.send(sender, plugin.getLanguage().getString("variables.toggle")
-                                        .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                        .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                                 if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
                                     utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                             } else {
                                 if (finalArgs.size() != 2) {
                                     throw new FailureException(plugin.getLanguage(),
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
-
+                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                                 }
                                 if (!sender.hasPermission("MCSF.modify")) {
                                     throw new NoPermissionException(plugin.getLanguage());
@@ -442,21 +441,19 @@ public class CommandEvents {
                                                 plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                     } else {
-                                        value = new User(utils, ((Player) sender).getUniqueId()).toggle();
+                                        User user = new User(utils, targetid);
+                                        value = user.toggle();
                                         if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
                                             utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
-                                        utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                        utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                     }
                                     break;
                                 }
                                 if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                     throw new CommandDisabledException(plugin.getLanguage());
-
                                 }
                                 targetid = null;
-
-
                                 for (final String key : utils.getUsers(false)) {
                                     User user = new User(utils, UUID.fromString(key));
                                     if (user.exists()) {
@@ -472,21 +469,23 @@ public class CommandEvents {
                                             plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                 } else {
-                                    new User(utils, targetid).toggle();
+                                    User user = new User(utils, targetid);
+                                    user.toggle();
                                     if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                        utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", new User(utils, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                        utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                                     utils.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (new User(utils, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                 }
                             }
                             break;
                         case "status":
                             if (finalArgs.size() == 1 && (sender instanceof Player)) {
+                                User user = new User(utils, ((Player) sender).getUniqueId());
                                 if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                     value = true;
                                 } else {
-                                    value = new User(utils, ((Player) sender).getUniqueId()).status();
+                                    value = user.status();
                                 }
-                                utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                 break;
                             } else {
                                 if (finalArgs.size() != 2) {
@@ -514,12 +513,13 @@ public class CommandEvents {
                                             plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                 } else {
+                                    User user = new User(utils, targetid);
                                     if (plugin.getConfig().getBoolean("settings.filtering.force")) {
                                         value = true;
                                     } else {
-                                        value = new User(utils, targetid).status();
+                                        value = user.status();
                                     }
-                                    utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                    utils.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
                                 }
                             }
                             break;
@@ -551,9 +551,17 @@ public class CommandEvents {
                             break;
                         case "version":
                             if (sender.hasPermission("MCSF.version")) {
+                                StringBuilder version = new StringBuilder();
+                                int length = plugin.getLanguage().getStringList("variables.version").size();
                                 for (String str : plugin.getLanguage().getStringList("variables.version")) {
-                                    utils.send(sender, str);
+                                    length = length - 1;
+                                    if (length <= 0) { // length is the end
+                                        version.append(str);
+                                    } else { // length is not the end
+                                        version.append(str).append("\n");
+                                    }
                                 }
+                                utils.send(sender, version.toString());
                             } else {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }

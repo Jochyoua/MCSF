@@ -33,11 +33,11 @@ settings:
     replace word for word: false
     # Enable this if you plan on replacing words with another word, see replacements
     filter reverse versions of swears: true
-    # Enable this if you want to filter the reverse saying of a word: E.G kcuf (fuck) would be filtered
+    # Enable this if you want to filter the reverse sayinstiog of a word: E.G kcuf (fuck) would be filtered
     replacement: "&c*&r"
     # Basic replacement, repeats for each letter in the blacklisted word so E.G fuck would be ****
     ignore special characters:
-      enabled: false
+      enabled: true
       characters to ignore: "!@#$%^&*()_+-"
     punishments:
       punish players: false
@@ -48,12 +48,11 @@ settings:
         chat: true
       # Where would swearing be punishable?
       flags:
-        reset every leave: true
         reset every interval at: 10
       commands:
         '1': # How many swear flags should trigger these commands?
           commands:
-            - 'tell {PLAYER} {player} Swearing isn''t allowed. Swear again and you will be kicked.'
+            - 'tell {PLAYER} Swearing isn''t allowed. Swear again and you will be kicked.'
           execute_as: "CONSOLE" # Who should execute this command?
         '2': # How many swear flags should trigger these commands?
           commands:

@@ -68,15 +68,6 @@ public class PlayerEvents implements Listener {
         // Message saving / global filtering
         utils.setTable("global");
         try {
-            if (!utils.getGlobal().isEmpty()) {
-                utils.reloadPattern();
-                if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
-                    utils.reloadPattern();
-                    new_message = utils.clean(old_message, false, true, utils.getGlobalRegex(), Types.Filters.PLAYERS);
-                    e.setMessage(new_message);
-                }
-            }
-
             if (!utils.isclean(old_message, plugin.getConfig().getBoolean("settings.filtering.save messages.only global messages", true) ? utils.getGlobalRegex() : utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
                 File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
                 File dir = new File(plugin.getDataFolder(), "logs");
@@ -109,6 +100,14 @@ public class PlayerEvents implements Listener {
         if (e.isCancelled())
             return;
         if (use || !utils.supported("ProtocolLib")) {
+            if (!utils.getGlobal().isEmpty()) {
+                utils.reloadPattern();
+                if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
+                    utils.reloadPattern();
+                    new_message = utils.clean(old_message, false, true, utils.getGlobalRegex(), Types.Filters.PLAYERS);
+                    e.setMessage(new_message);
+                }
+            }
             e.setCancelled(true);
             utils.reloadPattern();
             if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), utils.getBoth()) && e.getPlayer().hasPermission("MCSF.bypass"))
@@ -135,8 +134,8 @@ public class PlayerEvents implements Listener {
             Plugin pl = Bukkit.getPluginManager().getPlugin("DiscordSRV");
             if (pl != null && (plugin.getConfig().getBoolean("settings.discordSRV.enabled") && utils.supported("DiscordSRV")))
                 new AsyncPlayerChatEvent(true, player, "", Collections.singleton(player)).getHandlers().unregister(pl);
-            if(user.exists()) {
-                user.playerName(player.getName().toLowerCase());
+            if (user.exists()) {
+                user.playerName(player.getName());
                 if (!user.playerName().equalsIgnoreCase(player.getName())) {
                     utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
                 } else {
@@ -186,10 +185,9 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (plugin.getConfig().getBoolean("settings.filtering.punishments.flags.reset every leave")) {
-                plugin.getConfig().set("users." + e.getPlayer().getUniqueId() + ".flags", 0);
+                User user = new User(utils, e.getPlayer().getUniqueId());
+                user.setFlags(0);
                 plugin.saveConfig();
-            }
         });
     }
 

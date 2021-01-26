@@ -9,6 +9,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
+/**
+ * The type User.
+ */
 public class User {
     UUID id;
     MCSF plugin;
@@ -16,6 +19,12 @@ public class User {
     Connection userConnection;
     Utils utils;
 
+    /**
+     * Instantiates a new User.
+     *
+     * @param utils the utility file
+     * @param id    the player's unique id
+     */
     public User(Utils utils, UUID id) {
         this.id = id;
         this.plugin = utils.getProvider();
@@ -24,6 +33,11 @@ public class User {
         this.userConnection = utils.getUserConnection();
     }
 
+    /**
+     * Toggles the player's filter status
+     *
+     * @return the status the filter was set to
+     */
     public boolean toggle() {
         plugin.reloadConfig();
         if (plugin.getConfig().getBoolean("settings.filtering.force"))
@@ -90,13 +104,24 @@ public class User {
             value = !value;
         }
         this.set(value);
+        utils.signCheck(id);
         return value;
     }
 
+    /**
+     * Gets the player's unique ID
+     *
+     * @return the player's uniqueid
+     */
     public UUID getId() {
         return this.id;
     }
 
+    /**
+     * Sets the status of the player's filter status, used by the toggle function
+     *
+     * @param bool the status to be set
+     */
     public void set(boolean bool) {
         try {
             PreparedStatement ps;
@@ -117,6 +142,12 @@ public class User {
         }
     }
 
+    /**
+     * Create a new user, sets the status and playername if user already exists
+     *
+     * @param playername the playername
+     * @param bool       the status of the player's filter
+     */
     public void create(String playername, boolean bool) {
         try {
             PreparedStatement ps;
@@ -137,6 +168,12 @@ public class User {
         }
     }
 
+    /**
+     * Sets the playername
+     *
+     * @param string the string
+     * @return the string
+     */
     public String playerName(String string) {
         String name = "";
         try {
@@ -151,6 +188,11 @@ public class User {
         return name;
     }
 
+    /**
+     * Gets the playername
+     *
+     * @return the string
+     */
     public String playerName() {
         String name = "";
         try {
@@ -167,6 +209,11 @@ public class User {
         return name;
     }
 
+    /**
+     * Gets the status of the player's current filter
+     *
+     * @return the boolean
+     */
     public boolean status() {
         boolean status = false;
         try {
@@ -183,6 +230,11 @@ public class User {
         return plugin.getConfig().getBoolean("settings.filtering.force") || status;
     }
 
+    /**
+     * Checks to see if the player is currently set into the database
+     *
+     * @return the boolean
+     */
     public boolean exists() {
         boolean exists = false;
         try {
@@ -197,5 +249,27 @@ public class User {
             throwables.printStackTrace();
         }
         return exists;
+    }
+
+    /**
+     * Sets the filter flags for the player
+     *
+     * @param i the flags to set, if 0 it removes the user from the local hashmap
+     */
+    public void setFlags(int i) {
+        if(i == 0) {
+            utils.userFlags.remove(id);
+            return;
+        }
+        utils.userFlags.put(id, i);
+    }
+
+    /**
+     * Gets the player's currenty flags
+     *
+     * @return the flags
+     */
+    public int getFlags() {
+        return utils.userFlags.getOrDefault(id, 0);
     }
 }
