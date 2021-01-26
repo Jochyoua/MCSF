@@ -50,7 +50,7 @@ public class PlayerEvents implements Listener {
     public PlayerEvents(Utils utils) {
         this.plugin = utils.getProvider();
         this.connector = utils.getConnector();
-        if (plugin.getConfig().getBoolean("mysql.enabled"))
+        if (plugin.getFile("sql").getBoolean("mysql.enabled"))
             try {
                 this.connection = connector.getConnection();
             } catch (SQLException throwables) {
@@ -185,9 +185,9 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                User user = new User(utils, e.getPlayer().getUniqueId());
-                user.setFlags(0);
-                plugin.saveConfig();
+            User user = new User(utils, e.getPlayer().getUniqueId());
+            user.setFlags(0);
+            plugin.saveConfig();
         });
     }
 

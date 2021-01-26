@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -39,7 +38,17 @@ public class MCSF extends JavaPlugin {
                         + "Wiki: https://github.com/Jochyoua/MCSF/wiki");
         this.getConfig().options().copyDefaults(true);
         saveDefaultConfig();
-        FileConfiguration local = getFile("swears");
+        FileConfiguration sql = getFile("sql");
+        if (getConfig().isSet("mysql")) {
+            getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
+            for (String key : getConfig().getConfigurationSection("mysql").getKeys(false)) {
+                sql.set("mysql." + key, getConfig().get("mysql." + key));
+            }
+            saveFile(sql, "sql");
+            getConfig().set("mysql", null);
+            saveConfig();
+        }
+        FileConfiguration local = getFile("data/swears");
         if (!getConfig().getStringList("swears").isEmpty()) {
             getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
             if (local.isSet("swears")) {
@@ -48,14 +57,14 @@ public class MCSF extends JavaPlugin {
                     Set<String> local2 = new HashSet<>(getConfig().getStringList("swears"));
                     local1.addAll(local2);
                     local.set("swears", local1);
-                    saveFile(local, "swears");
+                    saveFile(local, "data/swears");
                     getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
                 }
             }
             getConfig().set("swears", null);
             saveConfig();
         }
-        local = getFile("whitelist");
+        local = getFile("data/whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
             getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
             if (local.isSet("whitelist")) {
@@ -64,14 +73,14 @@ public class MCSF extends JavaPlugin {
                     Set<String> local2 = new HashSet<>(getConfig().getStringList("whitelist"));
                     local1.addAll(local2);
                     local.set("whitelist", local1);
-                    saveFile(local, "whitelist");
+                    saveFile(local, "data/whitelist");
                     getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
                 }
             }
             getConfig().set("whitelist", null);
             saveConfig();
         }
-        local = getFile("global");
+        local = getFile("data/global");
         if (!getConfig().getStringList("global").isEmpty()) {
             getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
             if (local.isSet("global")) {
@@ -80,14 +89,14 @@ public class MCSF extends JavaPlugin {
                     Set<String> local2 = new HashSet<>(getConfig().getStringList("global"));
                     local1.addAll(local2);
                     local.set("global", local1);
-                    saveFile(local, "global");
+                    saveFile(local, "data/global");
                     getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
                 }
             }
             getConfig().set("global", null);
             saveConfig();
         }
-        if (getConfig().getBoolean("mysql.enabled")) {
+        if (sql.getBoolean("mysql.enabled")) {
             boolean load = false;
             if (connector == null)
                 load = true;
@@ -103,7 +112,7 @@ public class MCSF extends JavaPlugin {
         }
         utils = new Utils(this, connector);
 
-        if (plugin.getConfig().getBoolean("mysql.enabled"))
+        if (sql.getBoolean("mysql.enabled"))
             try {
                 utils.createTable(false);
             } catch (SQLException throwables) {
@@ -146,7 +155,7 @@ public class MCSF extends JavaPlugin {
             new SignEvents(utils);
         if (utils.supported("DiscordSRV"))
             new DiscordEvents(utils);
-        final List<String> swears = plugin.getFile("swears").getStringList("swears");
+        final List<String> swears = plugin.getFile("data/swears").getStringList("swears");
         if (!swears.isEmpty()) {
             final String test = swears.get((new Random()).nextInt(swears.size()));
             utils.reloadPattern();
@@ -194,14 +203,14 @@ public class MCSF extends JavaPlugin {
         ConfigAPI config;
         Settings settings = new Settings();
         settings.setSetting("reportMissingOptions", false);
-        config = new ConfigAPI("data/" + fileName + ".yml", settings, this);
+        config = new ConfigAPI(fileName + ".yml", settings, this);
         config.copyDefConfigIfNeeded();
         return config.getLiveConfiguration();
     }
 
     public void saveFile(FileConfiguration file, String fileName) {
         try {
-            file.save(new File(plugin.getDataFolder(), "data/" + fileName + ".yml"));
+            file.save(new File(plugin.getDataFolder(), fileName + ".yml"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -252,21 +261,22 @@ public class MCSF extends JavaPlugin {
     }
 
     public boolean reloadSQL() {
-        if (getConfig().getBoolean("mysql.enabled")) {
+        FileConfiguration sql = getFile("sql");
+        if (sql.getBoolean("mysql.enabled")) {
             if (connector == null)
                 connector = new DatabaseConnector(this);
             if (!connector.isWorking()) {
                 getLogger().info("(MYSQL) Loading database info....");
                 try {
-                    String driverClass = plugin.getString("mysql.driverClass");
-                    String url = plugin.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", plugin.getString("mysql.host"))
-                            .replaceAll("(?i)\\{port}|(?i)%port%", plugin.getString("mysql.port", "3306"))
-                            .replaceAll("(?i)\\{database}|(?i)%database%", plugin.getString("mysql.database", "MCSF"))
-                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(plugin.getConfig().getBoolean("mysql.use_unicode", true)))
-                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(plugin.getConfig().getBoolean("mysql.ssl", false)));
-                    String username = plugin.getString("mysql.username");
-                    String password = plugin.getString("mysql.password");
-                    int maxPoolSize = getConfig().getInt("mysql.maxPoolSize");
+                    String driverClass = sql.getString("mysql.driverClass");
+                    String url = sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", sql.getString("mysql.host"))
+                            .replaceAll("(?i)\\{port}|(?i)%port%", sql.getString("mysql.port", "3306"))
+                            .replaceAll("(?i)\\{database}|(?i)%database%", sql.getString("mysql.database", "MCSF"))
+                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(sql.getBoolean("mysql.use_unicode", true)))
+                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(sql.getBoolean("mysql.ssl", false)));
+                    String username = sql.getString("mysql.username");
+                    String password = sql.getString("mysql.password");
+                    int maxPoolSize = sql.getInt("mysql.maxPoolSize");
                     getLogger().info("(MYSQL) Using URL: " + url);
                     connector.setInfo(
                             new DatabaseConnector.Info(

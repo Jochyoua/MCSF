@@ -47,6 +47,7 @@ public class Utils {
     List<String> globalSwears = new ArrayList<>();
     List<String> localCustomRegex = new ArrayList<>();
     List<String> json = new ArrayList<>();
+    FileConfiguration sql;
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
     Connection userConnection;
@@ -56,8 +57,9 @@ public class Utils {
     public Utils(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
+        sql = plugin.getFile("sql");
         reloadUserData();
-        if (plugin.getConfig().getBoolean("mysql.enabled"))
+        if (sql.getBoolean("mysql.enabled"))
             try {
                 this.connection = connector.getConnection();
             } catch (SQLException throwables) {
@@ -78,7 +80,7 @@ public class Utils {
         cooldowns = ExpiringMap.builder()
                 .expiration(plugin.getConfig().getInt("settings.cooldown", 5), TimeUnit.SECONDS)
                 .build();
-        for (String str : plugin.getFile("whitelist").getStringList("whitelist")) {
+        for (String str : plugin.getFile("data/whitelist").getStringList("whitelist")) {
             String r;
             if (!getWhitelistMap().containsKey(str)) {
                 r = random();
@@ -219,7 +221,7 @@ public class Utils {
                 statement = plugin.getServer().getPluginManager().getPlugin("ProtocolLib") != null;
                 break;
             case "mysql":
-                statement = plugin.getConfig().getBoolean("mysql.enabled");
+                statement = sql.getBoolean("mysql.enabled");
                 break;
             case "placeholderapi":
                 statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
@@ -239,7 +241,7 @@ public class Utils {
     }
 
     public int countRows(String table) {
-        if (!plugin.getConfig().getBoolean("mysql.enabled"))
+        if (!sql.getBoolean("mysql.enabled"))
             return 0;
         int i = 0;
         try {
@@ -349,7 +351,7 @@ public class Utils {
 
     @SneakyThrows
     public void setTable(String table) {
-        if (!plugin.getConfig().getBoolean("mysql.enabled"))
+        if (!sql.getBoolean("mysql.enabled"))
             return;
         switch (table) {
             case "global":
@@ -358,7 +360,7 @@ public class Utils {
                         ps.execute();
                         ps.close();
                     }
-                    FileConfiguration local = plugin.getFile("global");
+                    FileConfiguration local = plugin.getFile("data/global");
                     List<String> s = local.getStringList("global");
                     if (s.isEmpty()) {
                         debug("Cannot set global data because it is empty!");
@@ -415,7 +417,7 @@ public class Utils {
                         ps.execute();
                         ps.close();
                     }
-                    List<String> s = plugin.getFile("swears").getStringList("swears");
+                    List<String> s = plugin.getFile("data/swears").getStringList("swears");
                     s.removeAll(json);
                     StringBuilder query = new StringBuilder("INSERT INTO swears(word) VALUES (?)");
                     for (int i = 0; i < s.size() - 1; i++) {
@@ -436,10 +438,10 @@ public class Utils {
                         ps.execute();
                         ps.close();
                     }
-                    FileConfiguration local = plugin.getFile("whitelist");
+                    FileConfiguration local = plugin.getFile("data/whitelist");
                     List<String> s = local.getStringList("whitelist");
 
-                    local = plugin.getFile("swears");
+                    local = plugin.getFile("data/swears");
                     s.removeAll(local.getStringList("swears"));
                     StringBuilder query = new StringBuilder("INSERT INTO whitelist(word) VALUES (?)");
                     for (int i = 0; i < s.size() - 1; i++) {
@@ -460,12 +462,12 @@ public class Utils {
     }
 
     public void createTable(boolean reset) throws SQLException {
-        if (plugin.getConfig().getBoolean("mysql.enabled")) {
+        if (sql.getBoolean("mysql.enabled")) {
             plugin.reloadConfig();
-            FileConfiguration local = plugin.getFile("swears");
+            FileConfiguration local = plugin.getFile("data/swears");
             if (local.getStringList("swears").isEmpty()) {
                 local.set("swears", new String[]{"fuck", "shit"});
-                plugin.saveFile(local, "swears");
+                plugin.saveFile(local, "data/swears");
             }
             if (plugin.reloadSQL()) {
                 connector.execute("SET NAMES utf8");
@@ -704,19 +706,19 @@ public class Utils {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            FileConfiguration local = plugin.getFile("swears");
+            FileConfiguration local = plugin.getFile("data/swears");
             local.set("swears", swears);
-            plugin.saveFile(local, "swears");
+            plugin.saveFile(local, "data/swears");
             setSwears(swears);
 
-            local = plugin.getFile("whitelist");
+            local = plugin.getFile("data/whitelist");
             local.set("whitelist", whitelist);
-            plugin.saveFile(local, "whitelist");
+            plugin.saveFile(local, "data/whitelist");
             setWhitelist(whitelist);
 
-            local = plugin.getFile("global");
+            local = plugin.getFile("data/global");
             local.set("global", global);
-            plugin.saveFile(local, "global");
+            plugin.saveFile(local, "data/global");
             setGlobal(global);
         }
         reloadPattern();
@@ -763,7 +765,7 @@ public class Utils {
                 plugin.setLocal("custom_regex", plugin.getConfig().getStringList("custom_regex.regex").size());
                 setCustomRegex(localCustomRegex);
             }
-        FileConfiguration local = plugin.getFile("whitelist");
+        FileConfiguration local = plugin.getFile("data/whitelist");
         if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.whitelist words")) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             setWhitelist(local.getStringList("whitelist"));
@@ -774,7 +776,7 @@ public class Utils {
             }
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
         }
-        local = plugin.getFile("global");
+        local = plugin.getFile("data/global");
         if ((local.getStringList("global").size() != plugin.getLocal("global")) || getGlobalRegex().isEmpty()) {
             debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("global");
@@ -802,16 +804,16 @@ public class Utils {
             setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
             local.set("global", s);
-            plugin.saveFile(local, "global");
+            plugin.saveFile(local, "data/global");
             plugin.setLocal("global", s.size());
         }
-        local = plugin.getFile("swears");
+        local = plugin.getFile("data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || getRegex().isEmpty()) {
             debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("swears");
             s.removeAll(json);
             local.set("swears", s);
-            plugin.saveFile(local, "swears");
+            plugin.saveFile(local, "data/swears");
             setSwears(s);
             if (s.isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
@@ -849,7 +851,7 @@ public class Utils {
                         str2 = Pattern.quote(str2);
                         String special = Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
                         if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+\\s*+|[").append(special).append("]\\s*+").append(str2).append("+\\s*+)");
+                            omg.append("(").append(str2).append("+|[").append(special).append("]\\s*+").append(str2).append("+)");
                         } else if (length == str.length() - 1) { // length is the beginning
                             omg.append("(").append(str2).append("+\\s*+|").append(str2).append("[").append(Pattern.quote(special)).append("]+\\s*+)");
                         } else { // length is somewhere inbetween
@@ -895,7 +897,7 @@ public class Utils {
                 .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion()))
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
-                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("swears").getStringList("swears").size())));
+                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("data/swears").getStringList("swears").size())));
         if (supported("PlaceholderAPI") && sender instanceof Player)
             message = PlaceholderAPI.setPlaceholders((Player) sender, message);
         return supported("hex") ? color(message) : message;

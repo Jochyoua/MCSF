@@ -35,7 +35,7 @@ public class CommandEvents {
 
     public CommandEvents(Utils utils) {
         this.plugin = utils.getProvider();
-        if (plugin.getConfig().getBoolean("mysql.enabled")) {
+        if (utils.supported("mysql")) {
             this.connector = utils.getConnector();
             this.connection = utils.getConnection();
         }
@@ -179,7 +179,7 @@ public class CommandEvents {
                                 throw new IllegalArgumentException(plugin.getLanguage());
                             }
                             String glo = finalArgs.get(1).toLowerCase();
-                            FileConfiguration local = plugin.getFile("global");
+                            FileConfiguration local = plugin.getFile("data/global");
                             List<String> global = local.getStringList("global");
                             if (utils.supported("mysql")) {
                                 if (!connector.isWorking())
@@ -233,9 +233,9 @@ public class CommandEvents {
                                     utils.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
                                 }
                             }
-                            local = plugin.getFile("global");
+                            local = plugin.getFile("data/global");
                             local.set("global", global);
-                            plugin.saveFile(local, "global");
+                            plugin.saveFile(local, "data/global");
                             break;
                         case "parse":
                             if (!sender.hasPermission("MCSF.modify")) {
@@ -280,7 +280,7 @@ public class CommandEvents {
                                 throw new IllegalArgumentException(plugin.getLanguage());
                             }
                             String white = finalArgs.get(1).toLowerCase();
-                            local = plugin.getFile("whitelist");
+                            local = plugin.getFile("data/whitelist");
                             List<String> whitelist = local.getStringList("whitelist");
                             if (utils.supported("mysql")) {
                                 if (!connector.isWorking())
@@ -335,7 +335,7 @@ public class CommandEvents {
                                 }
                             }
                             local.set("whitelist", whitelist);
-                            plugin.saveFile(local, "whitelist");
+                            plugin.saveFile(local, "data/whitelist");
                             break;
                         case "unset":
                             if (!sender.hasPermission("MCSF.modify")) {
@@ -579,7 +579,7 @@ public class CommandEvents {
                                     utils.setTable("global");
                                 }
                                 String word = finalArgs.get(1).toLowerCase();
-                                local = plugin.getFile("swears");
+                                local = plugin.getFile("data/swears");
                                 List<String> swears = local.getStringList("swears");
                                 switch (finalArgs.get(0)) {
                                     case "add":
@@ -672,9 +672,9 @@ public class CommandEvents {
                                     default:
                                         throw new IllegalArgumentException(plugin.getLanguage());
                                 }
-                                local = plugin.getFile("swears");
+                                local = plugin.getFile("data/swears");
                                 local.set("swears", swears);
-                                plugin.saveFile(local, "swears");
+                                plugin.saveFile(local, "data/swears");
                             } else {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
