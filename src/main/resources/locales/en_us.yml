@@ -34,7 +34,7 @@ variables:
     - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> -  Modifies swearlist"
     - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Modifies whitelist"
     - "{PERMISSION=MCSF.modify}&6> /{command} reload"
-    - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifies users"
+    - "{PERMISSION=MCSF.modify}&6> /{command} unset </player/uuid> - Modifies users"
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Resets database to config data"
     - "&6-------------------------"
   console motd:

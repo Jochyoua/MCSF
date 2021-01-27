@@ -851,11 +851,11 @@ public class Utils {
                         str2 = Pattern.quote(str2);
                         String special = Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
                         if (length <= 0) { // length is the end
-                            omg.append("(").append(str2).append("+|[").append(special).append("]\\s*+").append(str2).append("+)");
+                            omg.append("(").append(str2).append("+|[").append(special).append("]+\\s*+").append(str2).append("+)");
                         } else if (length == str.length() - 1) { // length is the beginning
                             omg.append("(").append(str2).append("+\\s*+|").append(str2).append("[").append(Pattern.quote(special)).append("]+\\s*+)");
                         } else { // length is somewhere inbetween
-                            omg.append("(").append(str2).append("+\\s*+|[").append(special).append("]\\s*+").append(str2).append("+\\s*+)");
+                            omg.append("(").append(str2).append("+\\s*+|[").append(special).append("]+").append(str2).append("+\\s*+)");
                         }
                     }
                     duh.add(omg.toString());

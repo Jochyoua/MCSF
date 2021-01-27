@@ -132,7 +132,7 @@ public class User {
             } else {
                 ps = userConnection.prepareStatement("INSERT INTO users VALUES (?, ?, ?)");
                 ps.setString(1, id.toString());
-                ps.setString(2, "placeholder");
+                ps.setString(2, playerName());
                 ps.setBoolean(3, bool);
             }
             ps.execute();

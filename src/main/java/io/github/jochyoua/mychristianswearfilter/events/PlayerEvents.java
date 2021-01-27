@@ -136,11 +136,14 @@ public class PlayerEvents implements Listener {
                 new AsyncPlayerChatEvent(true, player, "", Collections.singleton(player)).getHandlers().unregister(pl);
             if (user.exists()) {
                 user.playerName(player.getName());
-                if (!user.playerName().equalsIgnoreCase(player.getName())) {
-                    utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
-                } else {
-                    utils.debug("Successfully added " + player.getName() + "'s name to the config.");
-                }
+            } else {
+                if (!user.exists())
+                    user.create(player.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
+            }
+            if (!user.playerName().equalsIgnoreCase(player.getName())) {
+                utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+            } else {
+                utils.debug("Successfully added " + player.getName() + "'s name to the config.");
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.force")) {
                 if (!user.exists())
@@ -168,10 +171,8 @@ public class PlayerEvents implements Listener {
                         result = plugin.getConfig().getBoolean("settings.filtering.default");
                     }
                     user.set(result);
-                    plugin.saveConfig();
                 }
                 utils.debug("Player " + player.getName() + "'s swear filter is " + (new User(utils, player.getUniqueId()).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
-
             }
 
             if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && utils.needsUpdate()) {

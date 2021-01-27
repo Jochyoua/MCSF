@@ -34,7 +34,7 @@ variables:
     - "{PERMISSION=MCSF.version}&6> /{command} version - Zeigt die Version dieses Plugins"
     - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> - Ändert Chatfilter-Wörter"
     - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Ändert die Whitelist"
-    - "{PERMISSION=MCSF.modify}&6> /{command} unset <all/player/uuid> - Modifiziert Benutzer"
+    - "{PERMISSION=MCSF.modify}&6> /{command} unset </player/uuid> - Modifiziert Benutzer"
     - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Setzt Datenbank zurück"
     - "&6-------------------------"
   console motd:
