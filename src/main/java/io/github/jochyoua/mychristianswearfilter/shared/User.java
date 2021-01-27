@@ -252,24 +252,24 @@ public class User {
     }
 
     /**
-     * Sets the filter flags for the player
-     *
-     * @param i the flags to set, if 0 it removes the user from the local hashmap
-     */
-    public void setFlags(int i) {
-        if(i == 0) {
-            utils.userFlags.remove(id);
-            return;
-        }
-        utils.userFlags.put(id, i);
-    }
-
-    /**
      * Gets the player's currenty flags
      *
      * @return the flags
      */
     public int getFlags() {
         return utils.userFlags.getOrDefault(id, 0);
+    }
+
+    /**
+     * Sets the filter flags for the player
+     *
+     * @param i the flags to set, if 0 it removes the user from the local hashmap
+     */
+    public void setFlags(int i) {
+        if (i == 0) {
+            utils.userFlags.remove(id);
+            return;
+        }
+        utils.userFlags.put(id, i);
     }
 }

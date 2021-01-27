@@ -5,7 +5,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import lombok.RequiredArgsConstructor;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -23,14 +22,14 @@ public class DatabaseConnector implements Connector {
 
     public void setInfo(Info info) throws IllegalStateException {
         try {
-                config = new HikariConfig();
-                    config.setDriverClassName(info.driverClass);
-                    config.setJdbcUrl(info.url);
-                    config.setUsername(info.username);
-                    config.setPassword(info.password);
-                    config.setMaximumPoolSize(info.maxPoolSize);
-                    config.setAutoCommit(true);
-                    config.validate();
+            config = new HikariConfig();
+            config.setDriverClassName(info.driverClass);
+            config.setJdbcUrl(info.url);
+            config.setUsername(info.username);
+            config.setPassword(info.password);
+            config.setMaximumPoolSize(info.maxPoolSize);
+            config.setAutoCommit(true);
+            config.validate();
         } catch (Exception e) {
             throw new IllegalStateException("Error trying to load information from config.", e);
         }

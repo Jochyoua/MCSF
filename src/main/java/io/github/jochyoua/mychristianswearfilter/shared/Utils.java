@@ -40,20 +40,37 @@ public class Utils {
     public Map<UUID, Integer> userFlags = new HashMap<>();
     MCSF plugin;
     DatabaseConnector connector;
+
     List<String> regex = new ArrayList<>();
+
     List<String> globalRegex = new ArrayList<>();
+
     List<String> localSwears = new ArrayList<>();
+
     List<String> localWhitelist = new ArrayList<>();
+
     List<String> globalSwears = new ArrayList<>();
+
     List<String> localCustomRegex = new ArrayList<>();
+
     List<String> json = new ArrayList<>();
+
     FileConfiguration sql;
+
     ExpiringMap<UUID, UUID> cooldowns;
+
     Connection connection;
+
     Connection userConnection;
     @Getter
     Map<String, String> whitelistMap = new HashMap<>();
 
+    /**
+     * Instantiates a new Utility class
+     *
+     * @param plugin    the providing plugin
+     * @param connector the mysql connector
+     */
     public Utils(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
@@ -98,6 +115,9 @@ public class Utils {
 
     }
 
+    /**
+     * Reloads the user sql database
+     */
     public void reloadUserData() {
         String url = "jdbc:sqlite:" + plugin.getDataFolder() + File.separator + "data/users.db";
         if (userConnection == null) {
@@ -118,6 +138,9 @@ public class Utils {
         }
     }
 
+    /**
+     * Closes SQL connections, called when the plugin is disabled.
+     */
     public void shutDown() {
         try {
             userConnection.close();
@@ -131,6 +154,12 @@ public class Utils {
         whitelistMap.put(str1, str2);
     }
 
+    /**
+     * This method colors the string with hex, only works on 1.16.x+
+     *
+     * @param message the message to be colored
+     * @return the colored string
+     */
     public String color(String message) {
         StringBuffer rgbBuilder = new StringBuffer();
         Matcher rgbMatcher = Pattern.compile("(&)?&#([0-9a-fA-F]{6})").matcher(message);
@@ -159,14 +188,29 @@ public class Utils {
         return rgbBuilder.toString();
     }
 
+    /**
+     * Gets the user cooldowns
+     *
+     * @return the cooldowns
+     */
     public ExpiringMap<UUID, UUID> getCooldowns() {
         return this.cooldowns;
     }
 
+    /**
+     * Adds user to the cooldown
+     *
+     * @param id the playerid
+     */
     public void addUser(UUID id) {
         cooldowns.put(id, id);
     }
 
+    /**
+     * Gets the local saved swears
+     *
+     * @return the swears list
+     */
     public List<String> getSwears() {
         return this.localSwears;
     }
@@ -175,12 +219,23 @@ public class Utils {
         this.localSwears = sortArray(str);
     }
 
+    /**
+     * Distinctly sorts an arraylist
+     *
+     * @param str the arraylist to be sorted
+     * @return the sorted list
+     */
     public List<String> sortArray(List<String> str) {
         return str.stream()
                 .distinct()
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Gets the local whitelist
+     *
+     * @return the whitelist
+     */
     public List<String> getWhitelist() {
         return this.localWhitelist;
     }
@@ -189,6 +244,11 @@ public class Utils {
         this.localWhitelist = sortArray(str);
     }
 
+    /**
+     * Gets the local global list
+     *
+     * @return the global
+     */
     public List<String> getGlobal() {
         return this.globalSwears;
     }
@@ -197,6 +257,11 @@ public class Utils {
         this.globalSwears = sortArray(str);
     }
 
+    /**
+     * Gets the local regex for swears
+     *
+     * @return the regex
+     */
     public List<String> getRegex() {
         return this.regex;
     }
@@ -205,6 +270,12 @@ public class Utils {
         this.regex = str;
     }
 
+    /**
+     * Checks to see if a feature is enabled
+     *
+     * @param string the feature to be checked
+     * @return boolean if the feature is supported
+     */
     public boolean supported(String string) {
         boolean statement = false;
         switch (string.toLowerCase()) {
@@ -229,6 +300,11 @@ public class Utils {
         return statement;
     }
 
+    /**
+     * Gets the current version according to spigot
+     *
+     * @return the version
+     */
     public Double getVersion() {
         String version;
         try {
@@ -240,6 +316,12 @@ public class Utils {
         return Double.parseDouble(version);
     }
 
+    /**
+     * Count rows in a mysql database
+     *
+     * @param table the table
+     * @return the size of the rows
+     */
     public int countRows(String table) {
         if (!sql.getBoolean("mysql.enabled"))
             return 0;
@@ -255,6 +337,11 @@ public class Utils {
         return i;
     }
 
+    /**
+     * Checks to see if the plugin needs an update,
+     *
+     * @return the boolean
+     */
     public boolean needsUpdate() {
         boolean isuptodate = true;
         try {
@@ -266,6 +353,11 @@ public class Utils {
         return !isuptodate;
     }
 
+    /**
+     * Filters the sign for a player, if the player is offline nothing happens
+     *
+     * @param ID the playerid
+     */
     public void signCheck(UUID ID) {
         Player player;
         try {
@@ -311,6 +403,11 @@ public class Utils {
         }
     }
 
+    /**
+     * Gets the MYSQL connection
+     *
+     * @return the connection
+     */
     public Connection getConnection() {
         return connection;
     }
@@ -319,10 +416,20 @@ public class Utils {
         return connector;
     }
 
+    /**
+     * Gets the providing plugin
+     *
+     * @return the provider
+     */
     public MCSF getProvider() {
         return plugin;
     }
 
+    /**
+     * Shows help to the user
+     *
+     * @param sender the sender
+     */
     public void showHelp(CommandSender sender) {
         StringBuilder message = new StringBuilder();
         int length = plugin.getLanguage().getStringList("variables.help").size();
@@ -349,6 +456,11 @@ public class Utils {
         send(sender, message.toString());
     }
 
+    /**
+     * Sets a table based on the correct information if the table is empty in mysql
+     *
+     * @param table the table
+     */
     @SneakyThrows
     public void setTable(String table) {
         if (!sql.getBoolean("mysql.enabled"))
@@ -461,6 +573,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Creates table based on the correct data, if reset is true the mysql tables are forcefully reset.
+     *
+     * @param reset the reset
+     * @throws SQLException the sql exception
+     */
     public void createTable(boolean reset) throws SQLException {
         if (sql.getBoolean("mysql.enabled")) {
             plugin.reloadConfig();
@@ -492,10 +610,20 @@ public class Utils {
         }
     }
 
+    /**
+     * Returns a random UUID
+     *
+     * @return the string
+     */
     String random() {
         return UUID.randomUUID().toString();
     }
 
+    /**
+     * Gets both the swears regex and the globalregex
+     *
+     * @return the both
+     */
     public List<String> getBoth() {
         List<String> array = new ArrayList<>();
         array.addAll(regex);
@@ -503,6 +631,16 @@ public class Utils {
         return array;
     }
 
+    /**
+     * Cleans string
+     *
+     * @param string the string to be cleared
+     * @param strip  if the string should be stripped of all chatcolor
+     * @param log    if this should count as a logged swear
+     * @param array  the array of regex strings to be checked for
+     * @param type   the type of filter this is
+     * @return the cleaned string
+     */
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty() || string == null)
             return string;
@@ -607,6 +745,11 @@ public class Utils {
         return string;
     }
 
+    /**
+     * Gets global regex.
+     *
+     * @return the global regex
+     */
     public List<String> getGlobalRegex() {
         return this.globalRegex;
     }
@@ -615,6 +758,13 @@ public class Utils {
         this.globalRegex = collect;
     }
 
+    /**
+     * Checks to see if the string is clean
+     *
+     * @param string the suspected string
+     * @param array  the array of strings to check for
+     * @return if the string is clean or not
+     */
     public boolean isclean(String string, List<String> array) {
         if (array.isEmpty())
             return true;
@@ -637,6 +787,12 @@ public class Utils {
         return !Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(string).find();
     }
 
+    /**
+     * Gets the current users in the database
+     *
+     * @param name if true, only names are returned. If false, only UUIDs are returned.
+     * @return the list of user's name or uuid
+     */
     public List<String> getUsers(boolean name) {
         List<String> users = new ArrayList<>();
         try {
@@ -655,10 +811,18 @@ public class Utils {
         return users;
     }
 
+    /**
+     * Gets user SQL connection
+     *
+     * @return the user connection
+     */
     public Connection getUserConnection() {
         return userConnection;
     }
 
+    /**
+     * Reloads the MYSQL Data
+     */
     public void reload() {
         if (supported("mysql")) {
             ArrayList<String> swears = new ArrayList<>();
@@ -724,6 +888,11 @@ public class Utils {
         reloadPattern();
     }
 
+    /**
+     * Debugs string, if settings.debug is false nothing is outputed to console but are still saved in /logs/debug.txt
+     *
+     * @param str the str
+     */
     public void debug(String str) {
         String message = prepare(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.debug").replaceAll("(?i)\\{message}|(?i)%message%", str));
         if (plugin.getConfig().getBoolean("settings.debug")) {
@@ -752,6 +921,9 @@ public class Utils {
         });
     }
 
+    /**
+     * Reload the current patterns for Global, Swears and whitelist.
+     */
     public void reloadPattern() {
         if (plugin.getConfig().getBoolean("custom_regex.enabled"))
             if (plugin.getConfig().getStringList("custom_regex.regex").size() != plugin.getLocal("custom_regex")) {
@@ -889,6 +1061,13 @@ public class Utils {
         this.localCustomRegex = localCustomRegex;
     }
 
+    /**
+     * Prepares string to be sent to the client
+     *
+     * @param sender  the sender
+     * @param message the message to be prepared
+     * @return the prepared string
+     */
     public String prepare(CommandSender sender, String message) {
         message = ChatColor.translateAlternateColorCodes('&', message.replaceAll("(?i)\\{prefix}|(?i)%prefix%", Objects.requireNonNull(plugin.getLanguage().getString("variables.prefix")))
                 .replaceAll("(?i)\\{command}|(?i)%command%", "mcsf")
@@ -903,6 +1082,12 @@ public class Utils {
         return supported("hex") ? color(message) : message;
     }
 
+    /**
+     * Send message to client
+     *
+     * @param sender  the sender
+     * @param message the message
+     */
     public void send(CommandSender sender, String message) {
         if (message.isEmpty())
             return;

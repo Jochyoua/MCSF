@@ -11,7 +11,6 @@ import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -182,21 +181,6 @@ public class MCSF extends JavaPlugin {
             }
             utils.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
         }, 1L);
-
-        if (Bukkit.getOnlinePlayers().size() != 0) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                User user = new User(utils, player.getUniqueId());
-                if (!user.exists()) {
-                    user.toggle();
-                }
-                user.playerName(player.getName());
-                if (!user.playerName().equalsIgnoreCase(player.getName())) {
-                    utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
-                } else {
-                    utils.debug("Successfully added " + player.getName() + "'s name to the config.");
-                }
-            }
-        }
     }
 
     public YamlConfiguration getFile(String fileName) {

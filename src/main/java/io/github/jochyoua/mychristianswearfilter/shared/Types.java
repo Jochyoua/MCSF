@@ -39,6 +39,10 @@ public class Types {
             this.permission = s;
         }
 
+        /**
+         * This grabs the permission for a command
+         * @return the permission needed for a command
+         */
         public String getPermission() {
             return permission;
         }
@@ -50,6 +54,11 @@ public class Types {
     public enum Languages {
         en_us(), de_de(), es_es(), fr_fr();
 
+        /**
+         * Returns the current language string,
+         * @param plugin the providing plugin
+         * @return the current language string
+         */
         public static String getLanguage(MCSF plugin) {
             String lan = plugin.getString("settings.language").replaceAll(".yml", "");
             try {
