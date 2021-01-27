@@ -358,7 +358,7 @@ public class Utils {
      *
      * @param ID the playerid
      */
-    public void signCheck(UUID ID) {
+    public synchronized void signCheck(UUID ID) {
         Player player;
         try {
             player = (Player) Bukkit.getOfflinePlayer(ID);

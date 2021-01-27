@@ -227,6 +227,20 @@ public class User {
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
+        if (utils.supported("mysql")) {
+            try (PreparedStatement ps = connection.prepareStatement("SELECT status FROM users WHERE uuid=?")) {
+                ps.setString(1, String.valueOf(id));
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    if (status != rs.getBoolean("status")) {
+                        status = rs.getBoolean("status");
+                        set(status);
+                    }
+                }
+                ps.close();
+            } catch (SQLException ignored) {
+            }
+        }
         return plugin.getConfig().getBoolean("settings.filtering.force") || status;
     }
 
