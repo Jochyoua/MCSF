@@ -9,9 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-/**
- * The type User.
- */
 public class User {
     UUID id;
     MCSF plugin;
@@ -39,7 +36,6 @@ public class User {
      * @return the status the filter was set to
      */
     public boolean toggle() {
-        plugin.reloadConfig();
         if (plugin.getConfig().getBoolean("settings.filtering.force"))
             return true;
         Boolean value = null;
@@ -60,9 +56,9 @@ public class User {
             if (!exists) {
                 value = plugin.getConfig().getBoolean("settings.filtering.default");
                 try {
-                    PreparedStatement ps = connection.prepareStatement("INSERT INTO users VALUES (?, ?, ?)");
+                    PreparedStatement ps = connection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
                     ps.setString(1, id.toString());
-                    ps.setString(2, "placestopholder");
+                    ps.setString(2, playerName());
                     ps.setBoolean(3, value);
                     ps.execute();
                     ps.close();
@@ -94,7 +90,6 @@ public class User {
                     throwables.printStackTrace();
                 }
             }
-            plugin.saveConfig();
         }
         if (!this.exists()) {
             value = plugin.getConfig().getBoolean("settings.filtering.default");
@@ -130,7 +125,7 @@ public class User {
                 ps.setBoolean(1, bool);
                 ps.setString(2, String.valueOf(id));
             } else {
-                ps = userConnection.prepareStatement("INSERT INTO users VALUES (?, ?, ?)");
+                ps = userConnection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
                 ps.setString(1, id.toString());
                 ps.setString(2, playerName());
                 ps.setBoolean(3, bool);
@@ -152,7 +147,7 @@ public class User {
         try {
             PreparedStatement ps;
             if (!exists()) {
-                ps = userConnection.prepareStatement("INSERT INTO users VALUES (?, ?, ?)");
+                ps = userConnection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
                 ps.setString(1, id.toString());
                 ps.setString(2, playername);
                 ps.setBoolean(3, bool);

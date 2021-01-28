@@ -26,6 +26,8 @@ public class MCSF extends JavaPlugin {
     HashMap<String, Integer> localSizes = new HashMap<>();
     private DatabaseConnector connector;
 
+
+
     @Override
     public void onEnable() {
         plugin = this;
@@ -35,7 +37,6 @@ public class MCSF extends JavaPlugin {
                         + "Resource: https://www.spigotmc.org/resources/54115/\n"
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n"
                         + "Wiki: https://github.com/Jochyoua/MCSF/wiki");
-        this.getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         FileConfiguration sql = getFile("sql");
         if (getConfig().isSet("mysql")) {
@@ -315,7 +316,6 @@ public class MCSF extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        saveConfig();
         utils.shutDown();
         Bukkit.getScheduler().cancelTasks(this);
     }

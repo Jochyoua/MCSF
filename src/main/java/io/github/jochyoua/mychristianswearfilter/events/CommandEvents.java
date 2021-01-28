@@ -163,7 +163,6 @@ public class CommandEvents {
                             sender.sendMessage("Reloading configuration data:");
                             try {
                                 plugin.reloadLanguage();
-                                plugin.reloadConfig();
                                 sender.sendMessage("Successfully reloaded configuration information!");
                             } catch (Exception e) {
                                 sender.sendMessage("Failed to reload configuration data: " + e.getMessage());
@@ -270,11 +269,11 @@ public class CommandEvents {
                             utils.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", utils.clean(message.toString(), false, false, state ? utils.getBoth() : utils.getGlobalRegex(), Types.Filters.DEBUG)));
                             break;
                         case "whitelist":
-                            if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-                                throw new CommandDisabledException(plugin.getLanguage());
-                            }
                             if (!sender.hasPermission("MCSF.modify")) {
                                 throw new NoPermissionException(plugin.getLanguage());
+                            }
+                            if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+                                throw new CommandDisabledException(plugin.getLanguage());
                             }
                             if (finalArgs.size() != 2) {
                                 throw new IllegalArgumentException(plugin.getLanguage());

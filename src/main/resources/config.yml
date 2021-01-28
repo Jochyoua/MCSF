@@ -1,88 +1,132 @@
 settings:
+  # What language would you like to be used?
+
+  # Acceptable languages are
+  # en_us (English), fr_fr (French), es_es (Spanish), de_de (German)
   language: en_us
-  #Acceptable languages: en_us, de_de, es_es, fr_fr
+
+  # Would you like extra information to be shown on console?
+  # Despite the value, all debug messages are saved in /data/debug.txt
   debug: false
-  # Use the above for messages that help debug and show some nice information
+
+  # Would you like some information on enable? It shows swear count, plugin/server version, etc
   console motd: true
-  # Use the above for receiving some info whenever the plugin is enabled
-  cooldown: 5
+
   # Cool down for all MCSF commands, ignored if the player has the Permission MCSF.bypass
   # Default value is 5, to disable set to 0 (Integer)
+  cooldown: 5
+
+  # Enable support for placeholderAPI values in the messages sent to player
+  # Only messages issued by players will contain placeholderAPI messages, console will receieve the raw placeholder message.
   enable placeholder api: true
-  # Enable support for placeholder API if installed!
+
+  # Would you like to be notified on plugin updates?
+  # "updating.update notification ingame" will notify users with the permission MCSF.update
   updating:
     check for updates: true
-    # Whether or not to check for updates
     update notification ingame: true
-    # Whether or not to notify admins about updates upon joining
+
   filtering:
+    # What should the player's default filtering status be?
+    # If this value is false, all newly generated players will have their filter disabled.
     default: false
-    # Should the filter be enabled whenever the player first joins?
+
+    # Would you like messages to be filtered twice?
+    # This will prevent users from bypassing the filter by doing this: shi **** t
+    double filtering: false
+
+    # Should the filter be on for every player no matter what?
+    force: false
+
+    # Should strings in /data/global.yml be used and filtered for all players?
     global blacklist:
       enabled: true
-    # Should messages in the "global" field be flagged & blocked?
+
+    # Should message containing flagged strings be saved to config?
     save messages:
       enabled: true
-    # Should messages that are flagged be saved to a file? > Only messages in the global field will be logged
-    force: false
-    # Should the player have the filter forcefully enabled?
-    log filter changes: true
     # Should filter changes be logged into console?
-    whitelist words: false
+    log filter changes: true
+
     # Enable the above if you plan on whitelisting words
-    replace word for word: false
+    whitelist words: false
+
     # Enable this if you plan on replacing words with another word, see replacements
+    replace word for word: false
+
+    # Enable this if you want to filter the reverse instance of a word: E.G kcuf (fuck) would be filtered
     filter reverse versions of swears: true
-    # Enable this if you want to filter the reverse sayinstiog of a word: E.G kcuf (fuck) would be filtered
-    replacement: "&c*&r"
+
     # Basic replacement, repeats for each letter in the blacklisted word so E.G fuck would be ****
+    replacement: "&c*&r"
+
+    # Do you want messages with special characters to be filtered?
+    # If this is disabled, the string f_u_c_k will not be filtered.
     ignore special characters:
       enabled: true
       characters to ignore: "!@#$%^&*()_+-"
+
+    # Punishments for being flagged by the filter
+    # Only player actions can flag this, such as chatting or writing in books or signs and having any word contain something that's filtered.
     punishments:
       punish players: false
-      # Should players be punished for swearing?
       punish check:
         books: true
         signs: true
         chat: true
-      # Where would swearing be punishable?
       flags:
         reset every interval at: 10
       commands:
-        '1': # How many swear flags should trigger these commands?
+        # '1': This is the amount of flags that is needed for a player to be punished with this command
+        #   commands: This is the command(s) that will be executed if a player were to be caught by this feature
+        #   execute_as: This is who will execute the command, if the value is CONSOLE, the CONSOLE will execute,
+        #   any other value will be treated as a player executing the command
+        '1':
           commands:
             - 'tell {PLAYER} Swearing isn''t allowed. Swear again and you will be kicked.'
-          execute_as: "CONSOLE" # Who should execute this command?
-        '2': # How many swear flags should trigger these commands?
+          execute_as: "CONSOLE"
+        '2':
           commands:
             - 'kick {PLAYER} Swearing isn''t allowed on this server!'
-          execute_as: "CONSOLE" # Who should execute this command?
+          execute_as: "CONSOLE"
+
+    # Filter checks
+    # bookcheck: this checks books for swears and filters them accordingly
+    # signcheck: this checks signs for swears and filters them, this is very experimental and laggy.
     filter checks:
       bookcheck: true
-      # Should books be checked and filtered for swears?
       signcheck: false
-      # Should signs be checked and filtered for swears? *Could cause lag*
+
+  # Do you want to only filter players?
+  # enabled: enables this feature
+  # log chat messages: logs the messages that are flagged by the filter
+  # remove message on swear: removes the message if the swear contains something filtered
   only filter players:
     enabled: false
-    # Should only players be filtered? This prevents private messages or any message from another plugin from being filtered
     log chat messages: true
-    # Should player messages be sent to console? Since the chat event is cancelled, console doesn't receive messages if this is disabled.
     remove message on swear: false
-    # Removes messages that contain swears, only works for players!
+
+  # This enables discordSRV functionality
+  # enabled: enables this feature
   discordSRV:
     enabled: false
-    # Should discordSRV be enabled? IF so, all messages from the minecraft server would be filtered before being sent to Discord.
+
+    # Should special characters be escaped?
+    # escape swears: Should special characters only be escaped for swears?
+    # escape entire message: Should special characters be escaped before sending the cleaned message to the Discord server? Can't be enabled in correlation with escape swears
     escape special chars:
       escape swears: true
-      # Should special characters only be escaped for swears?
       escape entire message: false
-      # Should special characters be escaped before sending the cleaned message to the Discord server? Can't be enabled in correlation with escape swears
+
+    # Should messages be contained in spoilers?
+    # enabled: enables this feature
+    # template: template for swear replacement, E.G ||{swear}|| would show up as ||fuck|| if the message contained the word fuck
     spoilers:
       enabled: false
-      # Should messages be contained in spoilers?
       template: "||{swear}||"
-      # Template for swear replacement, E.G ||{swear}|| would show up as ||fuck|| if the message contained the word fuck
+
+  # Command arguments manager
+  # Use this to disable certain commands from being executed by anyone.
   command args enabled:
     version: true
     add: true
@@ -93,12 +137,19 @@ settings:
     help: true
     toggle: true
     unset: true
+
+# Custom regex
+# By default this contains a filter for IP and Domain values, and will always be filtered.
 custom_regex:
   enabled: false
   regex:
     - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
     - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
   replacement: "&c<ADVERTISMENT>"
+
+# Custom replacement messages
+# all: default value, if no word is here the message will be replaced with *
+# fuck: default value, if fuck is a flagged word in a message, it will be replaced with "&cReally bad word!"
 replacements:
   all: "&c*&f"
   fuck: "&cReally bad word!"

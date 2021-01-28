@@ -7,7 +7,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
@@ -44,7 +43,7 @@ public class ProtocolLib implements Listener {
                                         return;
                                     }
                                     component.setJson(string);
-                                    chatComponents.write(0, component);
+                                    chatComponents.writeSafely(0, component);
                                 }
                             }
                         }

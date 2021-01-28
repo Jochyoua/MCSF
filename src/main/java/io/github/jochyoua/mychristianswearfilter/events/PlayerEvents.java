@@ -147,7 +147,7 @@ public class PlayerEvents implements Listener {
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.force")) {
                 if (!user.exists())
-                    new User(utils, player.getUniqueId()).toggle();
+                    user.create(player.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
                 if (utils.supported("mysql")) {
                     utils.setTable("users");
                     try (PreparedStatement ps = connection.prepareStatement("UPDATE users SET name=? WHERE uuid=?")) {
@@ -188,15 +188,21 @@ public class PlayerEvents implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             User user = new User(utils, e.getPlayer().getUniqueId());
             user.setFlags(0);
-            plugin.saveConfig();
         });
     }
 
+    @Deprecated
     @EventHandler
     public void openBook(PlayerInteractEvent e) {
         Player player = e.getPlayer();
         if (plugin.getConfig().getBoolean("settings.filtering.filter checks.bookcheck")) {
-            if (player.getItemInHand().getType() == Material.WRITTEN_BOOK && (e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) {
+            ItemStack hand;
+            try {
+                hand = player.getInventory().getItemInMainHand();
+            } catch (Exception ex) {
+                hand = player.getInventory().getItemInHand();
+            }
+            if (hand.getType() == Material.WRITTEN_BOOK && (e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) {
                 if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
                     BlockState bs = Objects.requireNonNull(e.getClickedBlock()).getState();
                     if (bs instanceof InventoryHolder) {

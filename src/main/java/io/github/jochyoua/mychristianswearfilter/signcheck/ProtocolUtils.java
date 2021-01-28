@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+
 import java.util.List;
 
 public class ProtocolUtils {
@@ -19,15 +20,13 @@ public class ProtocolUtils {
 
             public static boolean isUpdateSignPacket(PacketContainer packet) {
                 assert isTileEntityDataPacket(packet);
-                int actionId = (Integer) packet.getIntegers().read(0);
-                if (actionId != 9)
-                    return false;
-                return true;
+                int actionId = packet.getIntegers().read(0);
+                return actionId == 9;
             }
 
             public static BlockPosition getBlockPosition(PacketContainer packet) {
                 assert isTileEntityDataPacket(packet);
-                return (BlockPosition)packet.getBlockPositionModifier().read(0);
+                return packet.getBlockPositionModifier().read(0);
             }
 
             public static void setBlockPosition(PacketContainer packet, BlockPosition blockPosition) {
@@ -37,7 +36,7 @@ public class ProtocolUtils {
 
             public static NbtCompound getTileEntityData(PacketContainer packet) {
                 assert isTileEntityDataPacket(packet);
-                return (NbtCompound)packet.getNbtModifier().read(0);
+                return (NbtCompound) packet.getNbtModifier().read(0);
             }
 
             public static void setTileEntityData(PacketContainer packet, NbtCompound tileEntityData) {
@@ -50,14 +49,12 @@ public class ProtocolUtils {
             public static boolean isMapChunkPacket(PacketContainer packet) {
                 if (packet == null)
                     return false;
-                if (packet.getType() != PacketType.Play.Server.MAP_CHUNK)
-                    return false;
-                return true;
+                return packet.getType() == PacketType.Play.Server.MAP_CHUNK;
             }
 
             public static List<Object> getTileEntitiesData(PacketContainer packet) {
                 assert isMapChunkPacket(packet);
-                return (List<Object>)packet.getSpecificModifier(List.class).read(0);
+                return (List<Object>) packet.getSpecificModifier(List.class).read(0);
             }
 
             public static void setTileEntitiesData(PacketContainer packet, List<Object> tileEntitiesData) {

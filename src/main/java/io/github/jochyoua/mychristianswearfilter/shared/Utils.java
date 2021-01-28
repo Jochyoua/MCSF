@@ -498,7 +498,7 @@ public class Utils {
                         ps.close();
                     }
                     List<String> user_list = new ArrayList<>();
-                    StringBuilder query = new StringBuilder("INSERT INTO users(uuid, name, status) VALUES ");
+                    StringBuilder query = new StringBuilder("INSERT IGNORE INTO users(uuid, name, status) VALUES ");
                     PreparedStatement userData = userConnection.prepareStatement("SELECT * FROM users");
                     ResultSet rs = userData.executeQuery();
                     while (rs.next()) {
@@ -531,7 +531,7 @@ public class Utils {
                     }
                     List<String> s = plugin.getFile("data/swears").getStringList("swears");
                     s.removeAll(json);
-                    StringBuilder query = new StringBuilder("INSERT INTO swears(word) VALUES (?)");
+                    StringBuilder query = new StringBuilder("INSERT IGNORE INTO swears(word) VALUES (?)");
                     for (int i = 0; i < s.size() - 1; i++) {
                         query.append(", (?)");
                     }
@@ -581,7 +581,6 @@ public class Utils {
      */
     public void createTable(boolean reset) throws SQLException {
         if (sql.getBoolean("mysql.enabled")) {
-            plugin.reloadConfig();
             FileConfiguration local = plugin.getFile("data/swears");
             if (local.getStringList("swears").isEmpty()) {
                 local.set("swears", new String[]{"fuck", "shit"});
@@ -632,7 +631,9 @@ public class Utils {
     }
 
     /**
-     * Cleans string
+     * Filtering but filters twice if server operator wishes for it.
+     * <p>
+     * This function is essentially a forward for filter(String string, boolean strip, boolean log, List<String> array, Types.Filters type)
      *
      * @param string the string to be cleared
      * @param strip  if the string should be stripped of all chatcolor
@@ -642,6 +643,22 @@ public class Utils {
      * @return the cleaned string
      */
     public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
+        if (plugin.getConfig().getBoolean("settings.filtering.double filtering"))
+            return filter(filter(string, strip, false, array, type), strip, log, array, type);
+        return filter(string, strip, log, array, type);
+    }
+
+    /**
+     * Filters string
+     *
+     * @param string the string to be cleared
+     * @param strip  if the string should be stripped of all chatcolor
+     * @param log    if this should count as a logged swear
+     * @param array  the array of regex strings to be checked for
+     * @param type   the type of filter this is
+     * @return the cleaned string
+     */
+    public String filter(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
         if (array.isEmpty() || string == null)
             return string;
         List<String> custom = getCustomRegex();
