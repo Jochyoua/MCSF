@@ -56,7 +56,7 @@ public class User {
             if (!exists) {
                 value = plugin.getConfig().getBoolean("settings.filtering.default");
                 try {
-                    PreparedStatement ps = connection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
+                    PreparedStatement ps = connection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
                     ps.setString(1, id.toString());
                     ps.setString(2, playerName());
                     ps.setBoolean(3, value);
@@ -125,7 +125,7 @@ public class User {
                 ps.setBoolean(1, bool);
                 ps.setString(2, String.valueOf(id));
             } else {
-                ps = userConnection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
+                ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
                 ps.setString(1, id.toString());
                 ps.setString(2, playerName());
                 ps.setBoolean(3, bool);
@@ -147,7 +147,7 @@ public class User {
         try {
             PreparedStatement ps;
             if (!exists()) {
-                ps = userConnection.prepareStatement("INSERT IGNORE INTO users VALUES (?, ?, ?)");
+                ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
                 ps.setString(1, id.toString());
                 ps.setString(2, playername);
                 ps.setBoolean(3, bool);

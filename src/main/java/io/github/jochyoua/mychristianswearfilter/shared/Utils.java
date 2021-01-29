@@ -498,7 +498,7 @@ public class Utils {
                         ps.close();
                     }
                     List<String> user_list = new ArrayList<>();
-                    StringBuilder query = new StringBuilder("INSERT IGNORE INTO users(uuid, name, status) VALUES ");
+                    StringBuilder query = new StringBuilder("INSERT OR IGNORE INTO users(uuid, name, status) VALUES ");
                     PreparedStatement userData = userConnection.prepareStatement("SELECT * FROM users");
                     ResultSet rs = userData.executeQuery();
                     while (rs.next()) {
@@ -696,7 +696,7 @@ public class Utils {
             }
         }
         Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-        Matcher matcher = pattern.matcher(string);
+        Matcher matcher = pattern.matcher(ChatColor.stripColor(string));
         StringBuffer out = new StringBuffer();
         int swearcount = plugin.getConfig().getInt("swearcount");
         while (matcher.find()) {
