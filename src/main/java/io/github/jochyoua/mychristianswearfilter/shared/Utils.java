@@ -696,7 +696,7 @@ public class Utils {
             }
         }
         Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-        Matcher matcher = pattern.matcher(ChatColor.stripColor(string));
+        Matcher matcher = pattern.matcher(string);
         StringBuffer out = new StringBuffer();
         int swearcount = plugin.getConfig().getInt("swearcount");
         while (matcher.find()) {
