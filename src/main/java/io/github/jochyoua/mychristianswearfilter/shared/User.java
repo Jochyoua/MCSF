@@ -99,7 +99,6 @@ public class User {
             value = !value;
         }
         this.set(value);
-        utils.signCheck(id);
         return value;
     }
 

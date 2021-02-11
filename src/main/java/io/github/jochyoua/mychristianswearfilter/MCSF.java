@@ -27,7 +27,6 @@ public class MCSF extends JavaPlugin {
     private DatabaseConnector connector;
 
 
-
     @Override
     public void onEnable() {
         plugin = this;
@@ -38,6 +37,7 @@ public class MCSF extends JavaPlugin {
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n"
                         + "Wiki: https://github.com/Jochyoua/MCSF/wiki");
         saveDefaultConfig();
+        saveConfig();
         FileConfiguration sql = getFile("sql");
         if (getConfig().isSet("mysql")) {
             getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
@@ -151,8 +151,6 @@ public class MCSF extends JavaPlugin {
             new ProtocolLib(utils);
         if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
             new PunishmentEvents(utils);
-        if (getConfig().getBoolean("settings.filtering.filter checks.signcheck") && utils.supported("ProtocolLib"))
-            new SignEvents(utils);
         if (utils.supported("DiscordSRV"))
             new DiscordEvents(utils);
         final List<String> swears = plugin.getFile("data/swears").getStringList("swears");

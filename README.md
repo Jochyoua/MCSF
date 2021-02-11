@@ -11,9 +11,6 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 * **DiscordSRV support**: 
   * This allows you to filter discord messages along with server chat messages. 
   * Optionally you may surround blacklisted words with spoilers.
-* **Sign filtering**: 
-  * This will enable you to filter Sign text based on the user's view distance.
-  * Though this could become laggy if there are enough signs.
 * **Punishments**: 
   * This allows you to punish players if they swear by executing commands.
 * **Whitelists**: 
@@ -53,8 +50,8 @@ MCSF is a swear filter that enables your server to let users personally toggle t
   * This command views the status of a user's swear filter status
 * **/MCSF add/remove [word]** *(Permission:MCSF.modify)* 
   * Modifies the blacklist
-* **/MCSF unset [all/player/uuid]** *(Permission:MCSF.modify)* 
-  * Removes remove specific or all users from the config/database
+* **/MCSF unset [player/uuid]** *(Permission:MCSF.modify)* 
+  * Removes remove specific users from the database
 * **/MCSF whitelist [word]** *(Permission:MCSF.modify)* 
   * Adds/Removes word from the whitelist (Requires settings.whitelist to be true)
 * **/MCSF global [word]** *(Permission:MCSF.modify)* 

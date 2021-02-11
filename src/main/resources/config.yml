@@ -1,6 +1,5 @@
 settings:
   # What language would you like to be used?
-
   # Acceptable languages are
   # en_us (English), fr_fr (French), es_es (Spanish), de_de (German)
   language: en_us
@@ -67,12 +66,11 @@ settings:
       characters to ignore: "!@#$%^&*()_+-"
 
     # Punishments for being flagged by the filter
-    # Only player actions can flag this, such as chatting or writing in books or signs and having any word contain something that's filtered.
+    # Only player actions can flag this, such as chatting or writing in books and having any word contain something that's filtered.
     punishments:
       punish players: false
       punish check:
         books: true
-        signs: true
         chat: true
       flags:
         reset every interval at: 10
@@ -92,10 +90,8 @@ settings:
 
     # Filter checks
     # bookcheck: this checks books for swears and filters them accordingly
-    # signcheck: this checks signs for swears and filters them, this is very experimental and laggy.
     filter checks:
       bookcheck: true
-      signcheck: false
 
   # Do you want to only filter players?
   # enabled: enables this feature
@@ -143,8 +139,8 @@ settings:
 custom_regex:
   enabled: false
   regex:
-    - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
-    - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, SIGNS, ALL}'
+    - '\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b {TYPE=PLAYERS, BOOKS, ALL}'
+    - '\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b {TYPE=PLAYERS, BOOKS, ALL}'
   replacement: "&c<ADVERTISMENT>"
 
 # Custom replacement messages

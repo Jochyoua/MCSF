@@ -24,7 +24,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.plugin.Plugin;
 import xyz.upperlevel.spigot.book.BookUtil;
 
 import java.io.BufferedWriter;
@@ -35,7 +34,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -45,7 +43,6 @@ public class PlayerEvents implements Listener {
     Connector connector;
     Utils utils;
     Connection connection;
-
 
     public PlayerEvents(Utils utils) {
         this.plugin = utils.getProvider();
@@ -60,7 +57,7 @@ public class PlayerEvents implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void PlayerChatEvent(AsyncPlayerChatEvent e) {
         boolean use = plugin.getConfig().getBoolean("settings.only filter players.enabled");
         String old_message = e.getMessage();
@@ -108,19 +105,16 @@ public class PlayerEvents implements Listener {
                     e.setMessage(new_message);
                 }
             }
-            e.setCancelled(true);
-            utils.reloadPattern();
-            if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), utils.getBoth()) && e.getPlayer().hasPermission("MCSF.bypass"))
+            /*if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), utils.getBoth()) && e.getPlayer().hasPermission("MCSF.bypass"))
                 return;
             if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
-            }
+            }*/
             utils.reloadPattern();
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Player player : e.getRecipients()) {
                 if (new User(utils, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getSwears(), Types.Filters.PLAYERS)));
-                } else {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getBoth(), Types.Filters.PLAYERS)));
+                    e.getRecipients().remove(player); // Instead of cancelling this entire event, removing user recipient if they recieve an altered message.
                 }
             }
         }
@@ -131,9 +125,6 @@ public class PlayerEvents implements Listener {
         Player player = e.getPlayer();
         User user = new User(utils, player.getUniqueId());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            Plugin pl = Bukkit.getPluginManager().getPlugin("DiscordSRV");
-            if (pl != null && (plugin.getConfig().getBoolean("settings.discordSRV.enabled") && utils.supported("DiscordSRV")))
-                new AsyncPlayerChatEvent(true, player, "", Collections.singleton(player)).getHandlers().unregister(pl);
             if (user.exists()) {
                 user.playerName(player.getName());
             } else {
@@ -179,7 +170,6 @@ public class PlayerEvents implements Listener {
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
                 utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }
-            utils.signCheck(player.getUniqueId());
         });
     }
 
