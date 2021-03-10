@@ -606,9 +606,6 @@ public class Utils {
         if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
             String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
             for (String str : lstring.split(" ")) {
-                if (type.equals(Types.Filters.ALL)) {
-                    str = str.trim().replaceAll("[\"{}\\]]", "").replace(",text:", "");
-                }
                 if (getWhitelist().stream().distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
                     String r = getWhitelistMap().get(str);
                     if (r == null) {
@@ -1074,7 +1071,7 @@ public class Utils {
                         JSON_BUILDER.append(format);
                         format = null;
                     }
-                    JSON_BUILDER.append(String.format("text:\"%s\"", part));
+                    JSON_BUILDER.append(String.format("\"text\":\"%s\"", part));
                     JSON_BUILDER.append("}");
                 }
             }

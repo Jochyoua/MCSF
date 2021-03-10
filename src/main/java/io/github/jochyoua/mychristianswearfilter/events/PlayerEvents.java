@@ -34,7 +34,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -111,12 +113,14 @@ public class PlayerEvents implements Listener {
                 Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
             }*/
             utils.reloadPattern();
+            List<Player> remove = new ArrayList<>();
             for (Player player : e.getRecipients()) {
                 if (new User(utils, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
                     player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getBoth(), Types.Filters.PLAYERS)));
-                    e.getRecipients().remove(player); // Instead of cancelling this entire event, removing user recipient if they recieve an altered message.
+                    remove.add(player);
                 }
             }
+            e.getRecipients().removeAll(remove);
         }
     }
 

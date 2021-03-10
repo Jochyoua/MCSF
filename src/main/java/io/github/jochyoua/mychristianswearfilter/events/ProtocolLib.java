@@ -12,7 +12,6 @@ import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -39,15 +38,23 @@ public class ProtocolLib implements Listener {
                                 if (!component.getJson().isEmpty()) {
                                     String string;
                                     String message = BaseComponent.toLegacyText(ComponentSerializer.parse(component.getJson()));
-                                    if (new User(utils, ID).status() || utils.getProvider().getConfig().getBoolean("settings.filtering.force"))
-                                        string = utils.clean(message, false, true, utils.getBoth(), Types.Filters.ALL);
-                                    else
-                                        string = utils.clean(message, false, true, utils.getGlobalRegex(), Types.Filters.ALL);
-                                    if (string == null) {
-                                        return;
+                                    if (!(message.trim().length() <= 4)) {
+                                        utils.debug("Unclean message: " + message);
+                                        if (new User(utils, ID).status() || utils.getProvider().getConfig().getBoolean("settings.filtering.force"))
+                                            string = utils.clean(message, false, true, utils.getBoth(), Types.Filters.ALL);
+                                        else
+                                            string = utils.clean(message, false, true, utils.getGlobalRegex(), Types.Filters.ALL);
+                                        if (string == null || string.isEmpty()) {
+                                            return;
+                                        }
+                                        utils.debug("Clean message: " + string);
+                                        if (!string.trim().isEmpty()) {
+                                            String json = Utils.JSONUtil.toJSON(string);
+                                            utils.debug("Clean JSON: " + json);
+                                            component.setJson(json);
+                                            chatComponents.writeSafely(0, component);
+                                        }
                                     }
-                                    component.setJson(Utils.JSONUtil.toJSON(string));
-                                    chatComponents.writeSafely(0, component);
                                 }
                             }
                         }

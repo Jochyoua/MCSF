@@ -56,10 +56,11 @@ public class User {
             if (!exists) {
                 value = plugin.getConfig().getBoolean("settings.filtering.default");
                 try {
-                    PreparedStatement ps = connection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
+                    PreparedStatement ps = connection.prepareStatement("INSERT INTO users VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE status=?");
                     ps.setString(1, id.toString());
                     ps.setString(2, playerName());
                     ps.setBoolean(3, value);
+                    ps.setBoolean(4, value);
                     ps.execute();
                     ps.close();
                 } catch (SQLException throwables) {
