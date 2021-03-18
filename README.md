@@ -78,7 +78,8 @@ MCSF is a swear filter that enables your server to let users personally toggle t
   * Returns the amount of blacklisted words
 * **{wordcount}**:
   * Returns the amount of swear words in the config
-#PlacholderAPI placeholders:
+  
+###PlacholderAPI placeholders:
 * **%mcsf_player_name%**:
   * Returns the player's username according to MCSF (Returns player's username)
 * **%mcsf_player_flags%**:
@@ -107,11 +108,11 @@ Download this plugin into your server's plugin folder
 You can add custom regex for both global and normal filtering by adding them as normal swears.
 For a string to be recognised as regex, it must be valid for Java and have the prefix regex:
 These are two valid examples:
- # IP Addresses:
-* (Per Player) /mcsf add regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
-* (Globally) /mcsf global regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
-  * This will match IP Addresses.
- # Domains:
-* (Per Player) /mcsf add regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
-* (Globally) /mcsf global regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
-  * This will match IP Addresses.
+  ### IP Addresses:
+  * (Per Player) /mcsf add regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
+  * (Globally) /mcsf global regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
+    * This will match IP Addresses.
+ ### Domains:
+  * (Per Player) /mcsf add regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
+  * (Globally) /mcsf global regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
+    * This will match IP Addresses.
