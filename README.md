@@ -60,21 +60,40 @@ MCSF is a swear filter that enables your server to let users personally toggle t
   * Reloads the configuration files, and the database (can be dangerous)
 
 # PLACEHOLDERS:
+*These placeholders are only valid for plugin messages if applicable*
 
-* {prefix}: gets the prefix set in config
-* {command}: gets the current command (MCSF)
-* {player}: gets the user's name 
-* {message}: gets the failure/success value if applicable
-* {current}: gets the current version of the plugin
-* {version}: gets the latest plugin verison
-* {serverversion}: gets the version of the server
-* {swearcount}: gets the amount of times a word was blacklisted
-* {wordcount}: gets the amount of swear words in the config
-
+* **{prefix}**: 
+  * Returns the current prefix
+* **{player}**:
+  * Returns the user's name according to MCSF
+* **{message}**:
+  * Returns the failure/success value if applicable
+* **{current}**:
+  * Returns the current version of the plugin
+* **{version}**:
+  * Returns the latest plugin version according to SpigotMC
+* **{serverversion}**:
+  * Returns the current version of the server
+* **{swearcount}**:
+  * Returns the amount of blacklisted words
+* **{wordcount}**:
+  * Returns the amount of swear words in the config
+#PlacholderAPI placeholders:
+* **%mcsf_player_name%**:
+  * Returns the player's username according to MCSF (Returns player's username)
+* **%mcsf_player_flags%**:
+  * Returns the flags of the user (Returns integer as String)
+* **%mcsf_player_status%**:
+  * Returns the flags of the user (Returns "enabled" or "disabled")
+* **%mcsf_swearcount%**:
+  * Returns the amount of swears filtered (Returns integer as String)
+* **%mcsf_version%**:
+  * Returns the current version of this plugin (Returns double as String)
+    
 # NOTES:
 
     If you have this plugin on your server, please let me know so I can add it here.
-    This plugin is compiled with the latest Paper API and works with versions 1.8 - latest.
+    This plugin is compiled with the latest Spigot API and works with versions 1.8 - latest.
 
 # Installation instructions:
 
@@ -83,3 +102,16 @@ Download this plugin into your server's plugin folder
 **(OPTIONAL):** If you wish all messages to be filtered, you must install [ProtocolLib](https://www.spigotmc.org/resources/1997/) as-well!
 
 **(OPTIONAL):** If you plan on using [DiscordSRV](https://www.spigotmc.org/resources/18494/), you must first download the plugin and then add them to your server and then restart the server.
+
+# CUSTOM REGEX:
+You can add custom regex for both global and normal filtering by adding them as normal swears.
+For a string to be recognised as regex, it must be valid for Java and have the prefix regex:
+These are two valid examples:
+ # IP Addresses:
+* (Per Player) /mcsf add regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
+* (Globally) /mcsf global regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
+  * This will match IP Addresses.
+ # Domains:
+* (Per Player) /mcsf add regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
+* (Globally) /mcsf global regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
+  * This will match IP Addresses.
