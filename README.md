@@ -79,7 +79,7 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 * **{wordcount}**:
   * Returns the amount of swear words in the config
   
-###PlacholderAPI placeholders:
+### PlacholderAPI placeholders:
 * **%mcsf_player_name%**:
   * Returns the player's username according to MCSF (Returns player's username)
 * **%mcsf_player_flags%**:
@@ -115,4 +115,4 @@ These are two valid examples:
  ### Domains:
   * (Per Player) /mcsf add regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
   * (Globally) /mcsf global regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
-    * This will match IP Addresses.
+    * This will match domains.
