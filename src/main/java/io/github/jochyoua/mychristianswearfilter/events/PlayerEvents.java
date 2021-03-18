@@ -1,17 +1,15 @@
 package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.Connector;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.Connector;
+import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
-import io.github.jochyoua.mychristianswearfilter.shared.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.TrapDoor;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -26,36 +24,32 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import xyz.upperlevel.spigot.book.BookUtil;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
-import java.util.logging.Level;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PlayerEvents implements Listener {
     MCSF plugin;
     Connector connector;
-    Utils utils;
+    Manager manager;
     Connection connection;
 
-    public PlayerEvents(Utils utils) {
-        this.plugin = utils.getProvider();
-        this.connector = utils.getConnector();
-        if (plugin.getFile("sql").getBoolean("mysql.enabled"))
+    public PlayerEvents(Manager manager) {
+        this.plugin = manager.getProvider();
+        this.connector = manager.getConnector();
+        if (Manager.FileManager.getFile(plugin, "sql").getBoolean("mysql.enabled"))
             try {
                 this.connection = connector.getConnection();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-        this.utils = utils;
+        this.manager = manager;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
@@ -65,30 +59,7 @@ public class PlayerEvents implements Listener {
         String old_message = e.getMessage();
         String new_message = e.getMessage();
         // Message saving / global filtering
-        utils.setTable("global");
-        try {
-            if (!utils.isclean(old_message, plugin.getConfig().getBoolean("settings.filtering.save messages.only global messages", true) ? utils.getGlobalRegex() : utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.save messages.enabled")) {
-                File file = new File(plugin.getDataFolder(), "/logs/flags.txt");
-                File dir = new File(plugin.getDataFolder(), "logs");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-                BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
-                bw.append("[").append(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date())).append("] ").append(e.getPlayer().getName()).append(" ").append(ChatColor.stripColor(old_message)).append("\n");
-                bw.close();
-            }
-        } catch (Exception ex) {
-            FileConfiguration language = plugin.getLanguage();
-            plugin.getLogger().log(Level.SEVERE, "Failure: {message}"
-                    .replaceAll("(?i)\\{message}|(?i)%message%",
-                            Objects.requireNonNull(language.getString("variables.error.execute_failure"))
-                                    .replaceAll("(?i)\\{feature}", "Message saving")), e);
-            plugin.getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))));
-
-        }
+        manager.setTable("global");
         try {
             if (!use && !ProtocolLib.isEnabled())
                 use = true;
@@ -98,25 +69,20 @@ public class PlayerEvents implements Listener {
         }
         if (e.isCancelled())
             return;
-        if (use || !utils.supported("ProtocolLib")) {
-            if (!utils.getGlobal().isEmpty()) {
-                utils.reloadPattern();
+        if (use || !manager.supported("ProtocolLib")) {
+            if (!manager.getGlobal().isEmpty()) {
+                manager.reloadPattern();
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
-                    utils.reloadPattern();
-                    new_message = utils.clean(old_message, false, true, utils.getGlobalRegex(), Types.Filters.PLAYERS);
+                    manager.reloadPattern();
+                    new_message = manager.clean(old_message, false, true, manager.getGlobalRegex(), Types.Filters.PLAYERS);
                     e.setMessage(new_message);
                 }
             }
-            /*if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear") && !utils.isclean(e.getMessage(), utils.getBoth()) && e.getPlayer().hasPermission("MCSF.bypass"))
-                return;
-            if (plugin.getConfig().getBoolean("settings.only filter players.log chat messages")) {
-                Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), new_message));
-            }*/
-            utils.reloadPattern();
-            List<Player> remove = new ArrayList<>();
+            manager.reloadPattern();
+            Set<Player> remove = new HashSet<>();
             for (Player player : e.getRecipients()) {
-                if (new User(utils, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), utils.clean(new_message, false, true, utils.getBoth(), Types.Filters.PLAYERS)));
+                if (new User(manager, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), manager.clean(new_message, false, true, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.PLAYERS)));
                     remove.add(player);
                 }
             }
@@ -127,7 +93,7 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void Join(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-        User user = new User(utils, player.getUniqueId());
+        User user = new User(manager, player.getUniqueId());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (user.exists()) {
                 user.playerName(player.getName());
@@ -136,15 +102,15 @@ public class PlayerEvents implements Listener {
                     user.create(player.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
             }
             if (!user.playerName().equalsIgnoreCase(player.getName())) {
-                utils.debug("There was an issue saving " + player.getName() + "'s name to the config.");
+                manager.debug("There was an issue saving " + player.getName() + "'s name to the config.");
             } else {
-                utils.debug("Successfully added " + player.getName() + "'s name to the config.");
+                manager.debug("Successfully added " + player.getName() + "'s name to the config.");
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.force")) {
                 if (!user.exists())
                     user.create(player.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
-                if (utils.supported("mysql")) {
-                    utils.setTable("users");
+                if (manager.supported("mysql")) {
+                    manager.setTable("users");
                     try (PreparedStatement ps = connection.prepareStatement("UPDATE users SET name=? WHERE uuid=?")) {
                         ps.setString(1, player.getName());
                         ps.setString(2, String.valueOf(player.getUniqueId()));
@@ -167,12 +133,12 @@ public class PlayerEvents implements Listener {
                     }
                     user.set(result);
                 }
-                utils.debug("Player " + player.getName() + "'s swear filter is " + (new User(utils, player.getUniqueId()).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
+                manager.debug("Player " + player.getName() + "'s swear filter is " + (new User(manager, player.getUniqueId()).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
             }
 
-            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && utils.needsUpdate()) {
-                utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
-                utils.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
+            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && Manager.needsUpdate(plugin.getDescription().getVersion())) {
+                manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
+                manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }
         });
     }
@@ -180,7 +146,7 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            User user = new User(utils, e.getPlayer().getUniqueId());
+            User user = new User(manager, e.getPlayer().getUniqueId());
             user.setFlags(0);
         });
     }
@@ -216,13 +182,13 @@ public class PlayerEvents implements Listener {
                 if (newmeta == null || meta == null) {
                     return;
                 }
-                utils.reloadPattern();
+                manager.reloadPattern();
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
-                    if (new User(utils, player.getUniqueId()).status())
-                        newmeta.addPage(utils.isclean(page, utils.getBoth()) ? page : utils.clean(page, true, false, utils.getBoth(), Types.Filters.BOOKS));
+                    if (new User(manager, player.getUniqueId()).status())
+                        newmeta.addPage(manager.isclean(page, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) ? page : manager.clean(page, true, false, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.BOOKS));
                     else
-                        newmeta.addPage(utils.isclean(page, utils.getGlobalRegex()) ? page : utils.clean(page, true, false, utils.getGlobalRegex(), Types.Filters.BOOKS));
+                        newmeta.addPage(manager.isclean(page, manager.getGlobalRegex()) ? page : manager.clean(page, true, false, manager.getGlobalRegex(), Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());
@@ -231,8 +197,6 @@ public class PlayerEvents implements Listener {
                 BookUtil.openPlayer(player, newbook);
                 player.getInventory().setItem(slot, old);
             }
-
-
         }
     }
 }

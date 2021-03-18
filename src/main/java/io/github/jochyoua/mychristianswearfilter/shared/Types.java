@@ -40,6 +40,7 @@ public class Types {
 
         /**
          * This grabs the permission for a command
+         *
          * @return the permission needed for a command
          */
         public String getPermission() {
@@ -55,14 +56,15 @@ public class Types {
 
         /**
          * Returns the current language string,
+         *
          * @param plugin the providing plugin
          * @return the current language string
          */
         public static String getLanguage(MCSF plugin) {
-            String lan = plugin.getString("settings.language").replaceAll(".yml", "");
+            String lan = plugin.getConfig().getString("settings.language").replaceAll(".yml", "");
             try {
                 Languages.valueOf(lan);
-            } catch (Exception ignored) {
+            } catch (IllegalArgumentException | NullPointerException exception) {
                 plugin.getLogger().warning("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
                 plugin.getConfig().set("settings.language", "en_us");
                 plugin.saveConfig();

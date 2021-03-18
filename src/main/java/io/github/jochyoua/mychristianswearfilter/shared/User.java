@@ -1,7 +1,7 @@
 package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,20 +14,20 @@ public class User {
     MCSF plugin;
     Connection connection;
     Connection userConnection;
-    Utils utils;
+    Manager manager;
 
     /**
      * Instantiates a new User.
      *
-     * @param utils the utility file
-     * @param id    the player's unique id
+     * @param manager the utility file
+     * @param id      the player's unique id
      */
-    public User(Utils utils, UUID id) {
+    public User(Manager manager, UUID id) {
         this.id = id;
-        this.plugin = utils.getProvider();
-        this.utils = utils;
-        this.connection = utils.getConnection();
-        this.userConnection = utils.getUserConnection();
+        this.plugin = manager.getProvider();
+        this.manager = manager;
+        this.connection = manager.getConnection();
+        this.userConnection = manager.getUserConnection();
     }
 
     /**
@@ -39,8 +39,8 @@ public class User {
         if (plugin.getConfig().getBoolean("settings.filtering.force"))
             return true;
         Boolean value = null;
-        if (utils.supported("mysql")) {
-            utils.setTable("users");
+        if (manager.supported("mysql")) {
+            manager.setTable("users");
             boolean exists = false;
             try {
                 PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.exists);
@@ -222,7 +222,7 @@ public class User {
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
-        if (utils.supported("mysql")) {
+        if (manager.supported("mysql")) {
             try (PreparedStatement ps = connection.prepareStatement("SELECT status FROM users WHERE uuid=?")) {
                 ps.setString(1, String.valueOf(id));
                 ResultSet rs = ps.executeQuery();
@@ -266,7 +266,7 @@ public class User {
      * @return the flags
      */
     public int getFlags() {
-        return utils.userFlags.getOrDefault(id, 0);
+        return manager.userFlags.getOrDefault(id, 0);
     }
 
     /**
@@ -276,9 +276,9 @@ public class User {
      */
     public void setFlags(int i) {
         if (i == 0) {
-            utils.userFlags.remove(id);
+            manager.userFlags.remove(id);
             return;
         }
-        utils.userFlags.put(id, i);
+        manager.userFlags.put(id, i);
     }
 }

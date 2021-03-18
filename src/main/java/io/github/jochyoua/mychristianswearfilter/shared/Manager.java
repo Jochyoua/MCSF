@@ -1,10 +1,11 @@
 package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.DatabaseConnector;
-import io.github.jochyoua.mychristianswearfilter.shared.HikariCP.HikariCP;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
+import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -12,9 +13,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -32,8 +35,9 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Utils {
+public class Manager {
     public Map<UUID, Integer> userFlags = new HashMap<>();
     MCSF plugin;
     DatabaseConnector connector;
@@ -48,8 +52,6 @@ public class Utils {
 
     List<String> globalSwears = new ArrayList<>();
 
-    List<String> localCustomRegex = new ArrayList<>();
-
 
     FileConfiguration sql;
 
@@ -62,15 +64,15 @@ public class Utils {
     Map<String, String> whitelistMap = new HashMap<>();
 
     /**
-     * Instantiates a new Utility class
+     * Instantiates a new Manager class
      *
      * @param plugin    the providing plugin
      * @param connector the mysql connector
      */
-    public Utils(MCSF plugin, DatabaseConnector connector) {
+    public Manager(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
-        sql = plugin.getFile("sql");
+        sql = Manager.FileManager.getFile(plugin, "sql");
         reloadUserData();
         if (sql.getBoolean("mysql.enabled"))
             try {
@@ -81,11 +83,11 @@ public class Utils {
         cooldowns = ExpiringMap.builder()
                 .expiration(plugin.getConfig().getInt("settings.cooldown", 5), TimeUnit.SECONDS)
                 .build();
-        for (String str : plugin.getFile("data/whitelist").getStringList("whitelist")) {
+        for (String str : Manager.FileManager.getFile(plugin, "data/whitelist").getStringList("whitelist")) {
             String r;
             if (!getWhitelistMap().containsKey(str)) {
                 r = random();
-                while (!isclean(r, getBoth())) {
+                while (!isclean(r, Stream.of(getRegex(), getGlobalRegex()).collect(Collectors.toList()).get(0))) {
                     debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
                     r = random();
                 }
@@ -97,6 +99,84 @@ public class Utils {
             }
         }
 
+    }
+
+    /**
+     * Gets the current version according to spigot
+     *
+     * @return the version
+     */
+    public static Double getVersion(String version) {
+        try {
+            version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
+        } catch (ParseException | IOException ignored) {
+        }
+
+        return Double.parseDouble(version);
+    }
+
+    /**
+     * Checks to see if the plugin needs an update,
+     *
+     * @return the boolean
+     */
+    public static boolean needsUpdate(String version) {
+        return (Double.parseDouble(version) < getVersion(version));
+    }
+
+    /**
+     * This method colors the string with hex, only works on 1.16.x+
+     *
+     * @param message the message to be colored
+     * @return the colored string
+     */
+    public static String color(String message) {
+        StringBuffer rgbBuilder = new StringBuffer();
+        Matcher rgbMatcher = Pattern.compile("(&)?&#([0-9a-fA-F]{6})").matcher(message);
+        while (rgbMatcher.find()) {
+            boolean isEscaped = (rgbMatcher.group(1) != null);
+            if (!isEscaped) {
+                try {
+                    String hexCode = rgbMatcher.group(2);
+                    if (hexCode.startsWith("#")) {
+                        hexCode = hexCode.substring(1);
+                    }
+                    Color.decode("#" + hexCode);
+                    StringBuilder assembledColorCode = new StringBuilder();
+                    assembledColorCode.append("\u00a7x");
+                    for (char curChar : hexCode.toCharArray()) {
+                        assembledColorCode.append("\u00a7").append(curChar);
+                    }
+                    rgbMatcher.appendReplacement(rgbBuilder, assembledColorCode.toString());
+                    continue;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            rgbMatcher.appendReplacement(rgbBuilder, "&#$2");
+        }
+        rgbMatcher.appendTail(rgbBuilder);
+        return rgbBuilder.toString();
+    }
+
+    /**
+     * Distinctly sorts an arraylist
+     *
+     * @param str the arraylist to be sorted
+     * @return the sorted list
+     */
+    public static List<String> sortArray(List<String> str) {
+        return str.stream()
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a random UUID
+     *
+     * @return the string
+     */
+    public static String random() {
+        return UUID.randomUUID().toString();
     }
 
     /**
@@ -139,40 +219,6 @@ public class Utils {
     }
 
     /**
-     * This method colors the string with hex, only works on 1.16.x+
-     *
-     * @param message the message to be colored
-     * @return the colored string
-     */
-    public String color(String message) {
-        StringBuffer rgbBuilder = new StringBuffer();
-        Matcher rgbMatcher = Pattern.compile("(&)?&#([0-9a-fA-F]{6})").matcher(message);
-        while (rgbMatcher.find()) {
-            boolean isEscaped = (rgbMatcher.group(1) != null);
-            if (!isEscaped) {
-                try {
-                    String hexCode = rgbMatcher.group(2);
-                    if (hexCode.startsWith("#")) {
-                        hexCode = hexCode.substring(1);
-                    }
-                    Color.decode("#" + hexCode);
-                    StringBuilder assembledColorCode = new StringBuilder();
-                    assembledColorCode.append("\u00a7x");
-                    for (char curChar : hexCode.toCharArray()) {
-                        assembledColorCode.append("\u00a7").append(curChar);
-                    }
-                    rgbMatcher.appendReplacement(rgbBuilder, assembledColorCode.toString());
-                    continue;
-                } catch (NumberFormatException ignored) {
-                }
-            }
-            rgbMatcher.appendReplacement(rgbBuilder, "&#$2");
-        }
-        rgbMatcher.appendTail(rgbBuilder);
-        return rgbBuilder.toString();
-    }
-
-    /**
      * Gets the user cooldowns
      *
      * @return the cooldowns
@@ -201,18 +247,6 @@ public class Utils {
 
     public void setSwears(List<String> str) {
         this.localSwears = sortArray(str);
-    }
-
-    /**
-     * Distinctly sorts an arraylist
-     *
-     * @param str the arraylist to be sorted
-     * @return the sorted list
-     */
-    public List<String> sortArray(List<String> str) {
-        return str.stream()
-                .distinct()
-                .collect(Collectors.toList());
     }
 
     /**
@@ -285,22 +319,6 @@ public class Utils {
     }
 
     /**
-     * Gets the current version according to spigot
-     *
-     * @return the version
-     */
-    public Double getVersion() {
-        String version;
-        try {
-            version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
-        } catch (Exception ignored) {
-            version = plugin.getDescription().getVersion();
-        }
-
-        return Double.parseDouble(version);
-    }
-
-    /**
      * Count rows in a mysql database
      *
      * @param table the table
@@ -319,22 +337,6 @@ public class Utils {
         } catch (Exception ignored) {
         }
         return i;
-    }
-
-    /**
-     * Checks to see if the plugin needs an update,
-     *
-     * @return the boolean
-     */
-    public boolean needsUpdate() {
-        boolean isuptodate = true;
-        try {
-            isuptodate = !(Double.parseDouble(plugin.getDescription().getVersion()) < this.getVersion());
-        } catch (NumberFormatException e) {
-            send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.failure")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.error.updatecheck"))));
-            e.printStackTrace();
-        }
-        return !isuptodate;
     }
 
     /**
@@ -395,114 +397,117 @@ public class Utils {
      *
      * @param table the table
      */
-    @SneakyThrows
     public void setTable(String table) {
         if (!sql.getBoolean("mysql.enabled"))
             return;
-        switch (table) {
-            case "global":
-                if (countRows("global") == 0) {
-                    try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.create)) {
+        try {
+            switch (table) {
+                case "global":
+                    if (countRows("global") == 0) {
+                        try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.create)) {
+                            ps.execute();
+                            ps.close();
+                        }
+                        FileConfiguration local = Manager.FileManager.getFile(plugin, "data/global");
+                        List<String> s = local.getStringList("global");
+                        if (s.isEmpty()) {
+                            debug("Cannot set global data because it is empty!");
+                            break;
+                        }
+                        StringBuilder query = new StringBuilder("INSERT INTO global(word) VALUES (?)");
+                        for (int i = 0; i < s.size() - 1; i++) {
+                            query.append(", (?)");
+                        }
+                        PreparedStatement ps = connection.prepareStatement(query.toString());
+                        for (int i = 0; i < s.size(); i++) {
+                            ps.setString(i + 1, s.get(i));
+                        }
                         ps.execute();
                         ps.close();
                     }
-                    FileConfiguration local = plugin.getFile("data/global");
-                    List<String> s = local.getStringList("global");
-                    if (s.isEmpty()) {
-                        debug("Cannot set global data because it is empty!");
-                        break;
-                    }
-                    StringBuilder query = new StringBuilder("INSERT INTO global(word) VALUES (?)");
-                    for (int i = 0; i < s.size() - 1; i++) {
-                        query.append(", (?)");
-                    }
-                    PreparedStatement ps = connection.prepareStatement(query.toString());
-                    for (int i = 0; i < s.size(); i++) {
-                        ps.setString(i + 1, s.get(i));
-                    }
-                    ps.execute();
-                    ps.close();
-                }
-                break;
-            case "users":
-                if (countRows("users") == 0) {
-                    debug("(MySQL) attempting to insert user data");
-                    try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
+                    break;
+                case "users":
+                    if (countRows("users") == 0) {
+                        debug("(MySQL) attempting to insert user data");
+                        try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
+                            ps.execute();
+                            ps.close();
+                        }
+                        List<String> user_list = new ArrayList<>();
+                        StringBuilder query = new StringBuilder("INSERT IGNORE INTO users(uuid, name, status) VALUES ");
+                        PreparedStatement userData = userConnection.prepareStatement("SELECT * FROM users");
+                        ResultSet rs = userData.executeQuery();
+                        while (rs.next()) {
+                            UUID ID = UUID.fromString(rs.getString("uuid"));
+                            String name = rs.getString("name");
+                            boolean status = rs.getBoolean("status");
+                            user_list.add(ID.toString());
+                            user_list.add(name);
+                            user_list.add(String.valueOf(status));
+                            query.append("(?,?,?), ");
+                        }
+                        if (user_list.isEmpty()) {
+                            debug("Cannot set user data because it is empty!");
+                            break;
+                        }
+                        PreparedStatement ps = connection.prepareStatement(query.toString().trim().substring(0, query.toString().trim().length() - 1));
+                        for (int i = 0; i < user_list.size(); i++) {
+                            ps.setString(i + 1, user_list.get(i));
+                        }
                         ps.execute();
                         ps.close();
                     }
-                    List<String> user_list = new ArrayList<>();
-                    StringBuilder query = new StringBuilder("INSERT IGNORE INTO users(uuid, name, status) VALUES ");
-                    PreparedStatement userData = userConnection.prepareStatement("SELECT * FROM users");
-                    ResultSet rs = userData.executeQuery();
-                    while (rs.next()) {
-                        UUID ID = UUID.fromString(rs.getString("uuid"));
-                        String name = rs.getString("name");
-                        boolean status = rs.getBoolean("status");
-                        user_list.add(ID.toString());
-                        user_list.add(name);
-                        user_list.add(String.valueOf(status));
-                        query.append("(?,?,?), ");
-                    }
-                    if (user_list.isEmpty()) {
-                        debug("Cannot set user data because it is empty!");
-                        break;
-                    }
-                    PreparedStatement ps = connection.prepareStatement(query.toString().trim().substring(0, query.toString().trim().length() - 1));
-                    for (int i = 0; i < user_list.size(); i++) {
-                        ps.setString(i + 1, user_list.get(i));
-                    }
-                    ps.execute();
-                    ps.close();
-                }
-                break;
-            case "swears":
-                if (countRows("swears") == 0) {
-                    debug("(MySQL) attempting to insert swear data");
-                    try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
+                    break;
+                case "swears":
+                    if (countRows("swears") == 0) {
+                        debug("(MySQL) attempting to insert swear data");
+                        try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
+                            ps.execute();
+                            ps.close();
+                        }
+                        List<String> s = Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears");
+                        StringBuilder query = new StringBuilder("INSERT IGNORE INTO swears(word) VALUES (?)");
+                        for (int i = 0; i < s.size() - 1; i++) {
+                            query.append(", (?)");
+                        }
+                        PreparedStatement ps = connection.prepareStatement(query.toString());
+                        for (int i = 0; i < s.size(); i++) {
+                            ps.setString(i + 1, s.get(i));
+                        }
                         ps.execute();
                         ps.close();
                     }
-                    List<String> s = plugin.getFile("data/swears").getStringList("swears");
-                    StringBuilder query = new StringBuilder("INSERT IGNORE INTO swears(word) VALUES (?)");
-                    for (int i = 0; i < s.size() - 1; i++) {
-                        query.append(", (?)");
-                    }
-                    PreparedStatement ps = connection.prepareStatement(query.toString());
-                    for (int i = 0; i < s.size(); i++) {
-                        ps.setString(i + 1, s.get(i));
-                    }
-                    ps.execute();
-                    ps.close();
-                }
-                break;
-            case "whitelist":
-                if (countRows("whitelist") == 0) {
-                    debug("(MySQL) attempting to insert whitelist data");
-                    try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
-                        ps.execute();
-                        ps.close();
-                    }
-                    FileConfiguration local = plugin.getFile("data/whitelist");
-                    List<String> s = local.getStringList("whitelist");
+                    break;
+                case "whitelist":
+                    if (countRows("whitelist") == 0) {
+                        debug("(MySQL) attempting to insert whitelist data");
+                        try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
+                            ps.execute();
+                            ps.close();
+                        }
+                        FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
+                        List<String> s = local.getStringList("whitelist");
 
-                    local = plugin.getFile("data/swears");
-                    s.removeAll(local.getStringList("swears"));
-                    StringBuilder query = new StringBuilder("INSERT INTO whitelist(word) VALUES (?)");
-                    for (int i = 0; i < s.size() - 1; i++) {
-                        query.append(", (?)");
+                        local = Manager.FileManager.getFile(plugin, "data/swears");
+                        s.removeAll(local.getStringList("swears"));
+                        StringBuilder query = new StringBuilder("INSERT INTO whitelist(word) VALUES (?)");
+                        for (int i = 0; i < s.size() - 1; i++) {
+                            query.append(", (?)");
+                        }
+                        PreparedStatement ps = connection.prepareStatement(query.toString());
+                        for (int i = 0; i < s.size(); i++) {
+                            ps.setString(i + 1, s.get(i));
+                        }
+                        ps.execute();
+                        ps.close();
                     }
-                    PreparedStatement ps = connection.prepareStatement(query.toString());
-                    for (int i = 0; i < s.size(); i++) {
-                        ps.setString(i + 1, s.get(i));
-                    }
-                    ps.execute();
-                    ps.close();
-                }
-                break;
-            default:
-                debug("No correct database was selected.");
-                break;
+                    break;
+                default:
+                    debug("No correct database was selected.");
+                    break;
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 
@@ -514,10 +519,10 @@ public class Utils {
      */
     public void createTable(boolean reset) throws SQLException {
         if (sql.getBoolean("mysql.enabled")) {
-            FileConfiguration local = plugin.getFile("data/swears");
+            FileConfiguration local = Manager.FileManager.getFile(plugin, "data/swears");
             if (local.getStringList("swears").isEmpty()) {
                 local.set("swears", new String[]{"fuck", "shit"});
-                plugin.saveFile(local, "data/swears");
+                Manager.FileManager.saveFile(plugin, local, "data/swears");
             }
             if (plugin.reloadSQL()) {
                 connector.execute("SET NAMES utf8");
@@ -543,25 +548,10 @@ public class Utils {
     }
 
     /**
-     * Returns a random UUID
-     *
-     * @return the string
-     */
-    String random() {
-        return UUID.randomUUID().toString();
-    }
-
-    /**
      * Gets both the swears regex and the globalregex
      *
      * @return the both
      */
-    public List<String> getBoth() {
-        List<String> array = new ArrayList<>();
-        array.addAll(regex);
-        array.addAll(globalRegex);
-        return array;
-    }
 
     /**
      * Filtering but filters twice if server operator wishes for it.
@@ -595,17 +585,11 @@ public class Utils {
         if (array.isEmpty() || string == null) {
             return string;
         }
-        List<String> custom = getCustomRegex();
-        if (custom != null && plugin.getConfig().getBoolean("custom_regex.enabled")) {
-            if (!custom.isEmpty()) {
-                Pattern pattern = Pattern.compile(String.join("|", custom), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
-                string = pattern.matcher(string).replaceAll(ChatColor.translateAlternateColorCodes('&', plugin.getString("custom_regex.replacement", "&c<ADVERTISEMENT>")));
-            }
-        }
-        String replacement = plugin.getString("settings.filtering.replacement");
+        String replacement = plugin.getConfig().getString("settings.filtering.replacement");
         if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
             String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
             for (String str : lstring.split(" ")) {
+                str = str.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
                 if (getWhitelist().stream().distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
                     String r = getWhitelistMap().get(str);
                     if (r == null) {
@@ -628,8 +612,8 @@ public class Utils {
                     String[] arr = matcher.toMatchResult().toString().split("=");
                     String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
                     if (plugin.getConfig().getBoolean("settings.replace word for word")) {
-                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getString("replacements." + str) :
-                                (plugin.getConfig().isSet("replacements.all") ? plugin.getString("replacements.all") : plugin.getString("settings.filtering.replacement")));
+                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
+                                (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
                     }
                 } catch (Exception e) {
                     debug("Could not register replace_word_for_words: " + e.getMessage());
@@ -647,7 +631,7 @@ public class Utils {
                                 .replaceAll("~", "\\~")
                                 .replaceAll("`", "\\\\`");
                     }
-                    r = Objects.requireNonNull(plugin.getString("settings.discordSRV.spoilers.template", "||{swear}||"));
+                    r = Objects.requireNonNull(plugin.getConfig().getString("settings.discordSRV.spoilers.template", "||{swear}||"));
                     r = r.replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).trim().replaceAll("\\*", "\\\\*")
                             .replaceAll("_", "\\_")
                             .replaceAll("\\|", "\\\\|")
@@ -800,19 +784,18 @@ public class Utils {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            FileConfiguration local = plugin.getFile("data/swears");
+            FileConfiguration local = Manager.FileManager.getFile(plugin, "data/swears");
             local.set("swears", swears);
-            plugin.saveFile(local, "data/swears");
+            Manager.FileManager.saveFile(plugin, local, "data/swears");
             setSwears(swears);
-
-            local = plugin.getFile("data/whitelist");
+            local = Manager.FileManager.getFile(plugin, "data/whitelist");
             local.set("whitelist", whitelist);
-            plugin.saveFile(local, "data/whitelist");
+            Manager.FileManager.saveFile(plugin, local, "data/whitelist");
             setWhitelist(whitelist);
 
-            local = plugin.getFile("data/global");
+            local = Manager.FileManager.getFile(plugin, "data/global");
             local.set("global", global);
-            plugin.saveFile(local, "data/global");
+            Manager.FileManager.saveFile(plugin, local, "data/global");
             setGlobal(global);
         }
         reloadPattern();
@@ -855,20 +838,8 @@ public class Utils {
      * Reload the current patterns for Global, Swears and whitelist.
      */
     public void reloadPattern() {
-        if (plugin.getConfig().getBoolean("custom_regex.enabled"))
-            if (plugin.getConfig().getStringList("custom_regex.regex").size() != plugin.getLocal("custom_regex")) {
-                localCustomRegex.clear();
-                debug("Custom Regex doesn't equal local parameters, filling variables.");
-                for (String str : plugin.getConfig().getStringList("custom_regex.regex")) {
-                    str = str.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                    if (!localCustomRegex.contains(str))
-                        localCustomRegex.add(str);
-                }
-                plugin.setLocal("custom_regex", plugin.getConfig().getStringList("custom_regex.regex").size());
-                setCustomRegex(localCustomRegex);
-            }
-        FileConfiguration local = plugin.getFile("data/whitelist");
-        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.whitelist words")) {
+        FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
+        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
             setWhitelist(local.getStringList("whitelist"));
             if (local.getStringList("whitelist").isEmpty()) {
@@ -878,7 +849,7 @@ public class Utils {
             }
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
         }
-        local = plugin.getFile("data/global");
+        local = Manager.FileManager.getFile(plugin, "data/global");
         if ((local.getStringList("global").size() != plugin.getLocal("global")) || getGlobalRegex().isEmpty()) {
             debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("global");
@@ -888,15 +859,15 @@ public class Utils {
             setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
             local.set("global", s);
-            plugin.saveFile(local, "data/global");
+            Manager.FileManager.saveFile(plugin, local, "data/global");
             plugin.setLocal("global", s.size());
         }
-        local = plugin.getFile("data/swears");
+        local = Manager.FileManager.getFile(plugin, "data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || getRegex().isEmpty()) {
             debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("swears");
             local.set("swears", s);
-            plugin.saveFile(local, "data/swears");
+            Manager.FileManager.saveFile(plugin, local, "data/swears");
             setSwears(s);
             if (s.isEmpty()) {
                 send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure")
@@ -914,6 +885,10 @@ public class Utils {
     public List<String> generateRegex(List<String> s) {
         List<String> duh = new ArrayList<>();
         for (String str : s) {
+            if (str.startsWith("regex:")) {
+                duh.add(str.replaceAll("regex:", ""));
+                continue;
+            }
             if (!plugin.getConfig().getBoolean("settings.filtering.ignore special characters.enabled")) {
                 str = str.replaceAll("\\s+", "");
                 StringBuilder omg = new StringBuilder();
@@ -931,7 +906,7 @@ public class Utils {
                 }
             } else {
                 StringBuilder omg = new StringBuilder();
-                String quote = Pattern.quote(plugin.getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
+                String quote = Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
                 int length = str.length();
                 for (String str2 : str.split("")) {
                     length = length - 1;
@@ -972,14 +947,6 @@ public class Utils {
         return duh;
     }
 
-    private List<String> getCustomRegex() {
-        return this.localCustomRegex;
-    }
-
-    private void setCustomRegex(List<String> localCustomRegex) {
-        this.localCustomRegex = localCustomRegex;
-    }
-
     /**
      * Prepares string to be sent to the client
      *
@@ -992,10 +959,10 @@ public class Utils {
                 .replaceAll("(?i)\\{command}|(?i)%command%", "mcsf")
                 .replaceAll("(?i)\\{player}|(?i)%player%", sender.getName())
                 .replaceAll("(?i)\\{current}|(?i)%current%", plugin.getDescription().getVersion())
-                .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion()))
+                .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion(plugin.getDescription().getVersion())))
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
-                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(plugin.getFile("data/swears").getStringList("swears").size())));
+                .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears").size())));
         if (supported("PlaceholderAPI") && sender instanceof Player)
             message = PlaceholderAPI.setPlaceholders((Player) sender, message);
         return supported("hex") ? color(message) : message;
@@ -1101,6 +1068,43 @@ public class Utils {
             if (cc == null)
                 return null;
             return STYLE.append("\"color\":\"").append(cc.name().toLowerCase()).append("\",").toString();
+        }
+    }
+
+    public static class FileManager {
+        public static YamlConfiguration getLanguage(MCSF plugin) {
+            String language = Types.Languages.getLanguage(plugin);
+            Settings settings = new Settings();
+            settings.setSetting("reportMissingOptions", false);
+            ConfigAPI lang = new ConfigAPI("locales/" + language + ".yml", settings, plugin);
+            lang.copyDefConfigIfNeeded();
+            YamlConfiguration conf = lang.getLiveConfiguration();
+            Map<String, Object> missingOptions = lang.getMissingOptions(conf, lang.getDefaultConfiguration());
+            if (!missingOptions.isEmpty()) {
+                for (Map.Entry<String, Object> missing : missingOptions.entrySet()) {
+                    conf.set(missing.getKey(), missing.getValue());
+                }
+            }
+            return conf;
+        }
+
+        public static YamlConfiguration getFile(MCSF plugin, String fileName) {
+            ConfigAPI config;
+            Settings settings = new Settings();
+            settings.setSetting("reportMissingOptions", false);
+            config = new ConfigAPI(fileName + ".yml", settings, plugin);
+            config.copyDefConfigIfNeeded();
+            return config.getLiveConfiguration();
+        }
+
+        public static void saveFile(MCSF plugin, FileConfiguration file, String fileName) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    file.save(new File(plugin.getDataFolder(), fileName + ".yml"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 }

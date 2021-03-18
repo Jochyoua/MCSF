@@ -1,4 +1,4 @@
-package io.github.jochyoua.mychristianswearfilter.shared.HikariCP;
+package io.github.jochyoua.mychristianswearfilter.shared.hikaricp;
 
 import java.sql.SQLException;
 

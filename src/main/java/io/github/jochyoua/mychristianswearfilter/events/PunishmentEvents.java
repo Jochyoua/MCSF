@@ -2,7 +2,7 @@ package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
-import io.github.jochyoua.mychristianswearfilter.shared.Utils;
+import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,14 +11,17 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class PunishmentEvents implements Listener {
     MCSF plugin;
-    Utils utils;
+    Manager manager;
 
 
-    public PunishmentEvents(Utils utils) {
-        this.plugin = utils.getProvider();
-        this.utils = utils;
+    public PunishmentEvents(Manager manager) {
+        this.plugin = manager.getProvider();
+        this.manager = manager;
         if (!plugin.getConfig().getBoolean("settings.filtering.punishments.punish players")) {
             return;
         }
@@ -27,14 +30,14 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getLines()), utils.getBoth()) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
             return;
         }
         punishPlayers(event.getPlayer());
     }
 
     public void punishPlayers(Player player) {
-        User user = new User(utils, player.getUniqueId());
+        User user = new User(manager, player.getUniqueId());
         int flags = user.getFlags();
         if (flags != 0)
             flags = flags + 1;
@@ -45,21 +48,21 @@ public class PunishmentEvents implements Listener {
             try {
                 if (Integer.parseInt(str) == flags || Integer.parseInt(str) == 0) {
                     String path = "settings.filtering.punishments.commands." + str;
-                    String executor = plugin.getString(path + ".executor", "CONSOLE");
+                    String executor = plugin.getConfig().getString(path + ".executor", "CONSOLE");
                     for (String command : plugin.getConfig().getStringList(path + ".commands")) {
-                        command = utils.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(flags));
+                        command = manager.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(flags));
                         String finalCommand = command;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             if (executor.equalsIgnoreCase("CONSOLE")) {
-                                utils.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
+                                manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
                             } else {
-                                utils.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
+                                manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
                             }
                         });
                     }
                 }
             } catch (NumberFormatException e) {
-                utils.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", "Failed to parse integer (" + str + ") under path (settings.filtering.punishments.commands." + str + ")"));
+                manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", "Failed to parse integer (" + str + ") under path (settings.filtering.punishments.commands." + str + ")"));
                 e.printStackTrace();
             }
             if (plugin.getConfig().getInt("settings.filtering.punishments.flags.reset every interval at") != 0) {
@@ -74,14 +77,14 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !utils.isclean(message, utils.getBoth()) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
+        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || utils.isclean(String.join("", event.getNewBookMeta().getPages()), utils.getBoth()) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
             return;
         }
         punishPlayers(event.getPlayer());
