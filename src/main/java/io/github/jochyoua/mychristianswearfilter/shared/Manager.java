@@ -72,7 +72,7 @@ public class Manager {
         this.connector = connector;
         sql = Manager.FileManager.getFile(plugin, "sql");
         reloadUserData();
-        if (sql.getBoolean("mysql.enabled"))
+        if (plugin.getHikariCP().isEnabled())
             try {
                 this.connection = connector.getConnection();
             } catch (SQLException throwables) {
@@ -165,6 +165,11 @@ public class Manager {
      * Reloads the user sql database
      */
     public void reloadUserData() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         String url = "jdbc:sqlite:" + plugin.getDataFolder() + File.separator + "data/users.db";
         if (userConnection == null) {
             try {
@@ -296,7 +301,7 @@ public class Manager {
                 statement = plugin.getServer().getPluginManager().getPlugin("ProtocolLib") != null;
                 break;
             case "mysql":
-                statement = sql.getBoolean("mysql.enabled");
+                statement = plugin.getHikariCP().isEnabled();
                 break;
             case "placeholderapi":
                 statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
@@ -311,7 +316,7 @@ public class Manager {
      * @return the size of the rows
      */
     public int countRows(String table) {
-        if (!sql.getBoolean("mysql.enabled"))
+        if (!plugin.getHikariCP().isEnabled())
             return 0;
         int i = 0;
         try {
@@ -384,7 +389,7 @@ public class Manager {
      * @param table the table
      */
     public void setTable(String table) {
-        if (!sql.getBoolean("mysql.enabled"))
+        if (!plugin.getHikariCP().isEnabled())
             return;
         try {
             switch (table) {
@@ -500,7 +505,7 @@ public class Manager {
      * @throws SQLException the sql exception
      */
     public void createTable(boolean reset) throws SQLException {
-        if (sql.getBoolean("mysql.enabled")) {
+        if (plugin.getHikariCP().isEnabled()) {
             FileConfiguration local = Manager.FileManager.getFile(plugin, "data/swears");
             if (local.getStringList("swears").isEmpty()) {
                 local.set("swears", new String[]{"fuck", "shit"});

@@ -2,13 +2,18 @@ package io.github.jochyoua.mychristianswearfilter;
 
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
-import io.github.jochyoua.mychristianswearfilter.events.*;
+import io.github.jochyoua.mychristianswearfilter.events.CommandEvents;
+import io.github.jochyoua.mychristianswearfilter.events.PlayerEvents;
+import io.github.jochyoua.mychristianswearfilter.events.PunishmentEvents;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
+import io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV;
 import io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI;
+import io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib;
+import lombok.Getter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -22,15 +27,23 @@ import java.util.logging.Level;
 
 public class MCSF extends JavaPlugin {
     private final HashMap<String, Integer> localSizes = new HashMap<>();
-    public HikariCP hikariCP = null;
-    private MCSF plugin;
-    private Manager manager;
+    @Getter
+    private HikariCP hikariCP = null;
     private DatabaseConnector connector;
+    @Getter
     private YamlConfiguration language;
+    @Getter
+    private Manager manager;
+    @Getter
+    private io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib ProtocolLib;
+    @Getter
+    private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
+    @Getter
+    private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
 
     @Override
     public void onEnable() {
-        plugin = this;
+        // Sets the default configuration with header
         getConfig().options().header(
                 "MCSF (My Christian Swear Filter) v" + getDescription().getVersion() + " by Jochyoua\n"
                         + "This is a toggleable swear filter for your players\n"
@@ -38,13 +51,15 @@ public class MCSF extends JavaPlugin {
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n"
                         + "Wiki: https://github.com/Jochyoua/MCSF/wiki");
         saveDefaultConfig();
-        saveConfig();
 
+        // Retrieves the currently set language
         language = Manager.FileManager.getLanguage(this);
 
+        // Relocates old pre-existing data to the appropriate locations
         Manager.FileManager.relocateData(this);
 
-        FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
+        // Loads MySQL data if mysql is enabled
+        FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (sql.getBoolean("mysql.enabled")) {
             boolean load = false;
             if (connector == null)
@@ -63,17 +78,15 @@ public class MCSF extends JavaPlugin {
         }
         manager = new Manager(this, connector);
 
-        if (sql.getBoolean("mysql.enabled"))
+        // Sets the correct data for tables
+        if (getHikariCP().isEnabled())
             try {
                 manager.createTable(false);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-        if (getConfig().isSet("replacements.all")) {
-            if (Objects.requireNonNull(getConfig().getString("replacements.all")).equalsIgnoreCase("&c*&f") && !Objects.requireNonNull(getConfig().getString("settings.filtering.replacement")).equalsIgnoreCase("&c*&f")) {
-                getConfig().set("replacements.all", getConfig().getString("settings.filtering.replacement"));
-            }
-        }
+
+        // Relocates old pre-existing user data to the appropriate locations
         if (getConfig().isSet("users")) {
             getLogger().info("(CONFIG) Converting path `users` into `data/users.db`");
             for (String ID : getConfig().getConfigurationSection("users").getKeys(false)) {
@@ -95,15 +108,35 @@ public class MCSF extends JavaPlugin {
                 lang.copyDefConfigIfNeeded();
             }
         }
+
+        // Retrieves data from MySQL and sets it accordingly
         manager.reload();
+
+        // Loads the MCSF commands with aliases
         new CommandEvents(manager);
+
+        // Loads all the player related events
         new PlayerEvents(manager);
-        if (manager.supported("ProtocolLib"))
-            new ProtocolLib(manager);
+
+        // Punishes players if their messages, created signs or books contain swears
         if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
             new PunishmentEvents(manager);
-        if (manager.supported("DiscordSRV"))
-            new DiscordEvents(manager);
+
+        // Loading plugin hooks
+        if (manager.supported("ProtocolLib")) {
+            this.ProtocolLib = new ProtocolLib(this);
+            this.ProtocolLib.register();
+        }
+        if (manager.supported("PlaceholderAPI")) {
+            this.PlaceholderAPI = new PlaceholderAPI(this);
+            this.PlaceholderAPI.register();
+        }
+        if (manager.supported("DiscordSRV")) {
+            this.DiscordSRV = new DiscordSRV(this);
+            this.DiscordSRV.register();
+        }
+
+        // Debugs and checks to make sure that strings are correctly being filtered
         final List<String> swears = Manager.FileManager.getFile(this, "data/swears").getStringList("swears");
         if (!swears.isEmpty()) {
             final String test = swears.get((new Random()).nextInt(swears.size()));
@@ -112,19 +145,16 @@ public class MCSF extends JavaPlugin {
         } else {
             manager.debug("Uh-oh! Swears seems to be empty.");
         }
-        if (getConfig().getBoolean("settings.console motd")) {
-            manager.send(Bukkit.getConsoleSender(), String.join("\n", getLanguage().getStringList("variables.console motd")));
-        }
-        if (getConfig().getBoolean("settings.enable placeholder api")) {
-            new PlaceholderAPI(this).register();
-        }
+
+        // Basic metrics data, includes currently set language
         final Metrics metrics = new Metrics(this, 4345);
         metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
 
+        // Verifies this is the latest version of MCSF
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
-                if (Manager.needsUpdate(plugin.getDescription().getVersion())) {
+                if (Manager.needsUpdate(getDescription().getVersion())) {
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));
                 } else {
@@ -137,7 +167,10 @@ public class MCSF extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Closes pre-existing mysql and sqlite connections
         manager.shutDown();
+
+        // Terminates all pre-existing tasks that are still running
         Bukkit.getScheduler().cancelTasks(this);
     }
 
@@ -151,19 +184,7 @@ public class MCSF extends JavaPlugin {
         return localSizes.getOrDefault(value, 0);
     }
 
-    public YamlConfiguration getLanguage() {
-        return language;
-    }
-
     public void reloadLanguage() {
         language = Manager.FileManager.getLanguage(this);
-    }
-
-    public Manager getManager() {
-        return manager;
-    }
-
-    public HikariCP getHikariCP() {
-        return this.hikariCP;
     }
 }

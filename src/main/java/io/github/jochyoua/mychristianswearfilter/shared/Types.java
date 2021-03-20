@@ -35,6 +35,7 @@ public class Types {
         toggle("MCSF.toggle"),
         unset("MCSF.modify"),
         global("MCSF.modify");
+
         String permission;
 
         Arguments(String s) {

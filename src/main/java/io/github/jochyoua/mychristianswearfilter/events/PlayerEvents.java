@@ -5,6 +5,7 @@ import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.Connector;
+import io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
@@ -41,7 +42,7 @@ public class PlayerEvents implements Listener {
     public PlayerEvents(Manager manager) {
         this.plugin = manager.getProvider();
         this.connector = manager.getConnector();
-        if (Manager.FileManager.getFile(plugin, "sql").getBoolean("mysql.enabled"))
+        if (plugin.getHikariCP().isEnabled())
             try {
                 this.connection = connector.getConnection();
             } catch (SQLException throwables) {
@@ -59,7 +60,7 @@ public class PlayerEvents implements Listener {
         // Message saving / global filtering
         manager.setTable("global");
         try {
-            if (!use && !ProtocolLib.isEnabled())
+            if (!use && !plugin.getProtocolLib().isEnabled())
                 use = true;
         } catch (NoClassDefFoundError ignored) {
             use = true;

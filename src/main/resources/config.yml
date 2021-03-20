@@ -140,4 +140,7 @@ settings:
 replacements:
   all: "&c*&f"
   fuck: "&cReally bad word!"
+
+# This is the amount of times swears have been blocked on your server, they are only counted
+# if we know a player swore and are not counted when someone opens a book.
 swearcount: 0

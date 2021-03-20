@@ -1,28 +1,34 @@
-package io.github.jochyoua.mychristianswearfilter.events;
+package io.github.jochyoua.mychristianswearfilter.shared.hooks;
 
-import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.api.Subscribe;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
-public class DiscordEvents implements Listener {
-    private final Manager manager;
+public class DiscordSRV {
+    private final MCSF plugin;
+    private Manager manager;
+    @Getter
+    @Setter
+    private boolean enabled = true;
 
-    public DiscordEvents(Manager manager) {
-        this.manager = manager;
-        if (manager.getProvider().getConfig().getBoolean("settings.discordSRV.enabled") && manager.supported("DiscordSRV")) {
+    public DiscordSRV(MCSF plugin) {
+        this.plugin = plugin;
+    }
+
+    public void register() {
+        manager = plugin.getManager();
+        if (manager.supported("DiscordSRV")) {
             try {
                 manager.debug("Registered DiscordSRV hook successfully!");
-                Plugin pl = Bukkit.getPluginManager().getPlugin("DiscordSRV");
-                if (pl != null) {
-                    DiscordSRV.api.subscribe(this);
-                    manager.debug("DiscordSRV is installed, attempting to filter chat");
-                }
+                github.scarsz.discordsrv.DiscordSRV.api.subscribe(this);
             } catch (Exception e) {
                 String message = e.getMessage();
+                setEnabled(false);
                 manager.debug("Registered DiscordSRV hook unsuccessfully: " + message);
             }
         }

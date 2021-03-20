@@ -12,9 +12,6 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 
-import java.util.List;
-import java.util.stream.Stream;
-
 public class PunishmentEvents implements Listener {
     MCSF plugin;
     Manager manager;
@@ -78,16 +75,14 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat"))
-        {
+        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books"))
-        {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
             return;
         }
         punishPlayers(event.getPlayer());

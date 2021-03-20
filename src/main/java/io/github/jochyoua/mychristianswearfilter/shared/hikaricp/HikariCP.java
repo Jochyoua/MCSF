@@ -2,31 +2,32 @@ package io.github.jochyoua.mychristianswearfilter.shared.hikaricp;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import javax.xml.crypto.Data;
 import java.sql.SQLException;
+import java.util.Objects;
+import java.util.logging.Level;
 
 public class HikariCP {
-    private boolean successful = false;
-    private MCSF plugin;
+    @Getter
+    @Setter
+    private boolean enabled = false;
+    private final MCSF plugin;
     private DatabaseConnector connector;
 
-    public boolean isEnabled(){
-        return this.successful;
-    }
-    public void setEnabled(boolean bool){
-        this.successful = bool;
-    }
-
-    public DatabaseConnector getConnector(){
+    public DatabaseConnector getConnector() {
         return this.connector;
     }
+
     public HikariCP(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
         reload();
     }
+
     public void reload() {
         FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
         if (sql.getBoolean("mysql.enabled")) {
@@ -68,8 +69,11 @@ public class HikariCP {
                 plugin.getLogger().info("(MYSQL) The connection has been established!");
                 setEnabled(true);
             }
+        } else {
+            setEnabled(false);
         }
     }
+
 
     public enum Query {
         SWEARS("swears", "CREATE TABLE IF NOT EXISTS {table} (" +

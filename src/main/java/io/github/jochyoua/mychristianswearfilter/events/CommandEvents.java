@@ -142,17 +142,13 @@ public class CommandEvents {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
                             sender.sendMessage("Reload succeeded!");
-                            if (manager.supported("mysql")) {
+                            if (plugin.getHikariCP().isEnabled()) {
                                 sender.sendMessage("Reloading databases:");
-                                try {
-                                    plugin.getHikariCP().reload();
-                                    if (plugin.getHikariCP().isEnabled())
-                                        throw new Exception("Database was reloaded incorrectly");
-                                    sender.sendMessage("Successfully reloaded database information!");
-                                } catch (Exception e) {
-                                    sender.sendMessage("Failed to reload database: " + e.getMessage());
-                                    e.printStackTrace();
+                                plugin.getHikariCP().reload();
+                                if (!plugin.getHikariCP().isEnabled()) {
+                                    throw new FailureException(plugin.getLanguage(), "Database was reloaded unsuccessfully");
                                 }
+                                sender.sendMessage("Successfully reloaded database information!");
                             }
                             sender.sendMessage("Resetting Swears, Global swears and whitelist:");
                             try {

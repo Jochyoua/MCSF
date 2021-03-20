@@ -1,4 +1,4 @@
-package io.github.jochyoua.mychristianswearfilter.events;
+package io.github.jochyoua.mychristianswearfilter.shared.hooks;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -7,9 +7,12 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
+import lombok.Getter;
+import lombok.Setter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -21,13 +24,21 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 public class ProtocolLib implements Listener {
-    static boolean value = true;
+    private final MCSF plugin;
+    @Getter
+    @Setter
+    private boolean enabled = true;
 
-    public ProtocolLib(Manager manager) {
-        if (!manager.getProvider().getConfig().getBoolean("settings.only filter players.enabled")) {
-            ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(manager.getProvider(), PacketType.Play.Server.CHAT) {
-                @Override
-                public void onPacketSending(PacketEvent event) {
+    public ProtocolLib(MCSF plugin) {
+        this.plugin = plugin;
+    }
+
+    public void register() {
+        Manager manager = plugin.getManager();
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.CHAT) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                if (plugin.getConfig().getBoolean("settings.only filter players.enabled")) {
                     try {
                         Player player = event.getPlayer();
                         UUID ID = player.getUniqueId();
@@ -55,28 +66,18 @@ public class ProtocolLib implements Listener {
                                 }
                             }
                         }
-                        if (!isEnabled())
-                            setEnabled(true);
                     } catch (Exception e) {
                         FileConfiguration language = manager.getProvider().getLanguage();
                         manager.getProvider().getLogger().log(Level.SEVERE, "Failure: {message}"
                                 .replaceAll("(?i)\\{message}|(?i)%message%",
                                         language.getString("variables.error.execute_failure")
                                                 .replaceAll("(?i)\\{feature}", "Chat Filtering (FULL CHAT)")), e);
-                        manager.getProvider().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
                         setEnabled(false);
+                        manager.getProvider().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }
                 }
-            });
-        }
-    }
-
-    public static boolean isEnabled() {
-        return value;
-    }
-
-    private static void setEnabled(boolean val) {
-        value = val;
+            }
+        });
     }
 }
