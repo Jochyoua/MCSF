@@ -1,10 +1,10 @@
 package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.Connector;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.Connector;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
@@ -31,8 +31,6 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PlayerEvents implements Listener {
     MCSF plugin;
@@ -71,18 +69,15 @@ public class PlayerEvents implements Listener {
             return;
         if (use || !manager.supported("ProtocolLib")) {
             if (!manager.getGlobal().isEmpty()) {
-                manager.reloadPattern();
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
-                    manager.reloadPattern();
-                    new_message = manager.clean(old_message, false, true, manager.getGlobalRegex(), Types.Filters.PLAYERS);
+                    new_message = manager.clean(old_message, false, true, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.PLAYERS);
                     e.setMessage(new_message);
                 }
             }
-            manager.reloadPattern();
             Set<Player> remove = new HashSet<>();
             for (Player player : e.getRecipients()) {
                 if (new User(manager, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), manager.clean(new_message, false, true, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.PLAYERS)));
+                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), manager.clean(new_message, false, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.PLAYERS)));
                     remove.add(player);
                 }
             }
@@ -182,13 +177,12 @@ public class PlayerEvents implements Listener {
                 if (newmeta == null || meta == null) {
                     return;
                 }
-                manager.reloadPattern();
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
                     if (new User(manager, player.getUniqueId()).status())
-                        newmeta.addPage(manager.isclean(page, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) ? page : manager.clean(page, true, false, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.BOOKS));
+                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Types.Filters.BOTH)) ? page : manager.clean(page, true, false, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.BOOKS));
                     else
-                        newmeta.addPage(manager.isclean(page, manager.getGlobalRegex()) ? page : manager.clean(page, true, false, manager.getGlobalRegex(), Types.Filters.BOOKS));
+                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Types.Filters.GLOBAL)) ? page : manager.clean(page, true, false, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

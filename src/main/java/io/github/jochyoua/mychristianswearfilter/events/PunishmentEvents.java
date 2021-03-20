@@ -1,8 +1,9 @@
 package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
+import io.github.jochyoua.mychristianswearfilter.shared.User;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,7 +12,7 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 
-import java.util.stream.Collectors;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class PunishmentEvents implements Listener {
@@ -30,7 +31,7 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
             return;
         }
         punishPlayers(event.getPlayer());
@@ -77,14 +78,16 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
+        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat"))
+        {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books"))
+        {
             return;
         }
         punishPlayers(event.getPlayer());

@@ -1,8 +1,6 @@
 package io.github.jochyoua.mychristianswearfilter.events;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
-import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
-import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
@@ -10,6 +8,8 @@ import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabl
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.IllegalArgumentException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
+import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -144,7 +145,8 @@ public class CommandEvents {
                             if (manager.supported("mysql")) {
                                 sender.sendMessage("Reloading databases:");
                                 try {
-                                    if (!plugin.reloadSQL())
+                                    plugin.getHikariCP().reload();
+                                    if (plugin.getHikariCP().isEnabled())
                                         throw new Exception("Database was reloaded incorrectly");
                                     sender.sendMessage("Successfully reloaded database information!");
                                 } catch (Exception e) {
@@ -154,7 +156,7 @@ public class CommandEvents {
                             }
                             sender.sendMessage("Resetting Swears, Global swears and whitelist:");
                             try {
-                                manager.reloadPattern();
+                                manager.reloadPattern(Types.Filters.OTHER);
                                 sender.sendMessage("Successfully reloaded swear, global swears and whitelist information!");
                             } catch (Exception e) {
                                 sender.sendMessage("Failed to reload: " + e.getMessage());
@@ -178,11 +180,19 @@ public class CommandEvents {
                                 throw new IllegalArgumentException(plugin.getLanguage());
                             }
                             String glo = finalArgs.get(1).toLowerCase();
+                            if (glo.startsWith("regex:")) {
+                                try {
+                                    Pattern.compile(glo.replaceAll("regex:", ""));
+                                } catch (Exception e) {
+                                    manager.send(sender, new FailureException(plugin.getLanguage(), "The provided regex is invalid.").getMessage());
+                                    break;
+                                }
+                            }
                             FileConfiguration local = Manager.FileManager.getFile(plugin, "data/global");
                             List<String> global = local.getStringList("global");
                             if (manager.supported("mysql")) {
                                 if (!connector.isWorking())
-                                    plugin.reloadSQL();
+                                    plugin.getHikariCP().reload();
                                 boolean sqlexists = false;
                                 try {
 
@@ -265,8 +275,7 @@ public class CommandEvents {
                                 String arg = args.get(i) + " ";
                                 message.append(arg);
                             }
-                            manager.reloadPattern();
-                            manager.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0) : manager.getGlobalRegex(), Types.Filters.DEBUG)));
+                            manager.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
                             break;
                         case "whitelist":
                             if (!sender.hasPermission("MCSF.modify")) {
@@ -283,7 +292,7 @@ public class CommandEvents {
                             List<String> whitelist = local.getStringList("whitelist");
                             if (manager.supported("mysql")) {
                                 if (!connector.isWorking())
-                                    plugin.reloadSQL();
+                                    plugin.getHikariCP().reload();
                                 boolean sqlexists = false;
                                 try {
 
@@ -570,7 +579,6 @@ public class CommandEvents {
                             if (sender.hasPermission("MCSF.modify")) {
                                 if (finalArgs.size() != 2) {
                                     throw new IllegalArgumentException(plugin.getLanguage());
-
                                 }
                                 if (manager.supported("mysql")) {
                                     manager.setTable("swears");
@@ -578,16 +586,23 @@ public class CommandEvents {
                                     manager.setTable("global");
                                 }
                                 String word = finalArgs.get(1).toLowerCase();
+                                if (word.startsWith("regex:")) {
+                                    try {
+                                        Pattern.compile(word.replaceAll("regex:", ""));
+                                    } catch (Exception e) {
+                                        manager.send(sender, new FailureException(plugin.getLanguage(), "The provided regex is invalid.").getMessage());
+                                        break;
+                                    }
+                                }
                                 local = Manager.FileManager.getFile(plugin, "data/swears");
                                 List<String> swears = local.getStringList("swears");
                                 switch (finalArgs.get(0)) {
                                     case "add":
                                         if (manager.supported("mysql")) {
                                             if (!connector.isWorking())
-                                                plugin.reloadSQL();
+                                                plugin.getHikariCP().reload();
                                             boolean exists = false;
                                             try {
-
                                                 PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.exists);
                                                 ps.setString(1, word);
                                                 if (ps.executeQuery().next()) {
@@ -629,7 +644,7 @@ public class CommandEvents {
                                     case "remove":
                                         if (manager.supported("mysql")) {
                                             if (!connector.isWorking())
-                                                plugin.reloadSQL();
+                                                plugin.getHikariCP().reload();
                                             boolean exists = false;
                                             try {
 

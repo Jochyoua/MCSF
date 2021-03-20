@@ -35,7 +35,7 @@ public class PlaceholderAPI extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, String identifier) {
         User user = new User(plugin.getManager(), player.getUniqueId());
-        switch (identifier) {
+        switch (identifier.toLowerCase()) {
             case "player_name":
                 return user.playerName();
             case "player_flags":

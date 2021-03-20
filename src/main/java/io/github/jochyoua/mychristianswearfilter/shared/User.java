@@ -2,6 +2,7 @@ package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
+import org.bukkit.entity.Player;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,11 +11,11 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 public class User {
-    UUID id;
-    MCSF plugin;
-    Connection connection;
-    Connection userConnection;
-    Manager manager;
+    private final UUID id;
+    private final MCSF plugin;
+    private final Connection connection;
+    private final Connection userConnection;
+    private final Manager manager;
 
     /**
      * Instantiates a new User.
@@ -24,6 +25,20 @@ public class User {
      */
     public User(Manager manager, UUID id) {
         this.id = id;
+        this.plugin = manager.getProvider();
+        this.manager = manager;
+        this.connection = manager.getConnection();
+        this.userConnection = manager.getUserConnection();
+    }
+
+    /**
+     * Instantiates a new User.
+     *
+     * @param manager the utility file
+     * @param player  the player
+     */
+    public User(Manager manager, Player player) {
+        this.id = player.getUniqueId();
         this.plugin = manager.getProvider();
         this.manager = manager;
         this.connection = manager.getConnection();

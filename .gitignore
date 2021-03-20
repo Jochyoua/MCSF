@@ -1,5 +1,6 @@
 .idea
 target
 server
-*.xml
+dependency-reduced-pom.xml
 *.iml
+.gitignore

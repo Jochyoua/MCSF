@@ -13,7 +13,10 @@ public class Types {
         ALL,
         DEBUG,
         DISCORD,
-        CUSTOM
+        CUSTOM,
+        GLOBAL,
+        BOTH,
+        OTHER
     }
 
     /**

@@ -5,7 +5,6 @@ import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAP
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
-import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -35,7 +34,6 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Manager {
     public Map<UUID, Integer> userFlags = new HashMap<>();
@@ -60,7 +58,7 @@ public class Manager {
     Connection connection;
 
     Connection userConnection;
-    @Getter
+
     Map<String, String> whitelistMap = new HashMap<>();
 
     /**
@@ -83,22 +81,6 @@ public class Manager {
         cooldowns = ExpiringMap.builder()
                 .expiration(plugin.getConfig().getInt("settings.cooldown", 5), TimeUnit.SECONDS)
                 .build();
-        for (String str : Manager.FileManager.getFile(plugin, "data/whitelist").getStringList("whitelist")) {
-            String r;
-            if (!getWhitelistMap().containsKey(str)) {
-                r = random();
-                while (!isclean(r, Stream.of(getRegex(), getGlobalRegex()).collect(Collectors.toList()).get(0))) {
-                    debug("UUID value (" + r + ") for whitelisting is unclean and has been re-generated.");
-                    r = random();
-                }
-            } else {
-                r = getWhitelistMap().get(str);
-            }
-            if (!getWhitelistMap().containsKey(str)) {
-                putWhitelistMap(str, r);
-            }
-        }
-
     }
 
     /**
@@ -288,6 +270,10 @@ public class Manager {
         this.regex = str;
     }
 
+    public Map<String, String> getWhitelistMap() {
+        return whitelistMap;
+    }
+
     /**
      * Checks to see if a feature is enabled
      *
@@ -406,7 +392,6 @@ public class Manager {
                     if (countRows("global") == 0) {
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.create)) {
                             ps.execute();
-                            ps.close();
                         }
                         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/global");
                         List<String> s = local.getStringList("global");
@@ -431,7 +416,6 @@ public class Manager {
                         debug("(MySQL) attempting to insert user data");
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
                             ps.execute();
-                            ps.close();
                         }
                         List<String> user_list = new ArrayList<>();
                         StringBuilder query = new StringBuilder("INSERT IGNORE INTO users(uuid, name, status) VALUES ");
@@ -463,7 +447,6 @@ public class Manager {
                         debug("(MySQL) attempting to insert swear data");
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
                             ps.execute();
-                            ps.close();
                         }
                         List<String> s = Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears");
                         StringBuilder query = new StringBuilder("INSERT IGNORE INTO swears(word) VALUES (?)");
@@ -483,7 +466,6 @@ public class Manager {
                         debug("(MySQL) attempting to insert whitelist data");
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
                             ps.execute();
-                            ps.close();
                         }
                         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
                         List<String> s = local.getStringList("whitelist");
@@ -524,7 +506,7 @@ public class Manager {
                 local.set("swears", new String[]{"fuck", "shit"});
                 Manager.FileManager.saveFile(plugin, local, "data/swears");
             }
-            if (plugin.reloadSQL()) {
+            if (plugin.getHikariCP().isEnabled()) {
                 connector.execute("SET NAMES utf8");
                 connector.execute("SET CHARACTER SET utf8");
                 if (reset) {
@@ -546,12 +528,6 @@ public class Manager {
             }
         }
     }
-
-    /**
-     * Gets both the swears regex and the globalregex
-     *
-     * @return the both
-     */
 
     /**
      * Filtering but filters twice if server operator wishes for it.
@@ -594,8 +570,6 @@ public class Manager {
                     String r = getWhitelistMap().get(str);
                     if (r == null) {
                         r = random();
-                        while (!isclean(r, array))
-                            r = random();
                         putWhitelistMap(str, r);
                     }
                     string = string.replaceAll("(\\b" + str + "\\b)", r);
@@ -618,6 +592,8 @@ public class Manager {
                 } catch (Exception e) {
                     debug("Could not register replace_word_for_words: " + e.getMessage());
                 }
+                if (replacement == null)
+                    return string;
                 replacement = ChatColor.translateAlternateColorCodes('&', replacement);
                 if (strip) {
                     replacement = ChatColor.stripColor(replacement);
@@ -683,7 +659,6 @@ public class Manager {
         if (array.isEmpty())
             return true;
         string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-        reloadPattern();
         if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
             for (String strs : string.split(" ")) {
                 if (getWhitelist().stream().distinct().collect(Collectors.toList()).stream().anyMatch(string::equalsIgnoreCase)) {
@@ -792,13 +767,12 @@ public class Manager {
             local.set("whitelist", whitelist);
             Manager.FileManager.saveFile(plugin, local, "data/whitelist");
             setWhitelist(whitelist);
-
             local = Manager.FileManager.getFile(plugin, "data/global");
             local.set("global", global);
             Manager.FileManager.saveFile(plugin, local, "data/global");
             setGlobal(global);
         }
-        reloadPattern();
+        reloadPattern(Types.Filters.OTHER);
     }
 
     /**
@@ -815,11 +789,15 @@ public class Manager {
             File file = new File(plugin.getDataFolder(), "/logs/debug.txt");
             File dir = new File(plugin.getDataFolder(), "logs");
             if (!dir.exists()) {
-                dir.mkdirs();
+                if (dir.mkdirs()) {
+                    plugin.getLogger().info("Failed to create directory " + dir.getParent());
+                }
             }
             if (!file.exists()) {
                 try {
-                    file.createNewFile();
+                    if (!file.createNewFile()) {
+                        plugin.getLogger().info("Failed to create file " + file.getName());
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -837,7 +815,8 @@ public class Manager {
     /**
      * Reload the current patterns for Global, Swears and whitelist.
      */
-    public void reloadPattern() {
+    public List<String> reloadPattern(Types.Filters type) {
+        List<String> value = new ArrayList<>();
         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
         if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
@@ -850,11 +829,10 @@ public class Manager {
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
         }
         local = Manager.FileManager.getFile(plugin, "data/global");
-        if ((local.getStringList("global").size() != plugin.getLocal("global")) || getGlobalRegex().isEmpty()) {
+        if ((local.getStringList("global").size() != plugin.getLocal("global")) || (getGlobalRegex().isEmpty() && !local.getStringList("global").isEmpty())) {
             debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("global");
             setGlobal(s);
-            globalRegex.clear();
             List<String> duh = generateRegex(s);
             setGlobalRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
@@ -863,7 +841,7 @@ public class Manager {
             plugin.setLocal("global", s.size());
         }
         local = Manager.FileManager.getFile(plugin, "data/swears");
-        if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || getRegex().isEmpty()) {
+        if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || (getRegex().isEmpty() && !local.getStringList("swears").isEmpty())) {
             debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
             List<String> s = local.getStringList("swears");
             local.set("swears", s);
@@ -880,13 +858,24 @@ public class Manager {
                     .collect(Collectors.toList()));
             plugin.setLocal("swears", s.size());
         }
+
+        if (type == Types.Filters.BOTH) {
+            value.addAll(getGlobalRegex());
+            value.addAll(getRegex());
+        } else if (type == Types.Filters.GLOBAL) {
+            value.addAll(getGlobalRegex());
+        }
+        return value;
     }
 
     public List<String> generateRegex(List<String> s) {
         List<String> duh = new ArrayList<>();
         for (String str : s) {
-            if (str.startsWith("regex:")) {
-                duh.add(str.replaceAll("regex:", ""));
+            if (str.toLowerCase().startsWith("regex:")) {
+                try {
+                    duh.add(Pattern.compile(str.replaceAll("regex:", "")).pattern());
+                } catch (Exception ignored) {
+                }
                 continue;
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.ignore special characters.enabled")) {
@@ -906,7 +895,7 @@ public class Manager {
                 }
             } else {
                 StringBuilder omg = new StringBuilder();
-                String quote = Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replace("\"", "\\\""));
+                String quote = Pattern.quote(plugin.getConfig().getString("settings.filtering.ignore special characters.characters to ignore", "!@#$%^&*()_+-").replaceAll("\"", "\\\""));
                 int length = str.length();
                 for (String str2 : str.split("")) {
                     length = length - 1;
@@ -933,11 +922,11 @@ public class Manager {
                         //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)                                                                               = fuck
                         //(f+\s*+|f+[!@#$%^&*()_+-"]+\s*+)(u+\s*+|[!@#$%^&*()_+-"]+u+\s*+)(c+\s*+|[!@#$%^&*()_+-"]+c+\s*+)(k+\s*+|[!@#$%^&*()_+-"]+k+\s*+)   = fuck with special chars
                         if (length2 <= 0) { // length is the end
-                            omg.append("(").append(str3).append("+|([").append(quote).append("]|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append(")");
+                            omg2.append("(").append(str3).append("+|([").append(quote).append("]|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append(")");
                         } else if (length2 == str2.length() - 1) { // length is the beginning
-                            omg.append("(?i)(").append(str3).append("+\\s*+|").append(str3).append("+\\s*+([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+)");
+                            omg2.append("(?i)(").append(str3).append("+\\s*+|").append(str3).append("+\\s*+([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+)");
                         } else { // length is somewhere inbetween
-                            omg.append("(").append(str3).append("+\\s*+|([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append("+\\s*+)");
+                            omg2.append("(").append(str3).append("+\\s*+|([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append("+\\s*+)");
                         }
                     }
                     duh.add(omg2.toString().trim());
@@ -1105,6 +1094,67 @@ public class Manager {
                     e.printStackTrace();
                 }
             });
+        }
+
+        public static void relocateData(MCSF plugin) {
+            FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
+            if (plugin.getConfig().isSet("mysql")) {
+                plugin.getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
+                for (String key : plugin.getConfig().getConfigurationSection("mysql").getKeys(false)) {
+                    sql.set("mysql." + key, plugin.getConfig().get("mysql." + key));
+                }
+                Manager.FileManager.saveFile(plugin, sql, "sql");
+                plugin.getConfig().set("mysql", null);
+                plugin.saveConfig();
+            }
+            FileConfiguration local = Manager.FileManager.getFile(plugin, "data/swears");
+            if (!plugin.getConfig().getStringList("swears").isEmpty()) {
+                plugin.getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
+                if (local.isSet("swears")) {
+                    if (!local.getStringList("swears").isEmpty()) {
+                        Set<String> local1 = new HashSet<>(local.getStringList("swears"));
+                        Set<String> local2 = new HashSet<>(plugin.getConfig().getStringList("swears"));
+                        local1.addAll(local2);
+                        local.set("swears", local1);
+                        Manager.FileManager.saveFile(plugin, local, "data/swears");
+                        plugin.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                    }
+                }
+                plugin.getConfig().set("swears", null);
+                plugin.saveConfig();
+            }
+            local = Manager.FileManager.getFile(plugin, "data/whitelist");
+            if (!plugin.getConfig().getStringList("whitelist").isEmpty()) {
+                plugin.getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
+                if (local.isSet("whitelist")) {
+                    if (!local.getStringList("whitelist").isEmpty()) {
+                        Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
+                        Set<String> local2 = new HashSet<>(plugin.getConfig().getStringList("whitelist"));
+                        local1.addAll(local2);
+                        local.set("whitelist", local1);
+                        Manager.FileManager.saveFile(plugin, local, "data/whitelist");
+                        plugin.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                    }
+                }
+                plugin.getConfig().set("whitelist", null);
+                plugin.saveConfig();
+            }
+            local = Manager.FileManager.getFile(plugin, "data/global");
+            if (!plugin.getConfig().getStringList("global").isEmpty()) {
+                plugin.getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
+                if (local.isSet("global")) {
+                    if (!local.getStringList("global").isEmpty()) {
+                        Set<String> local1 = new HashSet<>(local.getStringList("global"));
+                        Set<String> local2 = new HashSet<>(plugin.getConfig().getStringList("global"));
+                        local1.addAll(local2);
+                        local.set("global", local1);
+                        Manager.FileManager.saveFile(plugin, local, "data/global");
+                        plugin.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                    }
+                }
+                plugin.getConfig().set("global", null);
+                plugin.saveConfig();
+            }
         }
     }
 }

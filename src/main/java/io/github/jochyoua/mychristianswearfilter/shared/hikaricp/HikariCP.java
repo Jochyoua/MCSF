@@ -1,17 +1,74 @@
 package io.github.jochyoua.mychristianswearfilter.shared.hikaricp;
 
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Manager;
+import org.bukkit.configuration.file.FileConfiguration;
+
+import javax.xml.crypto.Data;
 import java.sql.SQLException;
 
 public class HikariCP {
+    private boolean successful = false;
+    private MCSF plugin;
+    private DatabaseConnector connector;
 
-    public HikariCP(Connector connector) throws SQLException {
-        connector.execute(Query.SWEARS.create);
+    public boolean isEnabled(){
+        return this.successful;
+    }
+    public void setEnabled(boolean bool){
+        this.successful = bool;
+    }
 
-        connector.execute(Query.WHITELIST.create);
-
-        connector.execute(Query.GLOBAL.create);
-
-        connector.execute(Query.USERS.create);
+    public DatabaseConnector getConnector(){
+        return this.connector;
+    }
+    public HikariCP(MCSF plugin, DatabaseConnector connector) {
+        this.plugin = plugin;
+        this.connector = connector;
+        reload();
+    }
+    public void reload() {
+        FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
+        if (sql.getBoolean("mysql.enabled")) {
+            if (connector == null)
+                connector = new DatabaseConnector(plugin);
+            if (!connector.isWorking()) {
+                plugin.getLogger().info("(MYSQL) Loading database info....");
+                try {
+                    String driverClass = sql.getString("mysql.driverClass");
+                    String url = sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", sql.getString("mysql.host"))
+                            .replaceAll("(?i)\\{port}|(?i)%port%", sql.getString("mysql.port", "3306"))
+                            .replaceAll("(?i)\\{database}|(?i)%database%", sql.getString("mysql.database", "MCSF"))
+                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(sql.getBoolean("mysql.use_unicode", true)))
+                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(sql.getBoolean("mysql.ssl", false)));
+                    String username = sql.getString("mysql.username");
+                    String password = sql.getString("mysql.password");
+                    int maxPoolSize = sql.getInt("mysql.maxPoolSize");
+                    plugin.getLogger().info("(MYSQL) Using URL: " + url);
+                    connector.setInfo(
+                            new DatabaseConnector.Info(
+                                    driverClass,
+                                    url,
+                                    username,
+                                    password,
+                                    maxPoolSize
+                            )
+                    );
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                    setEnabled(false);
+                }
+                plugin.getLogger().info("(MYSQL) Trying a database connection....");
+                try {
+                    connector.tryFirstConnection();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    setEnabled(false);
+                }
+                plugin.getLogger().info("(MYSQL) The connection has been established!");
+                setEnabled(true);
+            }
+        }
     }
 
     public enum Query {

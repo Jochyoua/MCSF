@@ -2,14 +2,11 @@ package io.github.jochyoua.mychristianswearfilter.events;
 
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.api.Subscribe;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
+import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
-
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DiscordEvents implements Listener {
     private final Manager manager;
@@ -34,7 +31,6 @@ public class DiscordEvents implements Listener {
     @Subscribe
     public void DiscordGameMessage(
             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-        manager.reloadPattern();
-        event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, false, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.DISCORD));
+        event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, false, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DISCORD));
     }
 }

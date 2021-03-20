@@ -7,9 +7,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
-import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -19,8 +19,6 @@ import org.bukkit.event.Listener;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ProtocolLib implements Listener {
     static boolean value = true;
@@ -41,10 +39,10 @@ public class ProtocolLib implements Listener {
                                     String string;
                                     String message = BaseComponent.toLegacyText(ComponentSerializer.parse(component.getJson()));
                                     if (!(message.trim().length() <= 4)) {
-                                        if (new User(manager, ID).status() || manager.getProvider().getConfig().getBoolean("settings.filtering.force"))
-                                            string = manager.clean(message, false, true, Stream.of(manager.getRegex(), manager.getGlobalRegex()).collect(Collectors.toList()).get(0), Types.Filters.ALL);
-                                        else
-                                            string = manager.clean(message, false, true, manager.getGlobalRegex(), Types.Filters.ALL);
+                                        if (new User(manager, ID).status() || manager.getProvider().getConfig().getBoolean("settings.filtering.force")) {
+                                            string = manager.clean(message, false, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.ALL);
+                                        } else
+                                            string = manager.clean(message, false, true, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.ALL);
                                         if (string == null || string.isEmpty()) {
                                             return;
                                         }
