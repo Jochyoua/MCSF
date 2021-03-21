@@ -138,10 +138,9 @@ public class CommandEvents {
                             manager.showHelp(sender);
                             break;
                         case "reload":
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.reload")) {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
-                            sender.sendMessage("Reload succeeded!");
                             if (plugin.getHikariCP().isEnabled()) {
                                 sender.sendMessage("Reloading databases:");
                                 plugin.getHikariCP().reload();
@@ -161,6 +160,7 @@ public class CommandEvents {
                             sender.sendMessage("Reloading configuration data:");
                             try {
                                 plugin.reloadLanguage();
+                                plugin.reloadConfig();
                                 sender.sendMessage("Successfully reloaded configuration information!");
                             } catch (Exception e) {
                                 sender.sendMessage("Failed to reload configuration data: " + e.getMessage());
@@ -169,7 +169,7 @@ public class CommandEvents {
                             break;
                         case "global":
                             manager.setTable("global");
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.global")) {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
                             if (finalArgs.size() != 2) {
@@ -191,7 +191,6 @@ public class CommandEvents {
                                     plugin.getHikariCP().reload();
                                 boolean sqlexists = false;
                                 try {
-
                                     PreparedStatement ps = connection.prepareStatement(HikariCP.Query.GLOBAL.exists);
                                     ps.setString(1, glo);
                                     if (ps.executeQuery().next()) {
@@ -243,7 +242,7 @@ public class CommandEvents {
                             Manager.FileManager.saveFile(plugin, local, "data/global");
                             break;
                         case "parse":
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.parse")) {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
                             if (args.size() == 1 || args.size() == 2) {
@@ -274,7 +273,7 @@ public class CommandEvents {
                             manager.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
                             break;
                         case "whitelist":
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.whitelist")) {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
                             if (!plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
@@ -342,7 +341,7 @@ public class CommandEvents {
                             Manager.FileManager.saveFile(plugin, local, "data/whitelist");
                             break;
                         case "unset":
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.unset")) {
                                 throw new NoPermissionException(plugin.getLanguage());
                             }
                             if (finalArgs.size() == 1) {
@@ -399,7 +398,7 @@ public class CommandEvents {
                                 if (!user.exists()) {
                                     user.create(sender.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
                                 }
-                                if (!sender.hasPermission("MCSF.toggle")) {
+                                if (!sender.hasPermission("MCSF.use.toggle")) {
                                     throw new NoPermissionException(plugin.getLanguage());
                                 }
                                 if (plugin.getConfig().getBoolean("settings.filtering.force")) {
@@ -426,7 +425,7 @@ public class CommandEvents {
                                     throw new FailureException(plugin.getLanguage(),
                                             plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                                 }
-                                if (!sender.hasPermission("MCSF.modify")) {
+                                if (!sender.hasPermission("MCSF.modify.others")) {
                                     throw new NoPermissionException(plugin.getLanguage());
                                 } else if (sender.hasPermission("MCSF.bypass")) {
                                     targetid = null;
@@ -482,6 +481,9 @@ public class CommandEvents {
                             }
                             break;
                         case "status":
+                            if (!sender.hasPermission("MCSF.use.status")) {
+                                throw new NoPermissionException(plugin.getLanguage());
+                            }
                             if (finalArgs.size() == 1 && (sender instanceof Player)) {
                                 User user = new User(manager, ((Player) sender).getUniqueId());
                                 if (plugin.getConfig().getBoolean("settings.filtering.force")) {
@@ -497,9 +499,8 @@ public class CommandEvents {
                                             plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
 
                                 }
-                                if (!sender.hasPermission("MCSF.status")) {
+                                if (!sender.hasPermission("MCSF.modify.others")) {
                                     throw new NoPermissionException(plugin.getLanguage());
-
                                 }
                                 targetid = null;
                                 for (final String key : manager.getUsers(false)) {
@@ -528,7 +529,7 @@ public class CommandEvents {
                             }
                             break;
                         case "reset":
-                            if (!sender.hasPermission("MCSF.modify")) {
+                            if (!sender.hasPermission("MCSF.modify.reset")) {
                                 throw new NoPermissionException(plugin.getLanguage());
 
                             }
@@ -572,7 +573,7 @@ public class CommandEvents {
                             break;
                         case "add":
                         case "remove":
-                            if (sender.hasPermission("MCSF.modify")) {
+                            if (sender.hasPermission("MCSF.modify.add") || sender.hasPermission("MCSF.modify.remove")) {
                                 if (finalArgs.size() != 2) {
                                     throw new IllegalArgumentException(plugin.getLanguage());
                                 }
@@ -594,6 +595,8 @@ public class CommandEvents {
                                 List<String> swears = local.getStringList("swears");
                                 switch (finalArgs.get(0)) {
                                     case "add":
+                                        if (!sender.hasPermission("MCSF.modify.add"))
+                                            throw new NoPermissionException(plugin.getLanguage());
                                         if (manager.supported("mysql")) {
                                             if (!connector.isWorking())
                                                 plugin.getHikariCP().reload();
@@ -638,6 +641,8 @@ public class CommandEvents {
                                         }
                                         break;
                                     case "remove":
+                                        if (!sender.hasPermission("MCSF.modify.remove"))
+                                            throw new NoPermissionException(plugin.getLanguage());
                                         if (manager.supported("mysql")) {
                                             if (!connector.isWorking())
                                                 plugin.getHikariCP().reload();

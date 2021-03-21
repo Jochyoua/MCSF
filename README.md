@@ -44,19 +44,19 @@ MCSF is a swear filter that enables your server to let users personally toggle t
 
 * **/MCSF toggle [player]** *(Permission: MCSF.toggle & MCSF.modify if toggling other users)* 
   * This command toggles a users's swear filter.
-* **/MCSF reload** *(Permission: MCSF.reload)* 
+* **/MCSF reload** *(Permission: MCSF.modify.reload)* 
   * This command reloads the configuration files
-* **/MCSF status [player]** *(Permission: MCSF.modify if viewing the status of other users)* 
+* **/MCSF status [player]** *(Permission: MCSF.modify.others if viewing the status of other users)* 
   * This command views the status of a user's swear filter status
-* **/MCSF add/remove [word]** *(Permission:MCSF.modify)* 
+* **/MCSF add/remove [word]** *(Permission:MCSF.modify.add and MCSF.modify.remove)* 
   * Modifies the blacklist
-* **/MCSF unset [player/uuid]** *(Permission:MCSF.modify)* 
+* **/MCSF unset [player/uuid]** *(Permission:MCSF.modify.unset)* 
   * Removes remove specific users from the database
-* **/MCSF whitelist [word]** *(Permission:MCSF.modify)* 
+* **/MCSF whitelist [word]** *(Permission:MCSF.modify.whitelist)* 
   * Adds/Removes word from the whitelist (Requires settings.whitelist to be true)
-* **/MCSF global [word]** *(Permission:MCSF.modify)* 
+* **/MCSF global [word]** *(Permission:MCSF.modify.global)* 
   * Adds/Removes word from the global list (Requires settings.global blacklist to be true)
-* **/MCSF reload [confirm]** *(Permission:MCSF.modify)* 
+* **/MCSF reload [confirm]** *(Permission:MCSF.modify.reload)* 
   * Reloads the configuration files, and the database (can be dangerous)
 
 # PLACEHOLDERS:

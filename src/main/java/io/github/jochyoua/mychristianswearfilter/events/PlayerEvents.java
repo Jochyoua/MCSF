@@ -5,7 +5,6 @@ import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.Connector;
-import io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;

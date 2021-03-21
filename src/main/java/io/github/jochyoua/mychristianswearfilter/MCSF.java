@@ -43,6 +43,7 @@ public class MCSF extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
         // Sets the default configuration with header
         getConfig().options().header(
                 "MCSF (My Christian Swear Filter) v" + getDescription().getVersion() + " by Jochyoua\n"

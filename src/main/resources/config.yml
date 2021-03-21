@@ -8,9 +8,6 @@ settings:
   # Despite the value, all debug messages are saved in /data/debug.txt
   debug: false
 
-  # Would you like some information on enable? It shows swear count, plugin/server version, etc
-  console motd: true
-
   # Cool down for all MCSF commands, ignored if the player has the Permission MCSF.bypass
   # Default value is 5, to disable set to 0 (Integer)
   cooldown: 5

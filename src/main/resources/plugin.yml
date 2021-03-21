@@ -21,6 +21,9 @@ permissions:
   MCSF.use:
     description: Should user be able to use MCSF commands?
     default: true
+    children:
+      MCSF.use.status: true
+      MCSF.use.toggle: trie
   MCSF.*:
     description: Gives access to all MCSF commands
     children:
@@ -28,6 +31,16 @@ permissions:
       MCSF.toggle: true
       MCSF.update: true
   MCSF.modify:
+    children:
+      MCSF.modify.add: true
+      MCSF.modify.remove: true
+      MCSF.modify.parse: true
+      MCSF.modify.whitelist: true
+      MCSF.modify.global: true
+      MCSF.modify.unset: true
+      MCSF.modify.reset: true
+      MCSF.modify.reload: true
+      MCSF.modify.others: true
     description: Gives the player the ability to modify the blacklist
     default: false
   MCSF.toggle:

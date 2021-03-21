@@ -24,25 +24,18 @@ variables:
     update_available: "{prefix} Une nouvelle version (v{version}) est sorti! Vous utilisez toujours v{current}"
     update_link: "{prefix} Téléchargez la dernière version ici: https://www.spigotmc.org/resources/54115/" ## Update link for updating the plugin with latest release
   help:
-    - "&6-------------------------"
-    - "{prefix}"
-    - "&6Commande - Description"
-    - "&6([] = Facultatif / <> = Requis)"
-    - "{PERMISSION=MCSF.toggle}&6> /{command} toggle [player] - Bascule le filtre jurer pour vous-même ou quelqu'un d'autre"
-    - "&6> /{command} status [player] - Vue sur le statut d'une cible sur le statut du filtre"
-    - "{PERMISSION=MCSF.version}&b> /{command} version - Affiche la version de ce plugin"
-    - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> - Modifie la liste des jurés"
-    - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Modifie la liste blanche"
-    - "{PERMISSION=MCSF.modify}&6> /{command} reload"
-    - "{PERMISSION=MCSF.modify}&6> /{command} unset </player/uuid> - Modifie les utilisateurs"
-    - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Réinitialise la base de données aux données de configuration"
-    - "&6-------------------------"
-  console motd:
-    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
-    - "&dLa version du serveur:&f {serverversion}"
-    - "&dVersion du greffon:&f {current}"
-    - "&dJure comte:&f {wordcount}"
-    - "&dMots bloqués:&f {swearcount}"
+    - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&f Commands: &9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
+    - "  {PERMISSION=MCSF.use.toggle}/{command} &9toggle&f - Bascule le filtre jurer pour vous-même ou quelqu'un d'autre"
+    - "  {PERMISSION=MCSF.use.status}/{command} &9status&f - Vue sur le statut d'une cible sur le statut du filtre"
+    - "  {PERMISSION=MCSF.version}/{command} &9version&f - Affiche la version de ce plugin"
+    - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Modifie la liste des jurés"
+    - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Modifie la liste des jurés"
+    - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f -  Modifie la liste blanche"
+    - "  {PERMISSION=MCSF.modify.global}/{command} &global <word>&f - Modifie la liste globale"
+    - "  {PERMISSION=MCSF.modify.reload}/{command} &9reload&f"
+    - "  {PERMISSION=MCSF.modify.unset}/{command} &9unset&f -  Modifie les utilisateurs"
+    - "  {PERMISSION=MCSF.modify.reset}/{command} &9reset&f -  Réinitialise la base de données aux données de configuration"
+    - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
   successful:
     added: "Le mot a été ajouté." ##Mot a été ajouté message
     removed: "La parole a été supprimé." ## Mot a été supprimé message
