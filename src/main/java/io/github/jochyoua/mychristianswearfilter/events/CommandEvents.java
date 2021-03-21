@@ -129,6 +129,11 @@ public class CommandEvents {
                             throw new CommandDisabledException(plugin.getLanguage());
                         }
                     }
+                    try {
+                        if (!sender.hasPermission(Types.Arguments.valueOf(finalArgs.get(0)).getPermission()))
+                            throw new NoPermissionException(plugin.getLanguage());
+                    } catch (java.lang.IllegalArgumentException | NullPointerException ignored) {
+                    }
                     switch (finalArgs.get(0).toLowerCase()) {
                         case "help":
                         default:

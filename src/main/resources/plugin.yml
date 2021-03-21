@@ -23,7 +23,7 @@ permissions:
     default: true
     children:
       MCSF.use.status: true
-      MCSF.use.toggle: trie
+      MCSF.use.toggle: true
   MCSF.*:
     description: Gives access to all MCSF commands
     children:

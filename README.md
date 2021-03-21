@@ -42,7 +42,7 @@ MCSF is a swear filter that enables your server to let users personally toggle t
     Java 8+
 # COMMANDS:
 
-* **/MCSF toggle [player]** *(Permission: MCSF.toggle & MCSF.modify if toggling other users)* 
+* **/MCSF toggle [player]** *(Permission: MCSF.use.toggle & MCSF.modify.others if toggling other users)* 
   * This command toggles a users's swear filter.
 * **/MCSF reload** *(Permission: MCSF.modify.reload)* 
   * This command reloads the configuration files
