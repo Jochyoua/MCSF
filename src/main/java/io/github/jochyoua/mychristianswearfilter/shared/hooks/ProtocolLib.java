@@ -38,7 +38,7 @@ public class ProtocolLib implements Listener {
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.CHAT) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (plugin.getConfig().getBoolean("settings.only filter players.enabled")) {
+                if (!plugin.getConfig().getBoolean("settings.only filter players.enabled")) {
                     try {
                         Player player = event.getPlayer();
                         UUID ID = player.getUniqueId();
