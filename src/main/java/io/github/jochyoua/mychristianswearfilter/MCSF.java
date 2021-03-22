@@ -25,20 +25,15 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
+@Getter
 public class MCSF extends JavaPlugin {
     private final HashMap<String, Integer> localSizes = new HashMap<>();
-    @Getter
     private HikariCP hikariCP = null;
     private DatabaseConnector connector;
-    @Getter
     private YamlConfiguration language;
-    @Getter
     private Manager manager;
-    @Getter
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib ProtocolLib;
-    @Getter
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
-    @Getter
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
 
     @Override

@@ -18,7 +18,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -881,6 +880,7 @@ public class Manager {
                 try {
                     duh.add(Pattern.compile(str.replaceAll("regex:", "")).pattern());
                 } catch (Exception ignored) {
+                    debug("Pattern is invalid: " + str.replaceAll("regex:", ""));
                 }
                 continue;
             }
