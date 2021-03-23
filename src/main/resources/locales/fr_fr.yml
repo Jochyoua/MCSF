@@ -31,7 +31,7 @@ variables:
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Modifie la liste des jurés"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Modifie la liste des jurés"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f -  Modifie la liste blanche"
-    - "  {PERMISSION=MCSF.modify.global}/{command} &global <word>&f - Modifie la liste globale"
+    - "  {PERMISSION=MCSF.modify.global}/{command} &9global <word>&f - Modifie la liste globale"
     - "  {PERMISSION=MCSF.modify.reload}/{command} &9reload&f"
     - "  {PERMISSION=MCSF.modify.unset}/{command} &9unset&f -  Modifie les utilisateurs"
     - "  {PERMISSION=MCSF.modify.reset}/{command} &9reset&f -  Réinitialise la base de données aux données de configuration"

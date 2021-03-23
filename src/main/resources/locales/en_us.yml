@@ -31,7 +31,7 @@ variables:
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Adds word to swear list"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Removes word to swear list"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f - Modifies whitelist"
-    - "  {PERMISSION=MCSF.modify.global}/{command} &global <word>&f - Modifies global list"
+    - "  {PERMISSION=MCSF.modify.global}/{command} &9global <word>&f - Modifies global list"
     - "  {PERMISSION=MCSF.modify.reload}/{command} &9reload&f - Reloads data"
     - "  {PERMISSION=MCSF.modify.unset}/{command} &9unset&f - Modifies users"
     - "  {PERMISSION=MCSF.modify.reset}/{command} &9reset&f - Resets database to config data"

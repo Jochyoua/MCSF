@@ -31,7 +31,7 @@ variables:
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Ändert Chatfilter-Wörter"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Ändert Chatfilter-Wörter"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f -  Ändert die Whitelist"
-    - "  {PERMISSION=MCSF.modify.global}/{command} &global <word>&f -  Ändert die Globallist"
+    - "  {PERMISSION=MCSF.modify.global}/{command} &9global <word>&f -  Ändert die Globallist"
     - "  {PERMISSION=MCSF.modify.reload}/{command} &9reload&f"
     - "  {PERMISSION=MCSF.modify.unset}/{command} &9unset&f - Modifiziert Benutzer"
     - "  {PERMISSION=MCSF.modify.reset}/{command} &9reset&f - Setzt Datenbank zurüc"
