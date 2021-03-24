@@ -128,10 +128,10 @@ public class PlayerEvents implements Listener {
                     }
                     user.set(result);
                 }
-                manager.debug("Player " + player.getName() + "'s swear filter is " + (new User(manager, player.getUniqueId()).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
+                manager.debug("Player " + player.getName() + "'s swear filter is " + (user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")));
             }
 
-            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getConfig().getBoolean("settings.updating.check for updates") && Manager.needsUpdate(plugin.getDescription().getVersion())) {
+            if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getNeedsUpdate()) {
                 manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
                 manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
             }

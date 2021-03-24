@@ -91,7 +91,11 @@ public class Manager {
         try {
             return new Gson().fromJson(new Scanner(new URL("https://api.github.com/repos/Jochyoua/MCSF/releases/latest").openStream()).nextLine(), JsonElement.class).getAsJsonObject().get("tag_name").getAsDouble();
         } catch (IOException e) {
-            return 0.0;
+            try {
+                return new Gson().fromJson(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine(), JsonElement.class).getAsJsonObject().get("current_version").getAsDouble();
+            } catch (IOException ioException) {
+                return 0.0;
+            }
         }
     }
 
@@ -1082,13 +1086,11 @@ public class Manager {
         }
 
         public static void saveFile(MCSF plugin, FileConfiguration file, String fileName) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                try {
-                    file.save(new File(plugin.getDataFolder(), fileName + ".yml"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            try {
+                file.save(new File(plugin.getDataFolder(), fileName + ".yml"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         public static void relocateData(MCSF plugin) {

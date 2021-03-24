@@ -35,6 +35,8 @@ public class MCSF extends JavaPlugin {
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib ProtocolLib;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
+    private Boolean needsUpdate;
+
 
     @Override
     public void onEnable() {
@@ -73,7 +75,6 @@ public class MCSF extends JavaPlugin {
             }
         }
         manager = new Manager(this, connector);
-
         // Sets the correct data for tables
         if (getHikariCP().isEnabled())
             try {
@@ -146,13 +147,17 @@ public class MCSF extends JavaPlugin {
         final Metrics metrics = new Metrics(this, 4345);
         metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
 
-        // Verifies this is the latest version of MCSF
+        // This code notifies the server operator if an update is needed and if metrics is enabled
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
+
+            // Verifies this is the latest version of MCSF
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
-                if (Manager.getVersion() != 0.0 && Manager.getVersion() < Double.parseDouble(getDescription().getVersion())) {
+                Bukkit.getConsoleSender().sendMessage(Manager.getVersion() + "< new current >" + Double.parseDouble(getDescription().getVersion()));
+                if (Manager.getVersion() != 0.0 && Manager.getVersion() > Double.parseDouble(getDescription().getVersion())) {
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));
+                    needsUpdate = true;
                 } else {
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.no_new_version"));
                 }
