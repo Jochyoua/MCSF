@@ -57,6 +57,8 @@ public class MCSF extends JavaPlugin {
         Manager.FileManager.relocateData(this);
 
         // Loads MySQL data if mysql is enabled
+        hikariCP = new HikariCP(this, connector);
+
         FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (sql.getBoolean("mysql.enabled")) {
             boolean load = false;
@@ -65,7 +67,6 @@ public class MCSF extends JavaPlugin {
             else if (!connector.isWorking())
                 load = true;
             if (load) {
-                hikariCP = new HikariCP(this, connector);
                 if (hikariCP.isEnabled()) {
                     getLogger().log(Level.INFO, "(MYSQL) Successfully initiated MySQL!");
                     this.connector = hikariCP.getConnector();
@@ -153,7 +154,6 @@ public class MCSF extends JavaPlugin {
             // Verifies this is the latest version of MCSF
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
-                Bukkit.getConsoleSender().sendMessage(Manager.getVersion() + "< new current >" + Double.parseDouble(getDescription().getVersion()));
                 if (Manager.getVersion() != 0.0 && Manager.getVersion() > Double.parseDouble(getDescription().getVersion())) {
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));

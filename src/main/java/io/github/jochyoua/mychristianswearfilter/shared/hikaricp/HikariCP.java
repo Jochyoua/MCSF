@@ -6,26 +6,26 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import javax.xml.crypto.Data;
-import java.sql.SQLException;
-import java.util.Objects;
-import java.util.logging.Level;
-
 public class HikariCP {
+    private final MCSF plugin;
     @Getter
     @Setter
     private boolean enabled = false;
-    private final MCSF plugin;
     private DatabaseConnector connector;
-
-    public DatabaseConnector getConnector() {
-        return this.connector;
-    }
 
     public HikariCP(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
+        FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
+        if (sql.getBoolean("mysql.enabled")) {
+            setEnabled(false);
+            return;
+        }
         reload();
+    }
+
+    public DatabaseConnector getConnector() {
+        return this.connector;
     }
 
     public void reload() {
