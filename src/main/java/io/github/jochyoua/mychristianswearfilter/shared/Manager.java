@@ -1,5 +1,7 @@
 package io.github.jochyoua.mychristianswearfilter.shared;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
@@ -14,9 +16,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -84,26 +83,16 @@ public class Manager {
     }
 
     /**
-     * Gets the current version according to spigot
+     * Gets the current version according to Github
      *
      * @return the version
      */
-    public static Double getVersion(String version) {
+    public static Double getVersion() {
         try {
-            version = ((JSONObject) new JSONParser().parse(new Scanner(new URL("https://api.spigotmc.org/simple/0.1/index.php?action=getResource&id=54115").openStream()).nextLine())).get("current_version").toString();
-        } catch (ParseException | IOException ignored) {
+            return new Gson().fromJson(new Scanner(new URL("https://api.github.com/repos/Jochyoua/MCSF/releases/latest").openStream()).nextLine(), JsonElement.class).getAsJsonObject().get("tag_name").getAsDouble();
+        } catch (IOException e) {
+            return 0.0;
         }
-
-        return Double.parseDouble(version);
-    }
-
-    /**
-     * Checks to see if the plugin needs an update,
-     *
-     * @return the boolean
-     */
-    public static boolean needsUpdate(String version) {
-        return (Double.parseDouble(version) < getVersion(version));
     }
 
     /**
@@ -954,7 +943,7 @@ public class Manager {
                 .replaceAll("(?i)\\{command}|(?i)%command%", "mcsf")
                 .replaceAll("(?i)\\{player}|(?i)%player%", sender.getName())
                 .replaceAll("(?i)\\{current}|(?i)%current%", plugin.getDescription().getVersion())
-                .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion(plugin.getDescription().getVersion())))
+                .replaceAll("(?i)\\{version}|(?i)%version%", getVersion().toString())
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
                 .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
                 .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears").size())));
@@ -991,7 +980,7 @@ public class Manager {
         public static String toJSON(String message) {
             if (message == null || message.isEmpty())
                 return null;
-            message = JSONObject.escape(message);
+            // message = JSONObject.escape(message);
             if (JSON_BUILDER.length() > RETAIN)
                 JSON_BUILDER.delete(RETAIN, JSON_BUILDER.length());
             String[] parts = message.split(Character.toString(ChatColor.COLOR_CHAR));

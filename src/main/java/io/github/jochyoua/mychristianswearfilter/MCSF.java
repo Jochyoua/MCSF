@@ -150,7 +150,7 @@ public class MCSF extends JavaPlugin {
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
-                if (Manager.needsUpdate(getDescription().getVersion())) {
+                if (Manager.getVersion() != 0.0 && Manager.getVersion() < Double.parseDouble(getDescription().getVersion())) {
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
                     manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));
                 } else {
