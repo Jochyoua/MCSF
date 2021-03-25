@@ -21,14 +21,20 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Level;
+
+
 
 @Getter
 public class MCSF extends JavaPlugin {
     private final HashMap<String, Integer> localSizes = new HashMap<>();
-    private HikariCP hikariCP = null;
+    private HikariCP hikariCP;
     private DatabaseConnector connector;
     private YamlConfiguration language;
     private Manager manager;
@@ -36,6 +42,10 @@ public class MCSF extends JavaPlugin {
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
     private Boolean needsUpdate;
+
+    public MCSF() {
+        throw new AssertionError();
+    }
 
 
     @Override
@@ -87,7 +97,7 @@ public class MCSF extends JavaPlugin {
         // Relocates old pre-existing user data to the appropriate locations
         if (getConfig().isSet("users")) {
             getLogger().info("(CONFIG) Converting path `users` into `data/users.db`");
-            for (String ID : getConfig().getConfigurationSection("users").getKeys(false)) {
+            for (String ID : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
                 User user = new User(manager, UUID.fromString(ID));
                 if (!user.exists()) {
                     user.create(getConfig().getString("users." + ID + ".playername"), getConfig().getBoolean("users." + ID + ".enabled"));
@@ -137,7 +147,7 @@ public class MCSF extends JavaPlugin {
         // Debugs and checks to make sure that strings are correctly being filtered
         final List<String> swears = Manager.FileManager.getFile(this, "data/swears").getStringList("swears");
         if (!swears.isEmpty()) {
-            final String test = swears.get((new Random()).nextInt(swears.size()));
+            final String test = swears.get((new SecureRandom()).nextInt(swears.size()));
             String clean = manager.clean(test, true, false, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DEBUG);
             manager.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
         } else {
@@ -155,11 +165,11 @@ public class MCSF extends JavaPlugin {
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
                 if (Manager.getVersion() != 0.0 && Manager.getVersion() > Double.parseDouble(getDescription().getVersion())) {
-                    manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_available"));
-                    manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.update_link"));
+                    manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_available")));
+                    manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.update_link")));
                     needsUpdate = true;
                 } else {
-                    manager.send(Bukkit.getConsoleSender(), getLanguage().getString("variables.updatecheck.no_new_version"));
+                    manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.no_new_version")));
                 }
             }
             manager.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");

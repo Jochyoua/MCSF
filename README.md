@@ -104,15 +104,14 @@ Download this plugin into your server's plugin folder
 
 **(OPTIONAL):** If you plan on using [DiscordSRV](https://www.spigotmc.org/resources/18494/), you must first download the plugin and then add them to your server and then restart the server.
 
+## Example Regex Test:
+https://regex101.com/r/pvMY0o/1
+
 # CUSTOM REGEX:
 You can add custom regex for both global and normal filtering by adding them as normal swears.
 For a string to be recognised as regex, it must be valid for Java and have the prefix regex:
-These are two valid examples:
+These are a valid example:
   ### IP Addresses:
   * (Per Player) /mcsf add regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
   * (Globally) /mcsf global regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
     * This will match IP Addresses.
- ### Domains:
-  * (Per Player) /mcsf add regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
-  * (Globally) /mcsf global regex:\b[^\sw\.@/]([0-9a-zA-Z\-\.]*[0-9a-zA-Z\-]+\.)(?i)(de|com|org|net|edu|land|co\.uk)\b
-    * This will match domains.

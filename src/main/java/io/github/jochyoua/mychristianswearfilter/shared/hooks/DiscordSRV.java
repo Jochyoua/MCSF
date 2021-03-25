@@ -6,8 +6,6 @@ import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
 
 public class DiscordSRV {
     private final MCSF plugin;

@@ -50,7 +50,7 @@ public class ProtocolLib implements Listener {
                                     String string;
                                     String message = BaseComponent.toLegacyText(ComponentSerializer.parse(component.getJson()));
                                     if (!(message.trim().length() <= 4)) {
-                                        if (new User(manager, ID).status() || manager.getProvider().getConfig().getBoolean("settings.filtering.force")) {
+                                        if (new User(manager, ID).status() || manager.getPlugin().getConfig().getBoolean("settings.filtering.force")) {
                                             string = manager.clean(message, false, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.ALL);
                                         } else
                                             string = manager.clean(message, false, true, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.ALL);
@@ -67,13 +67,13 @@ public class ProtocolLib implements Listener {
                             }
                         }
                     } catch (Exception e) {
-                        FileConfiguration language = manager.getProvider().getLanguage();
-                        manager.getProvider().getLogger().log(Level.SEVERE, "Failure: {message}"
+                        FileConfiguration language = manager.getPlugin().getLanguage();
+                        manager.getPlugin().getLogger().log(Level.SEVERE, "Failure: {message}"
                                 .replaceAll("(?i)\\{message}|(?i)%message%",
-                                        language.getString("variables.error.execute_failure")
+                                        Objects.requireNonNull(language.getString("variables.error.execute_failure"))
                                                 .replaceAll("(?i)\\{feature}", "Chat Filtering (FULL CHAT)")), e);
                         setEnabled(false);
-                        manager.getProvider().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
+                        manager.getPlugin().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }
                 }

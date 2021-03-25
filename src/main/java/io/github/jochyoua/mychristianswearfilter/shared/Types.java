@@ -2,7 +2,13 @@ package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 
+import java.util.Objects;
+
 public class Types {
+
+    public Types() {
+        throw new AssertionError();
+    }
 
     /**
      * Successful filtering types
@@ -13,7 +19,6 @@ public class Types {
         ALL,
         DEBUG,
         DISCORD,
-        CUSTOM,
         GLOBAL,
         BOTH,
         OTHER
@@ -65,7 +70,7 @@ public class Types {
          * @return the current language string
          */
         public static String getLanguage(MCSF plugin) {
-            String lan = plugin.getConfig().getString("settings.language").replaceAll(".yml", "");
+            String lan = Objects.requireNonNull(plugin.getConfig().getString("settings.language")).replaceAll(".yml", "");
             try {
                 Languages.valueOf(lan);
             } catch (IllegalArgumentException | NullPointerException exception) {

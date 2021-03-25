@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.Objects;
+
 public class HikariCP {
     private final MCSF plugin;
     @Getter
@@ -16,11 +18,6 @@ public class HikariCP {
     public HikariCP(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
-        FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
-        if (sql.getBoolean("mysql.enabled")) {
-            setEnabled(false);
-            return;
-        }
         reload();
     }
 
@@ -37,11 +34,12 @@ public class HikariCP {
                 plugin.getLogger().info("(MYSQL) Loading database info....");
                 try {
                     String driverClass = sql.getString("mysql.driverClass");
-                    String url = sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}").replaceAll("(?i)\\{host}|(?i)%host%", sql.getString("mysql.host"))
-                            .replaceAll("(?i)\\{port}|(?i)%port%", sql.getString("mysql.port", "3306"))
-                            .replaceAll("(?i)\\{database}|(?i)%database%", sql.getString("mysql.database", "MCSF"))
-                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(sql.getBoolean("mysql.use_unicode", true)))
-                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(sql.getBoolean("mysql.ssl", false)));
+                    String url = Objects.requireNonNull(sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"))
+                            .replaceAll("(?i)\\{host}|(?i)%host%", Objects.requireNonNull(sql.getString("mysql.host")))
+                            .replaceAll("(?i)\\{port}|(?i)%port%", Objects.requireNonNull(sql.getString("mysql.port", "3306")))
+                            .replaceAll("(?i)\\{database}|(?i)%database%", Objects.requireNonNull(sql.getString("mysql.database", "MCSF")))
+                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(sql.getBoolean("mysql.use_unicode")))
+                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(sql.getBoolean("mysql.ssl")));
                     String username = sql.getString("mysql.username");
                     String password = sql.getString("mysql.password");
                     int maxPoolSize = sql.getInt("mysql.maxPoolSize");

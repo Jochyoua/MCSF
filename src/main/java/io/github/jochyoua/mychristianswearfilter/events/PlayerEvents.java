@@ -39,7 +39,7 @@ public class PlayerEvents implements Listener {
     Connection connection;
 
     public PlayerEvents(Manager manager) {
-        this.plugin = manager.getProvider();
+        this.plugin = manager.getPlugin();
         this.connector = manager.getConnector();
         if (plugin.getHikariCP().isEnabled())
             try {
@@ -68,7 +68,7 @@ public class PlayerEvents implements Listener {
         if (e.isCancelled())
             return;
         if (use || !manager.supported("ProtocolLib")) {
-            if (!manager.getGlobal().isEmpty()) {
+            if (!manager.getGlobalSwears().isEmpty()) {
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
                     new_message = manager.clean(old_message, false, true, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.PLAYERS);
                     e.setMessage(new_message);
@@ -121,6 +121,7 @@ public class PlayerEvents implements Listener {
                         while (rs.next()) {
                             result = rs.getBoolean("status");
                         }
+                        rs.close();
                         ps.close();
                     } catch (SQLException throwables) {
                         throwables.printStackTrace();
@@ -132,8 +133,8 @@ public class PlayerEvents implements Listener {
             }
 
             if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getNeedsUpdate()) {
-                manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_available"));
-                manager.send(player, plugin.getLanguage().getString("variables.updatecheck.update_link"));
+                manager.send(player, Objects.requireNonNull(plugin.getLanguage().getString("variables.updatecheck.update_available")));
+                manager.send(player, Objects.requireNonNull(plugin.getLanguage().getString("variables.updatecheck.update_link")));
             }
         });
     }

@@ -12,13 +12,15 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 
+import java.util.Objects;
+
 public class PunishmentEvents implements Listener {
     MCSF plugin;
     Manager manager;
 
 
     public PunishmentEvents(Manager manager) {
-        this.plugin = manager.getProvider();
+        this.plugin = manager.getPlugin();
         this.manager = manager;
         if (!plugin.getConfig().getBoolean("settings.filtering.punishments.punish players")) {
             return;
@@ -38,11 +40,11 @@ public class PunishmentEvents implements Listener {
         User user = new User(manager, player.getUniqueId());
         int flags = user.getFlags();
         if (flags != 0)
-            flags = flags + 1;
+            flags += 1;
         else
             flags = 1;
         user.setFlags(flags);
-        for (String str : plugin.getConfig().getConfigurationSection("settings.filtering.punishments.commands").getKeys(false)) {
+        for (String str : Objects.requireNonNull(plugin.getConfig().getConfigurationSection("settings.filtering.punishments.commands")).getKeys(false)) {
             try {
                 if (Integer.parseInt(str) == flags || Integer.parseInt(str) == 0) {
                     String path = "settings.filtering.punishments.commands." + str;
@@ -51,7 +53,7 @@ public class PunishmentEvents implements Listener {
                         command = manager.prepare(player, command).replaceAll("(?i)\\{amount}|(?i)%amount%", Integer.toString(flags));
                         String finalCommand = command;
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            if (executor.equalsIgnoreCase("CONSOLE")) {
+                            if (Objects.requireNonNull(executor).equalsIgnoreCase("CONSOLE")) {
                                 manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
                             } else {
                                 manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
@@ -60,7 +62,7 @@ public class PunishmentEvents implements Listener {
                     }
                 }
             } catch (NumberFormatException e) {
-                manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", "Failed to parse integer (" + str + ") under path (settings.filtering.punishments.commands." + str + ")"));
+                manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.failure")).replaceAll("(?i)\\{message}|(?i)%message%", "Failed to parse integer (" + str + ") under path (settings.filtering.punishments.commands." + str + ")"));
                 e.printStackTrace();
             }
             if (plugin.getConfig().getInt("settings.filtering.punishments.flags.reset every interval at") != 0) {

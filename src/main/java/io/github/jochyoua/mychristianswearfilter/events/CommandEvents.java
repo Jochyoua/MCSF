@@ -35,7 +35,7 @@ public class CommandEvents {
 
 
     public CommandEvents(Manager manager) {
-        this.plugin = manager.getProvider();
+        this.plugin = manager.getPlugin();
         if (manager.supported("mysql")) {
             this.connector = manager.getConnector();
             this.connection = manager.getConnection();
@@ -62,18 +62,18 @@ public class CommandEvents {
                             return null;
                         switch (args[0]) {
                             case "remove":
-                                List<String> swears = manager.getSwears();
+                                List<String> swears = manager.getLocalSwears();
                                 StringUtil.copyPartialMatches(args[1], swears, completions);
                                 break;
                             case "reset":
                                 StringUtil.copyPartialMatches(args[1], Collections.singletonList("confirm"), completions);
                                 break;
                             case "whitelist":
-                                List<String> white = manager.getWhitelist();
+                                List<String> white = manager.getLocalWhitelist();
                                 StringUtil.copyPartialMatches(args[1], white, completions);
                                 break;
                             case "global":
-                                List<String> global = manager.getGlobal();
+                                List<String> global = manager.getGlobalSwears();
                                 StringUtil.copyPartialMatches(args[1], global, completions);
                                 break;
                             case "status":
@@ -98,7 +98,7 @@ public class CommandEvents {
                                 long duration = manager.getCooldowns().getExpectedExpiration(player.getUniqueId());
                                 duration = TimeUnit.MILLISECONDS.toSeconds(duration);
                                 if (duration != 0) {
-                                    manager.send(player, plugin.getLanguage().getString("variables.cooldown").replaceAll("(?i)\\{duration}|(?i)%duration%", String.valueOf(duration)));
+                                    manager.send(player, Objects.requireNonNull(plugin.getLanguage().getString("variables.cooldown")).replaceAll("(?i)\\{duration}|(?i)%duration%", String.valueOf(duration)));
                                     return true;
                                 }
                             }
@@ -216,7 +216,7 @@ public class CommandEvents {
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                     }
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                 } else {
                                     if (!global.contains(glo))
                                         global.add(glo);
@@ -230,16 +230,16 @@ public class CommandEvents {
                                             e.printStackTrace();
                                         }
                                     }
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
                                 }
                             } else {
                                 if (global.contains(glo)) {
                                     global.remove(glo);
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                 } else {
                                     if (!global.contains(glo))
                                         global.add(glo);
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
                                 }
                             }
                             local = Manager.FileManager.getFile(plugin, "data/global");
@@ -268,14 +268,14 @@ public class CommandEvents {
                                     state = false;
                                     break;
                                 default:
-                                    throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.invalidtype").replaceAll("(?i)\\{arg}|(?i)%arg%", args.get(1)).replaceAll("(?i)\\{type}|(?i)%type%", "boolean"));
+                                    throw new FailureException(plugin.getLanguage(), Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtype")).replaceAll("(?i)\\{arg}|(?i)%arg%", args.get(1)).replaceAll("(?i)\\{type}|(?i)%type%", "boolean"));
                             }
                             StringBuilder message = new StringBuilder();
                             for (int i = 2; i < args.size(); i++) {
                                 String arg = args.get(i) + " ";
                                 message.append(arg);
                             }
-                            manager.send(sender, plugin.getLanguage().getString("variables.parse").replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
+                            manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.parse")).replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
                             break;
                         case "whitelist":
                             if (!sender.hasPermission("MCSF.modify.whitelist")) {
@@ -316,7 +316,7 @@ public class CommandEvents {
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                     }
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                 } else {
                                     if (!whitelist.contains(white))
                                         whitelist.add(white);
@@ -330,16 +330,16 @@ public class CommandEvents {
                                             e.printStackTrace();
                                         }
                                     }
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
                                 }
                             } else {
                                 if (whitelist.contains(white)) {
                                     whitelist.remove(white);
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                 } else {
                                     if (!whitelist.contains(white))
                                         whitelist.add(white);
-                                    manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
                                 }
                             }
                             local.set("whitelist", whitelist);
@@ -366,7 +366,7 @@ public class CommandEvents {
                                 }
                             if (targetid == null) {
                                 throw new FailureException(plugin.getLanguage(),
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                        Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             } else {
                                 try (
                                         PreparedStatement ps = manager.getUserConnection().prepareStatement(HikariCP.Query.USERS.delete)) {
@@ -393,7 +393,7 @@ public class CommandEvents {
                                                 replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             } else {
                                 throw new FailureException(plugin.getLanguage(),
-                                        plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                        Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                             }
                             break;
                         case "toggle":
@@ -412,23 +412,23 @@ public class CommandEvents {
                                 if (sender.hasPermission("MCSF.bypass")) {
                                     value = user.toggle();
                                     if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                        manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").
-                                                replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
-                                    manager.send(sender, plugin.getLanguage().getString("variables.toggle")
-                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                        manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle")).
+                                                replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.toggle"))
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
 
                                     break;
                                 }
                                 value = user.toggle();
-                                manager.send(sender, plugin.getLanguage().getString("variables.toggle")
-                                        .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.toggle"))
+                                        .replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                                 if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                    manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                            .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                    manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle"))
+                                            .replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
                             } else {
                                 if (finalArgs.size() != 2) {
                                     throw new FailureException(plugin.getLanguage(),
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                            Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
                                 }
                                 if (!sender.hasPermission("MCSF.modify.others")) {
                                     throw new NoPermissionException(plugin.getLanguage());
@@ -446,15 +446,15 @@ public class CommandEvents {
                                     }
                                     if (targetid == null) {
                                         throw new FailureException(plugin.getLanguage(),
-                                                plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                                Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                     } else {
                                         User user = new User(manager, targetid);
                                         value = user.toggle();
                                         if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                            manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle")
-                                                    .replaceAll("(?i)\\{value}|(?i)%value%", value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
-                                        manager.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                            manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle"))
+                                                    .replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                        manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")))));
                                     }
                                     break;
                                 }
@@ -474,14 +474,14 @@ public class CommandEvents {
                                 }
                                 if (targetid == null) {
                                     throw new FailureException(plugin.getLanguage(),
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                            Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                 } else {
                                     User user = new User(manager, targetid);
                                     user.toggle();
                                     if (plugin.getConfig().getBoolean("settings.filtering.log filter changes") && !(sender instanceof ConsoleCommandSender))
-                                        manager.send(Bukkit.getConsoleSender(), plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{value}|(?i)%value%", user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
-                                    manager.send(sender, plugin.getLanguage().getString("variables.targetToggle").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (new User(manager, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                        manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle")).replaceAll("(?i)\\{value}|(?i)%value%", Objects.requireNonNull(user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.targetToggle")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)).replaceAll("(?i)\\{value}|(?i)%value%", (Objects.requireNonNull(new User(manager, targetid).status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")))));
                                 }
                             }
                             break;
@@ -496,12 +496,12 @@ public class CommandEvents {
                                 } else {
                                     value = user.status();
                                 }
-                                manager.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.status")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")))));
                                 break;
                             } else {
                                 if (finalArgs.size() != 2) {
                                     throw new FailureException(plugin.getLanguage(),
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
+                                            Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", sender.getName()));
 
                                 }
                                 if (!sender.hasPermission("MCSF.modify.others")) {
@@ -520,7 +520,7 @@ public class CommandEvents {
                                 }
                                 if (targetid == null) {
                                     throw new FailureException(plugin.getLanguage(),
-                                            plugin.getLanguage().getString("variables.error.invalidtarget").replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
+                                            Objects.requireNonNull(plugin.getLanguage().getString("variables.error.invalidtarget")).replaceAll("(?i)\\{target}|(?i)%target%", finalArgs.get(1)));
 
                                 } else {
                                     User user = new User(manager, targetid);
@@ -529,7 +529,7 @@ public class CommandEvents {
                                     } else {
                                         value = user.status();
                                     }
-                                    manager.send(sender, plugin.getLanguage().getString("variables.status").replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"))));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.status")).replaceAll("(?i)\\{target}|(?i)%target%", user.playerName()).replaceAll("(?i)\\{value}|(?i)%value%", (Objects.requireNonNull(value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")))));
                                 }
                             }
                             break;
@@ -543,7 +543,7 @@ public class CommandEvents {
 
                             }
                             if (finalArgs.size() != 2) {
-                                manager.send(sender, plugin.getLanguage().getString("variables.reset"));
+                                manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.reset")));
 
                             } else {
                                 if (finalArgs.get(1).equalsIgnoreCase("confirm")) {
@@ -553,18 +553,18 @@ public class CommandEvents {
                                         throwables.printStackTrace();
                                     }
                                 } else {
-                                    manager.send(sender, plugin.getLanguage().getString("variables.reset"));
+                                    manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.reset")));
                                     break;
                                 }
                             }
-                            manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.reset")));
+                            manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.reset"))));
                             break;
                         case "version":
                             if (sender.hasPermission("MCSF.version")) {
                                 StringBuilder version = new StringBuilder();
                                 int length = plugin.getLanguage().getStringList("variables.version").size();
                                 for (String str : plugin.getLanguage().getStringList("variables.version")) {
-                                    length = length - 1;
+                                    length -= 1;
                                     if (length <= 0) { // length is the end
                                         version.append(str);
                                     } else { // length is not the end
@@ -633,13 +633,13 @@ public class CommandEvents {
                                             } catch (SQLException throwables) {
                                                 throwables.printStackTrace();
                                             }
-                                            manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                            manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
 
                                         } else {
                                             if (!swears.contains(word)) {
                                                 swears.add(word);
                                                 manager.debug(sender.getName() + " has added `" + word + "` to the config");
-                                                manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.added")));
+                                                manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
                                             } else {
                                                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.alreadyexists"));
                                             }
@@ -678,12 +678,12 @@ public class CommandEvents {
                                             } catch (SQLException throwables) {
                                                 throwables.printStackTrace();
                                             }
-                                            manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                            manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                         } else {
                                             boolean modified = swears.remove(word);
                                             if (modified) {
                                                 manager.debug(sender.getName() + " has removed `" + word + "` from config");
-                                                manager.send(sender, plugin.getLanguage().getString("variables.success").replaceAll("(?i)\\{message}|(?i)%message%", plugin.getLanguage().getString("variables.successful.removed")));
+                                                manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
                                             } else {
                                                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.doesntexist"));
                                             }
