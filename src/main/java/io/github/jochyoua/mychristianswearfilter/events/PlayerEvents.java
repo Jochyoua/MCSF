@@ -65,6 +65,11 @@ public class PlayerEvents implements Listener {
             use = true;
             // ProtocolLib wasn't found!!
         }
+        if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear"))
+            e.setCancelled(true);
+        if (plugin.getConfig().getBoolean("settings.only filter players.only remove global swears"))
+            if (!manager.isclean(old_message, manager.reloadPattern(Types.Filters.GLOBAL)))
+                e.setCancelled(true);
         if (e.isCancelled())
             return;
         if (use || !manager.supported("ProtocolLib")) {
@@ -150,8 +155,8 @@ public class PlayerEvents implements Listener {
     @Deprecated
     @EventHandler
     public void openBook(PlayerInteractEvent e) {
-        Player player = e.getPlayer();
         if (plugin.getConfig().getBoolean("settings.filtering.filter checks.bookcheck")) {
+            Player player = e.getPlayer();
             ItemStack hand;
             try {
                 hand = player.getInventory().getItemInMainHand();
