@@ -37,7 +37,7 @@ public class MCSF extends JavaPlugin {
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.ProtocolLib ProtocolLib;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
-    private Boolean needsUpdate;
+    private Boolean needsUpdate = false;
 
 
     @Override
@@ -50,6 +50,7 @@ public class MCSF extends JavaPlugin {
                         + "Resource: https://www.spigotmc.org/resources/54115/\n"
                         + "Github: https://www.github.com/Jochyoua/MCSF/\n"
                         + "Wiki: https://github.com/Jochyoua/MCSF/wiki");
+        getConfig().options().copyDefaults(true);
         saveDefaultConfig();
 
         // Retrieves the currently set language
