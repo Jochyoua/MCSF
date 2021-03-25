@@ -73,6 +73,7 @@ public class ProtocolLib implements Listener {
                                         Objects.requireNonNull(language.getString("variables.error.execute_failure"))
                                                 .replaceAll("(?i)\\{feature}", "Chat Filtering (FULL CHAT)")), e);
                         setEnabled(false);
+                        e.printStackTrace();
                         manager.getPlugin().getLogger().log(Level.INFO, "Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }

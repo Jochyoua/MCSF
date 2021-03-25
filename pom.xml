@@ -70,7 +70,19 @@
                     <relocations>
                         <relocation>
                             <pattern>org.bstats</pattern>
-                            <shadedPattern>io.github.jochyoua.mychristianswearfilter</shadedPattern>
+                            <shadedPattern>io.github.jochyoua.mychristianswearfilter.dependencies</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>xyz.upperlevel.spigot</pattern>
+                            <shadedPattern>io.github.jochyoua.mychristianswearfilter.dependencies</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.jodah</pattern>
+                            <shadedPattern>io.github.jochyoua.mychristianswearfilter.dependencies</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.zaxxer</pattern>
+                            <shadedPattern>io.github.jochyoua.mychristianswearfilter.dependencies</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

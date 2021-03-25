@@ -23,12 +23,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.security.SecureRandom;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
-
 
 
 @Getter
@@ -42,10 +38,6 @@ public class MCSF extends JavaPlugin {
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
     private Boolean needsUpdate;
-
-    public MCSF() {
-        throw new AssertionError();
-    }
 
 
     @Override
@@ -64,12 +56,67 @@ public class MCSF extends JavaPlugin {
         language = Manager.FileManager.getLanguage(this);
 
         // Relocates old pre-existing data to the appropriate locations
-        Manager.FileManager.relocateData(this);
+        FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
+        if (this.getConfig().isSet("mysql")) {
+            this.getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
+            for (String key : Objects.requireNonNull(this.getConfig().getConfigurationSection("mysql")).getKeys(false)) {
+                sql.set("mysql." + key, this.getConfig().get("mysql." + key));
+            }
+            Manager.FileManager.saveFile(this, sql, "sql");
+            this.getConfig().set("mysql", null);
+            this.saveConfig();
+        }
+        FileConfiguration local = Manager.FileManager.getFile(this, "data/swears");
+        if (!this.getConfig().getStringList("swears").isEmpty()) {
+            this.getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
+            if (local.isSet("swears")) {
+                if (!local.getStringList("swears").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("swears"));
+                    Set<String> local2 = new HashSet<>(this.getConfig().getStringList("swears"));
+                    local1.addAll(local2);
+                    local.set("swears", local1);
+                    Manager.FileManager.saveFile(this, local, "data/swears");
+                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                }
+            }
+            getConfig().set("swears", null);
+            saveConfig();
+        }
+        local = Manager.FileManager.getFile(this, "data/whitelist");
+        if (!getConfig().getStringList("whitelist").isEmpty()) {
+            getLogger().info("(CONFIG) Setting path `global` into `data/whitelist.yml`");
+            if (local.isSet("whitelist")) {
+                if (!local.getStringList("whitelist").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
+                    Set<String> local2 = new HashSet<>(this.getConfig().getStringList("whitelist"));
+                    local1.addAll(local2);
+                    local.set("whitelist", local1);
+                    Manager.FileManager.saveFile(this, local, "data/whitelist");
+                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                }
+            }
+            this.getConfig().set("whitelist", null);
+            this.saveConfig();
+        }
+        local = Manager.FileManager.getFile(this, "data/global");
+        if (!this.getConfig().getStringList("global").isEmpty()) {
+            this.getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
+            if (local.isSet("global")) {
+                if (!local.getStringList("global").isEmpty()) {
+                    Set<String> local1 = new HashSet<>(local.getStringList("global"));
+                    Set<String> local2 = new HashSet<>(this.getConfig().getStringList("global"));
+                    local1.addAll(local2);
+                    local.set("global", local1);
+                    Manager.FileManager.saveFile(this, local, "data/global");
+                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                }
+            }
+            this.getConfig().set("global", null);
+            this.saveConfig();
+        }
 
         // Loads MySQL data if mysql is enabled
         hikariCP = new HikariCP(this, connector);
-
-        FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (sql.getBoolean("mysql.enabled")) {
             boolean load = false;
             if (connector == null)
