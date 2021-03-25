@@ -66,6 +66,7 @@ settings:
     # Only player actions can flag this, such as chatting or writing in books and having any word contain something that's filtered.
     punishments:
       punish players: false
+      only global: false
       punish check:
         books: true
         chat: true

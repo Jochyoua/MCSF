@@ -30,7 +30,7 @@ public class PunishmentEvents implements Listener {
 
     @EventHandler
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
             return;
         }
         punishPlayers(event.getPlayer());
@@ -77,14 +77,14 @@ public class PunishmentEvents implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
+        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
             return;
         }
         punishPlayers(event.getPlayer());
