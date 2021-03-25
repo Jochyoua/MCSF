@@ -110,7 +110,7 @@ https://regex101.com/r/pvMY0o/1
 # CUSTOM REGEX:
 You can add custom regex for both global and normal filtering by adding them as normal swears.
 For a string to be recognised as regex, it must be valid for Java and have the prefix regex:
-These are a valid example:
+This is a valid example:
   ### IP Addresses:
   * (Per Player) /mcsf add regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
   * (Globally) /mcsf global regex:\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])(\.|,|-)){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b
