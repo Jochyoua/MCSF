@@ -50,7 +50,7 @@ public class MCSF extends JavaPlugin {
         // Retrieves the currently set language
         language = Manager.FileManager.getLanguage(this);
 
-        // Relocates old pre-existing data to the appropriate locations
+        // Removes old sql information from config.yml and sorts it into sql.yml
         FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (this.getConfig().isSet("mysql")) {
             this.getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
@@ -61,6 +61,8 @@ public class MCSF extends JavaPlugin {
             this.getConfig().set("mysql", null);
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
+
+        // Removes old swear information from config.yml and sorts it into data/swears.yml
         FileConfiguration local = Manager.FileManager.getFile(this, "data/swears");
         if (!this.getConfig().getStringList("swears").isEmpty()) {
             this.getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
@@ -77,6 +79,8 @@ public class MCSF extends JavaPlugin {
             getConfig().set("swears", null);
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
+
+        // Removes old whitelist information from config.yml and sorts it into data/whitelist.yml
         local = Manager.FileManager.getFile(this, "data/whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
             getLogger().info("(CONFIG) Setting path `whitelist` into `data/whitelist.yml`");
@@ -93,6 +97,8 @@ public class MCSF extends JavaPlugin {
             this.getConfig().set("whitelist", null);
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
+
+        // Removes old global information from config.yml and sorts it into data/global.yml
         local = Manager.FileManager.getFile(this, "data/global");
         if (!this.getConfig().getStringList("global").isEmpty()) {
             this.getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
