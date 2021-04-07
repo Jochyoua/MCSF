@@ -42,9 +42,6 @@ public class PlaceholderAPI extends PlaceholderExpansion {
                 return String.valueOf(user.getFlags());
             case "player_status":
                 return String.valueOf(user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated"));
-            case "swearcount":
-                plugin.reloadConfig();
-                return String.valueOf(plugin.getConfig().getInt("swearcount"));
             case "version":
                 return plugin.getDescription().getVersion();
         }

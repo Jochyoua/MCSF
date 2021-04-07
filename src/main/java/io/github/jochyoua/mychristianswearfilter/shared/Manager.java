@@ -18,7 +18,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.json.simple.JSONObject;
 
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -53,7 +52,11 @@ public class Manager {
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
     Connection userConnection;
-    Map<String, String> whitelistMap = new HashMap<>();
+
+
+    Pattern swearPattern;
+    Pattern globalPattern;
+    Pattern bothPattern;
 
     /**
      * Instantiates a new Manager class
@@ -132,27 +135,6 @@ public class Manager {
     }
 
     /**
-     * Distinctly sorts an arraylist
-     *
-     * @param str the arraylist to be sorted
-     * @return the sorted list
-     */
-    public static List<String> sortArray(List<String> str) {
-        return str.stream()
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns a random UUID
-     *
-     * @return the string
-     */
-    public static String random() {
-        return UUID.randomUUID().toString();
-    }
-
-    /**
      * Reloads the user sql database
      */
     public void reloadUserData() {
@@ -192,10 +174,6 @@ public class Manager {
         }
     }
 
-    public void putWhitelistMap(String str1, String str2) {
-        whitelistMap.put(str1, str2);
-    }
-
     /**
      * Gets the user cooldowns
      *
@@ -227,10 +205,6 @@ public class Manager {
         this.regex = str;
     }
 
-    public Map<String, String> getWhitelistMap() {
-        return whitelistMap;
-    }
-
     /**
      * Checks to see if a feature is enabled
      *
@@ -253,7 +227,7 @@ public class Manager {
                 statement = plugin.getServer().getPluginManager().getPlugin("ProtocolLib") != null;
                 break;
             case "mysql":
-                statement = plugin.getHikariCP().isEnabled();
+                statement = Manager.FileManager.getFile(plugin, "sql").getBoolean("mysql.enabled") && plugin.getHikariCP().isEnabled();
                 break;
             case "placeholderapi":
                 statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
@@ -280,37 +254,6 @@ public class Manager {
             }
         }
         return i;
-    }
-
-    /**
-     * Shows help to the user
-     *
-     * @param sender the sender
-     */
-    public void showHelp(CommandSender sender) {
-        StringBuilder message = new StringBuilder();
-        int length = plugin.getLanguage().getStringList("variables.help").size();
-        for (String str : plugin.getLanguage().getStringList("variables.help")) {
-            length -= 1;
-            Matcher match = Pattern.compile("(?i)\\{PERMISSION=(.*?)}|(?i)<%PERMISSION=(.*?)%>", Pattern.DOTALL).matcher(str);
-            String permission = null;
-            while (match.find()) {
-                permission = match.group(1);
-            }
-            if (!(permission == null)) {
-                if (!sender.hasPermission(permission)) {
-                    continue;
-                } else {
-                    str = str.replaceAll("(?i)\\{PERMISSION=(.*?)}|(?i)<%PERMISSION=(.*?)%>", "");
-                }
-            }
-            if (length <= 0) { // length is the end
-                message.append(str);
-            } else { // length is not the end
-                message.append(str).append("\n");
-            }
-        }
-        send(sender, message.toString());
     }
 
     /**
@@ -470,105 +413,92 @@ public class Manager {
      * <p>
      * This function is essentially a forward for filter(String string, boolean strip, boolean log, List<String> array, Types.Filters type)
      *
-     * @param string the string to be cleared
-     * @param strip  if the string should be stripped of all chatcolor
-     * @param log    if this should count as a logged swear
-     * @param array  the array of regex strings to be checked for
-     * @param type   the type of filter this is
+     * @param string  the string to be cleared
+     * @param strip   if the string should be stripped of all chat color
+     * @param log     if this should count as a logged swear
+     * @param pattern the pattern to filter by
+     * @param type    the type of filter this is
      * @return the cleaned string
      */
-    public String clean(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
+    public String clean(String string, boolean strip, boolean log, Pattern pattern, Types.Filters type) {
         if (plugin.getConfig().getBoolean("settings.filtering.double filtering") && type != Types.Filters.DISCORD)
-            return filter(filter(string, strip, false, array, type), strip, log, array, type);
-        return filter(string, strip, log, array, type);
+            return filter(filter(string, strip, false, pattern, type), strip, log, pattern, type);
+        return filter(string, strip, log, pattern, type);
     }
 
     /**
      * Filters string
      *
      * @param string the string to be cleared
-     * @param strip  if the string should be stripped of all chatcolor
+     * @param strip  if the string should be stripped of all chat color
      * @param log    if this should count as a logged swear
-     * @param array  the array of regex strings to be checked for
      * @param type   the type of filter this is
      * @return the cleaned string
      */
-    public String filter(String string, boolean strip, boolean log, List<String> array, Types.Filters type) {
-        if (array.isEmpty() || string == null) {
-            return string;
+    public String filter(String string, boolean strip, boolean log, Pattern pattern, Types.Filters type) {
+        if (string == null) {
+            return null;
         }
         String replacement = plugin.getConfig().getString("settings.filtering.replacement");
-        if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-            String lstring = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-            for (String str : lstring.split(" ")) {
-                str = str.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                if (getLocalWhitelist().stream().distinct().collect(Collectors.toList()).stream().anyMatch(str::equalsIgnoreCase)) {
-                    String r = getWhitelistMap().get(str);
-                    if (r == null) {
-                        r = random();
-                        putWhitelistMap(str, r);
-                    }
-                    string = string.replaceAll("(\\b" + str + "\\b)", r);
-                }
-            }
-        }
-        Pattern pattern = Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS);
         Matcher matcher = pattern.matcher(string);
         StringBuffer out = new StringBuffer();
-        int swearcount = plugin.getConfig().getInt("swearcount");
         while (matcher.find()) {
-            if (!matcher.group(0).trim().isEmpty()) {
-                try {
-                    String[] arr = matcher.toMatchResult().toString().split("=");
-                    String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                    if (plugin.getConfig().getBoolean("settings.replace word for word")) {
-                        replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
-                                (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
-                    }
-                } catch (Exception e) {
-                    debug("Could not register replace_word_for_words: " + e.getMessage());
+            if (getLocalWhitelist().contains(matcher.group(0).trim().toLowerCase()))
+                continue;
+            if (matcher.group(1) != null)
+                if (getLocalWhitelist().contains(matcher.group(1).trim().toLowerCase()))
+                    continue;
+            try {
+                String[] arr = matcher.toMatchResult().toString().split("=");
+                String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
+                if (plugin.getConfig().getBoolean("settings.filtering.replace word for word")) {
+                    replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
+                            (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
                 }
-                if (replacement == null)
-                    return string;
-                replacement = ChatColor.translateAlternateColorCodes('&', replacement);
-                if (strip) {
-                    replacement = ChatColor.stripColor(replacement);
-                }
-                String r = plugin.getConfig().getBoolean("settings.replace word for word") ? replacement : matcher.group(0).trim().replaceAll("(?s).", replacement);
-                if (type.equals(Types.Filters.DISCORD) && plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled")) {
-                    if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape entire message", false)) {
-                        string = string.replaceAll("\\*", "\\\\*")
-                                .replaceAll("_", "\\_")
-                                .replaceAll("\\|", "\\\\|")
-                                .replaceAll("~", "\\~")
-                                .replaceAll("`", "\\\\`");
-                    }
-                    r = Objects.requireNonNull(plugin.getConfig().getString("settings.discordSRV.spoilers.template", "||{swear}||"));
-                    r = r.replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).trim().replaceAll("\\*", "\\\\*")
+            } catch (Exception e) {
+                debug("Could not register replace_word_for_words: " + e.getMessage());
+            }
+            if (replacement == null)
+                return string;
+            replacement = ChatColor.translateAlternateColorCodes('&', replacement);
+            if (strip) {
+                replacement = ChatColor.stripColor(replacement);
+            }
+            String r = plugin.getConfig().getBoolean("settings.filtering.replace word for word") ? replacement : matcher.group(0).trim().replaceAll("(?s).", replacement);
+            if (type.equals(Types.Filters.DISCORD) && plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled")) {
+                if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape entire message", false)) {
+                    string = string.replaceAll("\\*", "\\\\*")
                             .replaceAll("_", "\\_")
                             .replaceAll("\\|", "\\\\|")
                             .replaceAll("~", "\\~")
-                            .replaceAll("`", "\\\\`") : matcher.group(0).trim()));
+                            .replaceAll("`", "\\\\`");
                 }
-                r = r.replaceAll("\\*", "\\\\*")
+                r = Objects.requireNonNull(plugin.getConfig().getString("settings.discordSRV.spoilers.template", "||{swear}||"));
+                r = r.replaceAll("(?i)\\{swear}|(?i)%swear%", (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape swears", true) ? matcher.group(0).trim().replaceAll("\\*", "\\\\*")
                         .replaceAll("_", "\\_")
                         .replaceAll("\\|", "\\\\|")
                         .replaceAll("~", "\\~")
-                        .replaceAll("`", "\\\\`");
-                matcher.appendReplacement(out, r);
-                swearcount++;
+                        .replaceAll("`", "\\\\`") : matcher.group(0).trim()));
             }
-        }
-        if (log) {
-            plugin.getConfig().set("swearcount", swearcount);
-            plugin.saveConfig();
+            r = r.replaceAll("\\*", "\\\\*")
+                    .replaceAll("_", "\\_")
+                    .replaceAll("\\|", "\\\\|")
+                    .replaceAll("~", "\\~")
+                    .replaceAll("`", "\\\\`");
+            matcher.appendReplacement(out, r);
         }
         matcher.appendTail(out);
         string = out.toString();
-        for (Map.Entry<String, String> str : getWhitelistMap().entrySet()) {
-            string = string.replaceAll(str.getValue(), str.getKey());
-        }
+
         return string;
+    }
+
+    private String getWhitelistRegex() {
+        List<String> whitelistRegex = new ArrayList<>();
+        for (String str : getLocalWhitelist()) {
+            whitelistRegex.add("(?i)\\b" + str + "\\b");
+        }
+        return String.join("|", whitelistRegex);
     }
 
     /**
@@ -587,29 +517,22 @@ public class Manager {
     /**
      * Checks to see if the string is clean
      *
-     * @param string the suspected string
-     * @param array  the array of strings to check for
+     * @param string  the suspected string
+     * @param pattern the pattern to check for
      * @return if the string is clean or not
      */
-    public boolean isclean(String string, List<String> array) {
-        if (array.isEmpty())
-            return true;
+    public boolean isclean(String string, Pattern pattern) {
         string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-        if (plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
-            for (String strs : string.split(" ")) {
-                if (getLocalWhitelist().stream().distinct().collect(Collectors.toList()).stream().anyMatch(string::equalsIgnoreCase)) {
-                    string = string.replaceAll("(\\b" + strs + "\\b)", "");
-                }
-            }
+        Matcher matcher = pattern.matcher(string);
+        while (matcher.find()) {
+            if (getLocalWhitelist().contains(matcher.group(0).trim().toLowerCase()))
+                continue;
+            if (matcher.group(1) != null)
+                if (getLocalWhitelist().contains(matcher.group(1).trim().toLowerCase()))
+                    continue;
+            return false;
         }
-        if (plugin.getConfig().getBoolean("custom_regex.enabled"))
-            for (String str2 : plugin.getConfig().getStringList("custom_regex.regex")) {
-                str2 = str2.replaceAll("(?i)\\{TYPE=(.*?)}", "").trim();
-                if (!array.contains(str2)) {
-                    array.add(str2);
-                }
-            }
-        return !Pattern.compile(String.join("|", array), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS).matcher(string).find();
+        return true;
     }
 
     /**
@@ -752,18 +675,26 @@ public class Manager {
     /**
      * Reload the current patterns for Global, Swears and whitelist.
      */
-    public List<String> reloadPattern(Types.Filters type) {
-        List<String> value = new ArrayList<>();
+    public Pattern reloadPattern(Types.Filters type) {
+        boolean update = false;
         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
-        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist")) && plugin.getConfig().getBoolean("settings.filtering.whitelist words")) {
+        if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
             debug("Whitelist doesn't equal local parameters, filling variables.");
-            setLocalWhitelist(local.getStringList("whitelist"));
-            if (local.getStringList("whitelist").isEmpty()) {
-                send(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getConfig().getString("variables.failure"))
-                        .replaceAll("(?i)\\{message}|(?i)%message%", "File /data/whitelist.yml is empty, please fix this ASAP; Using `class, hello` as placeholders"));
-                setLocalWhitelist(Arrays.asList("class", "hello"));
+            List<String> whitelist = local.getStringList("whitelist");
+            whitelist.add("text");
+            whitelist.add("color");
+            whitelist.add("extra");
+            whitelist.add("italic");
+            for (ChatColor c : ChatColor.values()) {
+                whitelist.add(c.toString());
             }
+            setLocalWhitelist(whitelist);
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
+            if (plugin.getLocal("swears") != 0 || plugin.getLocal("global") != 0) {
+                debug("Forcefully updating swear data & global data to prevent false positives");
+                plugin.setLocal("swears", 0);
+                plugin.setLocal("global", 0);
+            }
         }
         local = Manager.FileManager.getFile(plugin, "data/global");
         if ((local.getStringList("global").size() != plugin.getLocal("global")) || (getGlobalRegex().isEmpty() && !local.getStringList("global").isEmpty())) {
@@ -776,6 +707,8 @@ public class Manager {
             local.set("global", s);
             Manager.FileManager.saveFile(plugin, local, "data/global");
             plugin.setLocal("global", s.size());
+            update = true;
+            setGlobalPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         local = Manager.FileManager.getFile(plugin, "data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || (getRegex().isEmpty() && !local.getStringList("swears").isEmpty())) {
@@ -794,15 +727,22 @@ public class Manager {
             setRegex(duh.stream().sorted((s1, s2) -> s2.length() - s1.length())
                     .collect(Collectors.toList()));
             plugin.setLocal("swears", s.size());
+            update = true;
+            setSwearPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
-
+        if (update) {
+            debug("Updating pattern for both regex!");
+            List<String> patt = new ArrayList<>();
+            patt.addAll(getGlobalRegex());
+            patt.addAll(getRegex());
+            setBothPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", patt), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
+        }
         if (type == Types.Filters.BOTH) {
-            value.addAll(getGlobalRegex());
-            value.addAll(getRegex());
+            return getBothPattern();
         } else if (type == Types.Filters.GLOBAL) {
-            value.addAll(getGlobalRegex());
+            return getGlobalPattern();
         }
-        return value;
+        return getSwearPattern();
     }
 
     public List<String> generateRegex(List<String> s) {
@@ -863,7 +803,7 @@ public class Manager {
                             omg2.append("(").append(str3).append("+|([").append(quote).append("]|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append(")");
                         } else if (length2 == str2.length() - 1) { // length is the beginning
                             omg2.append("(?i)(").append(str3).append("+\\s*+|").append(str3).append("+\\s*+([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+)");
-                        } else { // length is somewhere inbetween
+                        } else { // length is somewhere in between
                             omg2.append("(").append(str3).append("+\\s*+|([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append("+\\s*+)");
                         }
                     }
@@ -888,7 +828,6 @@ public class Manager {
                 .replaceAll("(?i)\\{current}|(?i)%current%", plugin.getDescription().getVersion())
                 .replaceAll("(?i)\\{version}|(?i)%version%", String.valueOf(getVersion()))
                 .replaceAll("(?i)\\{serverversion}|(?i)%serverversion%", plugin.getServer().getVersion())
-                .replaceAll("(?i)\\{swearcount}|(?i)%swearcount", Integer.toString(plugin.getConfig().getInt("swearcount")))
                 .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears").size())));
         if (supported("PlaceholderAPI") && sender instanceof Player)
             message = PlaceholderAPI.setPlaceholders((Player) sender, message);
@@ -909,93 +848,6 @@ public class Manager {
             sender.spigot().sendMessage(new TextComponent(message));
         else
             sender.sendMessage(message);
-    }
-
-    public static class JSONUtil {
-        /**
-         * @author DarkSeraphim
-         **/
-        private static final StringBuilder JSON_BUILDER = new StringBuilder("{\"text\":\"\",\"extra\":[");
-
-        private static final int RETAIN = "{\"text\":\"\",\"extra\":[".length();
-        private static final StringBuilder STYLE = new StringBuilder();
-
-        public static String toJSON(String message) {
-            if (message == null || message.isEmpty())
-                return null;
-            message = JSONObject.escape(message);
-            if (JSON_BUILDER.length() > RETAIN)
-                JSON_BUILDER.delete(RETAIN, JSON_BUILDER.length());
-            String[] parts = message.split(Character.toString(ChatColor.COLOR_CHAR));
-            boolean first = true;
-            String colour = null;
-            String format = null;
-            boolean ignoreFirst = !parts[0].isEmpty() && ChatColor.getByChar(parts[0].charAt(0)) != null;
-            for (String part : parts) {
-                if (part.isEmpty()) {
-                    continue;
-                }
-
-                String newStyle = null;
-                if (!ignoreFirst) {
-                    newStyle = getStyle(part.charAt(0));
-                } else {
-                    ignoreFirst = false;
-                }
-
-                if (newStyle != null) {
-                    part = part.substring(1);
-                    if (newStyle.startsWith("\"c"))
-                        colour = newStyle;
-                    else
-                        format = newStyle;
-                }
-                if (!part.isEmpty()) {
-                    if (first)
-                        first = false;
-                    else {
-                        JSON_BUILDER.append(",");
-                    }
-                    JSON_BUILDER.append("{");
-                    if (colour != null) {
-                        JSON_BUILDER.append(colour);
-                        colour = null;
-                    }
-                    if (format != null) {
-                        JSON_BUILDER.append(format);
-                        format = null;
-                    }
-                    JSON_BUILDER.append(String.format("\"text\":\"%s\"", part));
-                    JSON_BUILDER.append("}");
-                }
-            }
-            return JSON_BUILDER.append("]}").toString();
-        }
-
-        private static String getStyle(char colour) {
-            if (STYLE.length() > 0)
-                STYLE.delete(0, STYLE.length());
-            switch (colour) {
-                case 'k':
-                    return "\"obfuscated\": true,";
-                case 'l':
-                    return "\"bold\": true,";
-                case 'm':
-                    return "\"strikethrough\": true,";
-                case 'n':
-                    return "\"underlined\": true,";
-                case 'o':
-                    return "\"italic\": true,";
-                case 'r':
-                    return "\"reset\": true,";
-                default:
-                    break;
-            }
-            ChatColor cc = ChatColor.getByChar(colour);
-            if (cc == null)
-                return null;
-            return STYLE.append("\"color\":\"").append(cc.name().toLowerCase()).append("\",").toString();
-        }
     }
 
     public static class FileManager {

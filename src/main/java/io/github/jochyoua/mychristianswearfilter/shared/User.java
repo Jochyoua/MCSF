@@ -27,8 +27,8 @@ public class User {
      */
     public User(Manager manager, UUID id) {
         this.id = id;
-        this.plugin = manager.getPlugin();
         this.manager = manager;
+        this.plugin = manager.getPlugin();
         this.connection = manager.getConnection();
         this.userConnection = manager.getUserConnection();
     }

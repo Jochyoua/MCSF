@@ -75,8 +75,6 @@ public class Types {
                 Languages.valueOf(lan);
             } catch (IllegalArgumentException | NullPointerException exception) {
                 plugin.getLogger().warning("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
-                plugin.getConfig().set("settings.language", "en_us");
-                plugin.saveConfig();
                 lan = "en_us";
             }
             return lan;
