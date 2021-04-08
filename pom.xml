@@ -116,8 +116,8 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
-            <id>scarsz-nexus</id>
-            <url>https://nexus.scarsz.me/content/repositories/releases/</url>
+            <id>Scarsz-Nexus</id>
+            <url>https://nexus.scarsz.me/content/groups/public/</url>
         </repository>
         <repository>
             <id>placeholderapi</id>
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>com.discordsrv</groupId>
             <artifactId>discordsrv</artifactId>
-            <version>1.16.6</version>
+            <version>1.21.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

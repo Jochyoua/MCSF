@@ -1,6 +1,7 @@
 package io.github.jochyoua.mychristianswearfilter.shared.hooks;
 
 import github.scarsz.discordsrv.api.Subscribe;
+import github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
@@ -36,7 +37,8 @@ public class DiscordSRV {
 
     @Subscribe
     public void DiscordGameMessage(
-            final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
+            final GameChatMessagePostProcessEvent event) {
+        // Filters messages from MC to Discord
         event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DISCORD));
     }
 }
