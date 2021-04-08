@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class User {
     private final UUID id;
@@ -103,13 +104,15 @@ public class User {
             value = !value;
         }
         this.set(value);
+        manager.debug(playerName() + "'s swear filter has been " +
+                (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
         return value;
     }
 
     /**
      * Gets the player's unique ID
      *
-     * @return the player's uniqueid
+     * @return the player's unique id
      */
     public UUID getId() {
         return this.id;
@@ -162,6 +165,8 @@ public class User {
                     ps.setBoolean(1, bool);
                     ps.setString(2, playername);
                 }
+                manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
+                        (status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
                 ps.execute();
                 ps.close();
             } catch (SQLException throwables) {

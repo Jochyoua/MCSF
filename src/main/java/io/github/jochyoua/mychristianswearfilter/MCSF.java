@@ -3,7 +3,10 @@ package io.github.jochyoua.mychristianswearfilter;
 import io.github.jochyoua.mychristianswearfilter.commands.McsfCommand;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
-import io.github.jochyoua.mychristianswearfilter.listeners.*;
+import io.github.jochyoua.mychristianswearfilter.listeners.ChatListener;
+import io.github.jochyoua.mychristianswearfilter.listeners.InteractListener;
+import io.github.jochyoua.mychristianswearfilter.listeners.JoinLeaveListener;
+import io.github.jochyoua.mychristianswearfilter.listeners.PunishmentListener;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
@@ -22,7 +25,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.security.SecureRandom;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 
 
@@ -145,7 +153,8 @@ public class MCSF extends JavaPlugin {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-        manager.debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH" : " !RELOAD!"), false, Level.INFO);
+
+        manager.debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH RUN" : " RELOADED"), false, Level.INFO);
 
 
         // Relocates old pre-existing user data to the appropriate locations

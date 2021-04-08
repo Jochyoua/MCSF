@@ -5,7 +5,14 @@ import io.github.jochyoua.mychristianswearfilter.commands.information.HelpComman
 import io.github.jochyoua.mychristianswearfilter.commands.information.StatusCommand;
 import io.github.jochyoua.mychristianswearfilter.commands.information.ToggleCommand;
 import io.github.jochyoua.mychristianswearfilter.commands.information.VersionCommand;
-import io.github.jochyoua.mychristianswearfilter.commands.modifications.*;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.AddCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.GlobalCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.ParseCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.ReloadCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.RemoveCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.ResetCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.UnsetCommand;
+import io.github.jochyoua.mychristianswearfilter.commands.modifications.WhitelistCommand;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
