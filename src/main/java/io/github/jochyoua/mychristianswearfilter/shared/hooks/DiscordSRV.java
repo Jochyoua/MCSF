@@ -25,12 +25,12 @@ public class DiscordSRV {
         manager = plugin.getManager();
         if (manager.supported("DiscordSRV")) {
             try {
-                manager.debug("Registered DiscordSRV hook successfully!", true, Level.INFO);
+                Manager.debug("Registered DiscordSRV hook successfully!", plugin.getDebug(), Level.INFO);
                 github.scarsz.discordsrv.DiscordSRV.api.subscribe(this);
             } catch (Exception e) {
                 String message = e.getMessage();
                 setEnabled(false);
-                manager.debug("Registered DiscordSRV hook unsuccessfully: " + message, true, Level.WARNING);
+                Manager.debug("Registered DiscordSRV hook unsuccessfully: " + message, true, Level.WARNING);
             }
         }
     }

@@ -10,7 +10,7 @@ variables:
   success: "{prefix} &aErfolg: {message}" ## Nachricht bei erfolgreicher Durchführung. Können unter "variables.success" eingesehen werden.
   activated: "aktiviert"
   deactivated: "deaktiviert"
-  debug: "{prefix} &d&lDEBUG > &f{message}"
+
   parse: "{prefix} &d&lPARSE > &f{message}"
   reset: "{prefix} Möchtest du die Datenbank wirklich zurücksetzen? Dies ist irreversibel. Zur Bestätigung gib /{command} reset confirm zur Bestätigung ein"
   cooldown: "{prefix} Du musst &c{duration}s&f warten, um diesen Befehl zu verwenden!"

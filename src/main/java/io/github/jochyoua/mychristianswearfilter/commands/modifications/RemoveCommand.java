@@ -69,12 +69,12 @@ public class RemoveCommand {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-            manager.debug(sender.getName() + " has removed `" + word + "` from database", true, Level.INFO);
+            Manager.debug(sender.getName() + " has removed `" + word + "` from database", plugin.getDebug(), Level.INFO);
             manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
         } else {
             boolean modified = swears.remove(word);
             if (modified) {
-                manager.debug(sender.getName() + " has removed `" + word + "` from config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has removed `" + word + "` from config", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.doesntexist"));

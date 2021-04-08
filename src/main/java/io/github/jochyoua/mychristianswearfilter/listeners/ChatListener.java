@@ -17,7 +17,7 @@ public class ChatListener implements Listener {
     private final MCSF plugin;
     private final Manager manager;
 
-    public ChatListener(MCSF plugin){
+    public ChatListener(MCSF plugin) {
         this.plugin = plugin;
         this.manager = plugin.getManager();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);

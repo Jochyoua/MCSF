@@ -80,11 +80,11 @@ public class AddCommand {
                 throwables.printStackTrace();
             }
             manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
-            manager.debug(sender.getName() + " has added `" + word + "` to the database", true, Level.INFO);
+            Manager.debug(sender.getName() + " has added `" + word + "` to the database", plugin.getDebug(), Level.INFO);
         } else {
             if (!swears.contains(word)) {
                 swears.add(word);
-                manager.debug(sender.getName() + " has added `" + word + "` to the config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has added `" + word + "` to the config", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
             } else {
                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.alreadyexists"));

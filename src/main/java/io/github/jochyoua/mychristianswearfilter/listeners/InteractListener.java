@@ -24,7 +24,7 @@ public class InteractListener implements Listener {
     private final MCSF plugin;
     private final Manager manager;
 
-    public InteractListener(MCSF plugin){
+    public InteractListener(MCSF plugin) {
         this.plugin = plugin;
         this.manager = plugin.getManager();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);

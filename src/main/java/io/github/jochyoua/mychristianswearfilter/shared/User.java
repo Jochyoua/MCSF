@@ -104,7 +104,7 @@ public class User {
             value = !value;
         }
         this.set(value);
-        manager.debug(playerName() + "'s swear filter has been " +
+        Manager.debug(playerName() + "'s swear filter has been " +
                 (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
         return value;
     }
@@ -165,7 +165,7 @@ public class User {
                     ps.setBoolean(1, bool);
                     ps.setString(2, playername);
                 }
-                manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
+                Manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
                         (status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
                 ps.execute();
                 ps.close();

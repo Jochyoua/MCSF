@@ -33,9 +33,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
+
 
 @Getter
 public class MCSF extends JavaPlugin {
+    public static MCSF plugin;
+
     public final HashMap<String, Integer> localSizes = new HashMap<>();
     private HikariCP hikariCP;
     private DatabaseConnector connector;
@@ -45,14 +49,24 @@ public class MCSF extends JavaPlugin {
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.PlaceholderAPI PlaceholderAPI;
     private io.github.jochyoua.mychristianswearfilter.shared.hooks.DiscordSRV DiscordSRV;
     private Boolean needsUpdate = false;
+    private Boolean debug;
 
+    public static MCSF getInstance() {
+        return plugin;
+    }
 
     @Override
     public void onEnable() {
+        plugin = this;
 
         // Sets the default configuration
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
+
+        // Enables debugging
+        debug = getConfig().getBoolean("settings.debug");
+
+        debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH RUN" : " RELOADED"), false, Level.INFO);
 
         // Retrieves the currently set language
         language = Manager.FileManager.getLanguage(this);
@@ -60,8 +74,8 @@ public class MCSF extends JavaPlugin {
         // Removes old sql information from config.yml and sorts it into sql.yml
         FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (this.getConfig().isSet("mysql")) {
-            this.getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
-            manager.debug("Converting legacy sql", false, Level.INFO);
+            debug("(MYSQL) Setting mysql path into `data/sql.yml`", true, Level.INFO);
+            debug("Converting legacy sql", false, Level.INFO);
             for (String key : Objects.requireNonNull(this.getConfig().getConfigurationSection("mysql")).getKeys(false)) {
                 sql.set("mysql." + key, this.getConfig().get("mysql." + key));
             }
@@ -73,8 +87,8 @@ public class MCSF extends JavaPlugin {
         // Removes old swear information from config.yml and sorts it into data/swears.yml
         FileConfiguration local = Manager.FileManager.getFile(this, "data/swears");
         if (!this.getConfig().getStringList("swears").isEmpty()) {
-            this.getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
-            manager.debug("Converting legacy swears", false, Level.INFO);
+            debug("(CONFIG) Setting path `swears` into `data/swears.yml`", true, Level.INFO);
+            debug("Converting legacy swears", false, Level.INFO);
             if (local.isSet("swears")) {
                 if (!local.getStringList("swears").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("swears"));
@@ -82,7 +96,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("swears", local1);
                     Manager.FileManager.saveFile(this, local, "data/swears");
-                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`");
+                    debug("(CONFIG) Set " + local1.size() + " entries into `data/swears.yml` and removed path `swears`", true, Level.INFO);
                 }
             }
             getConfig().set("swears", null);
@@ -92,8 +106,8 @@ public class MCSF extends JavaPlugin {
         // Removes old whitelist information from config.yml and sorts it into data/whitelist.yml
         local = Manager.FileManager.getFile(this, "data/whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
-            getLogger().info("(CONFIG) Setting path `whitelist` into `data/whitelist.yml`");
-            manager.debug("Converting legacy whitelist", false, Level.INFO);
+            debug("(CONFIG) Setting path `whitelist` into `data/whitelist.yml`", true, Level.INFO);
+            debug("Converting legacy whitelist", false, Level.INFO);
             if (local.isSet("whitelist")) {
                 if (!local.getStringList("whitelist").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
@@ -101,7 +115,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("whitelist", local1);
                     Manager.FileManager.saveFile(this, local, "data/whitelist");
-                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`");
+                    debug("(CONFIG) Set " + local1.size() + " entries into `data/whitelist.yml` and removed path `whitelist`", true, Level.INFO);
                 }
             }
             this.getConfig().set("whitelist", null);
@@ -111,8 +125,8 @@ public class MCSF extends JavaPlugin {
         // Removes old global information from config.yml and sorts it into data/global.yml
         local = Manager.FileManager.getFile(this, "data/global");
         if (!this.getConfig().getStringList("global").isEmpty()) {
-            this.getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
-            manager.debug("Converting legacy global", false, Level.INFO);
+            debug("(CONFIG) Setting path `global` into `data/global.yml`", true, Level.INFO);
+            debug("Converting legacy global", false, Level.INFO);
             if (local.isSet("global")) {
                 if (!local.getStringList("global").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("global"));
@@ -120,7 +134,7 @@ public class MCSF extends JavaPlugin {
                     local1.addAll(local2);
                     local.set("global", local1);
                     Manager.FileManager.saveFile(this, local, "data/global");
-                    this.getLogger().info("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`");
+                    debug("(CONFIG) Set " + local1.size() + " entries into `data/global.yml` and removed path `global`", true, Level.INFO);
                 }
             }
             this.getConfig().set("global", null);
@@ -137,10 +151,10 @@ public class MCSF extends JavaPlugin {
                 load = true;
             if (load) {
                 if (hikariCP.isEnabled()) {
-                    getLogger().log(Level.INFO, "(MYSQL) Successfully initiated MySQL!");
+                    debug("(MYSQL) Successfully initiated MySQL!", true, Level.INFO);
                     this.connector = hikariCP.getConnector();
                 } else {
-                    getLogger().log(Level.WARNING, "(MYSQL) Unsuccessfully initiated MySQL!");
+                    debug("(MYSQL) Unsuccessfully initiated MySQL!", true, Level.WARNING);
                 }
             }
         }
@@ -154,13 +168,10 @@ public class MCSF extends JavaPlugin {
                 throwables.printStackTrace();
             }
 
-        manager.debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH RUN" : " RELOADED"), false, Level.INFO);
-
-
         // Relocates old pre-existing user data to the appropriate locations
         if (getConfig().isSet("users")) {
-            getLogger().info("(CONFIG) Converting path `users` into `data/users.db`");
-            manager.debug("Converting legacy users", false, Level.INFO);
+            debug("(CONFIG) Converting path `users` into `data/users.db`", true, Level.INFO);
+            debug("Converting legacy users", false, Level.INFO);
             for (String ID : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
                 User user = new User(manager, UUID.fromString(ID));
                 if (!user.exists()) {
@@ -205,19 +216,19 @@ public class MCSF extends JavaPlugin {
             this.ProtocolLib = new ProtocolLib(this);
             this.ProtocolLib.register();
             if (this.getProtocolLib().isEnabled())
-                manager.debug("ProtocolLib support successfully enabled", false, Level.INFO);
+                debug("ProtocolLib support successfully enabled", false, Level.INFO);
         }
         if (manager.supported("PlaceholderAPI")) {
             this.PlaceholderAPI = new PlaceholderAPI(this);
             this.PlaceholderAPI.register();
             if (this.getPlaceholderAPI().isRegistered())
-                manager.debug("PlaceholderAPI support successfully enabled", false, Level.INFO);
+                debug("PlaceholderAPI support successfully enabled", false, Level.INFO);
         }
         if (manager.supported("DiscordSRV")) {
             this.DiscordSRV = new DiscordSRV(this);
             this.DiscordSRV.register();
             if (this.getDiscordSRV().isEnabled())
-                manager.debug("DiscordSRV support successfully enabled", false, Level.INFO);
+                debug("DiscordSRV support successfully enabled", false, Level.INFO);
         }
 
         // Debugs and checks to make sure that strings are correctly being filtered
@@ -226,9 +237,9 @@ public class MCSF extends JavaPlugin {
             if (!swears.isEmpty()) {
                 final String test = swears.get((new SecureRandom()).nextInt(swears.size()));
                 String clean = manager.clean(test, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DEBUG);
-                manager.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`", true, Level.INFO);
+                debug("Running filter test for `" + test + "`; returns as: `" + clean + "`", getDebug(), Level.INFO);
             } else {
-                manager.debug("Uh-oh! Swears seems to be empty.", true, Level.WARNING);
+                debug("Uh-oh! Swears seems to be empty.", true, Level.WARNING);
             }
         });
 
@@ -250,9 +261,11 @@ public class MCSF extends JavaPlugin {
                     manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.no_new_version")));
                 }
             }
-            manager.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.", true, Level.INFO);
+            debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.", getDebug(), Level.INFO);
         }, 1L);
     }
+
+    /* Setters and getters */
 
     @Override
     public void onDisable() {
@@ -262,8 +275,6 @@ public class MCSF extends JavaPlugin {
         // Terminates all pre-existing tasks that are still running
         Bukkit.getScheduler().cancelTasks(this);
     }
-
-    /* Setters and getters */
 
     public void setLocal(String name, int size) {
         localSizes.put(name, size);

@@ -69,7 +69,7 @@ public class GlobalCommand {
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
-                manager.debug(sender.getName() + " has removed `" + glo + "` from the global database", true, Level.INFO);
+                Manager.debug(sender.getName() + " has removed `" + glo + "` from the global database", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 if (!global.contains(glo))
@@ -85,17 +85,17 @@ public class GlobalCommand {
                     }
                 }
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
-                manager.debug(sender.getName() + " has added `" + glo + "` to the global database", true, Level.INFO);
+                Manager.debug(sender.getName() + " has added `" + glo + "` to the global database", plugin.getDebug(), Level.INFO);
             }
         } else {
             if (global.contains(glo)) {
                 global.remove(glo);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
-                manager.debug(sender.getName() + " has removed `" + glo + "` from the global config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has removed `" + glo + "` from the global config", plugin.getDebug(), Level.INFO);
             } else {
                 if (!global.contains(glo))
                     global.add(glo);
-                manager.debug(sender.getName() + " has added `" + glo + "` to the global config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has added `" + glo + "` to the global config", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
             }
         }

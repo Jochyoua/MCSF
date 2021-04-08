@@ -56,9 +56,9 @@ public class PunishmentListener implements Listener {
                         String finalCommand = command;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             if (Objects.requireNonNull(executor).equalsIgnoreCase("CONSOLE")) {
-                                manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
+                                Manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
                             } else {
-                                manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
+                                Manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
                             }
                         });
                     }

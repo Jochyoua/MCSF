@@ -10,7 +10,7 @@ variables:
   success: "{prefix} &aSuccès: {message}" ## Messages pour les réponses réussies, les messages peuvent être vus sous variables.successful
   activated: "activé"
   deactivated: "ésactivé"
-  debug: "{prefix} &d&lDEBUG > &f{message}"
+
   parse: "{prefix} &d&lPARSE > &f{message}"
   reset: "{prefix} Voulez-vous vraiment réinitialiser la base de données? C'est irréversible. Pour confirmer, veuillez taper /{command} reset confirm"
   cooldown: "{prefix} Vous devez vous attendre &c{duration}s&f pour utiliser cette commande!"

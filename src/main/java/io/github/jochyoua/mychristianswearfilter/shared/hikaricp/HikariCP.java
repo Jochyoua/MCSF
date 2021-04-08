@@ -7,6 +7,9 @@ import lombok.Setter;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Objects;
+import java.util.logging.Level;
+
+import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
 
 public class HikariCP {
     private final MCSF plugin;
@@ -31,7 +34,7 @@ public class HikariCP {
             if (connector == null)
                 connector = new DatabaseConnector(plugin);
             if (!connector.isWorking()) {
-                plugin.getLogger().info("(MYSQL) Loading database info....");
+                debug("(MYSQL) Loading database info....", true, Level.INFO);
                 try {
                     String driverClass = sql.getString("mysql.driverClass");
                     String url = Objects.requireNonNull(sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"))
@@ -43,7 +46,7 @@ public class HikariCP {
                     String username = sql.getString("mysql.username");
                     String password = sql.getString("mysql.password");
                     int maxPoolSize = sql.getInt("mysql.maxPoolSize");
-                    plugin.getLogger().info("(MYSQL) Using URL: " + url);
+                    debug("(MYSQL) Using URL: " + url, true, Level.INFO);
                     connector.setInfo(
                             new DatabaseConnector.Info(
                                     driverClass,
@@ -57,14 +60,14 @@ public class HikariCP {
                     e.printStackTrace();
                     setEnabled(false);
                 }
-                plugin.getLogger().info("(MYSQL) Trying a database connection....");
+                debug("(MYSQL) Trying a database connection....", true, Level.INFO);
                 try {
                     connector.tryFirstConnection();
                 } catch (Exception e) {
                     e.printStackTrace();
                     setEnabled(false);
                 }
-                plugin.getLogger().info("(MYSQL) The connection has been established!");
+                debug("(MYSQL) The connection has been established!", true, Level.INFO);
                 setEnabled(true);
             }
         } else {

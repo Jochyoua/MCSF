@@ -56,6 +56,17 @@ import static io.github.jochyoua.mychristianswearfilter.shared.Types.Filters.REL
 @Setter
 @Getter
 public class Manager {
+    private static FileHandler fileHandler;
+
+    static {
+        try {
+            fileHandler = new FileHandler(MCSF.getInstance().getDataFolder()
+                    + File.separator + "logs" + File.separator + "debug.log");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Map<UUID, Integer> userFlags = new HashMap<>();
     MCSF plugin;
     DatabaseConnector connector;
@@ -71,7 +82,6 @@ public class Manager {
     Pattern swearPattern;
     Pattern globalPattern;
     Pattern bothPattern;
-    private FileHandler fileHandler;
 
     /**
      * Instantiates a new Manager class
@@ -82,12 +92,6 @@ public class Manager {
     public Manager(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
-
-        try {
-            fileHandler = new FileHandler(plugin.getDataFolder() + File.separator + "logs" + File.separator + "debug.log");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         sql = Manager.FileManager.getFile(plugin, "sql");
         reloadUserData();
@@ -157,6 +161,53 @@ public class Manager {
     }
 
     /**
+     * Debugs string, if settings.debug is false nothing is shown to console but are still saved in /logs/debug.log
+     *
+     * @param str           the string to be debugged
+     * @param consoleOutput should the output be shown to console?
+     * @param level         what level should this debug be? > Only applies to file debugging
+     */
+    public static void debug(String str, boolean consoleOutput, Level level) {
+        StackTraceElement st = Thread.currentThread().getStackTrace()[2];
+        Logger debug = Logger.getLogger(st.getClassName() + ":" + st.getLineNumber() + " " + Thread.currentThread().getStackTrace()[2].getMethodName());
+        for (Handler handler : debug.getHandlers()) {
+            debug.removeHandler(handler);
+        }
+        try {
+            fileHandler.setFormatter(new SimpleFormatter() {
+                final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%n";
+
+                public String format(LogRecord record) {
+                    ZonedDateTime zdt = ZonedDateTime.ofInstant(
+                            Instant.ofEpochMilli(record.getMillis()), ZoneId.systemDefault());
+                    String source;
+                    source = record.getLoggerName();
+                    String message = formatMessage(record);
+                    return String.format(format,
+                            zdt,
+                            source,
+                            record.getLoggerName(),
+                            record.getLevel().getLocalizedName(),
+                            message);
+                }
+            });
+
+            debug.addHandler(fileHandler);
+            debug.setUseParentHandlers(false);
+            debug.setLevel(level);
+
+            debug.log(level, str + "\n");
+
+            if (consoleOutput) {
+                // Output to console
+                Bukkit.getLogger().log(level, "[MCSF Debug] " + str);
+            }
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Reloads the user sql database
      */
     public void reloadUserData() {
@@ -169,10 +220,10 @@ public class Manager {
         if (userConnection == null) {
             try {
                 userConnection = DriverManager.getConnection(url);
-                plugin.getLogger().info("Connection to the SQLite database has been established!");
+                debug("Connection to the SQLite database has been established!", true, Level.INFO);
             } catch (SQLException throwables) {
                 userConnection = null;
-                plugin.getLogger().warning(String.format("Unable to connect to the SQLite database!\n%s", throwables.getMessage()));
+                debug(String.format("Unable to connect to the SQLite database!\n%s", throwables.getMessage()), true, Level.WARNING);
             }
         }
         try {
@@ -311,7 +362,7 @@ public class Manager {
                     break;
                 case "users":
                     if (countRows("users") == 0) {
-                        debug("(MySQL) attempting to insert user data", true, Level.INFO);
+                        debug("(MySQL) attempting to insert user data", plugin.getDebug(), Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
                             ps.execute();
                         }
@@ -343,7 +394,7 @@ public class Manager {
                     break;
                 case "swears":
                     if (countRows("swears") == 0) {
-                        debug("(MySQL) attempting to insert swear data", true, Level.INFO);
+                        debug("(MySQL) attempting to insert swear data", plugin.getDebug(), Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
                             ps.execute();
                         }
@@ -362,7 +413,7 @@ public class Manager {
                     break;
                 case "whitelist":
                     if (countRows("whitelist") == 0) {
-                        debug("(MySQL) attempting to insert whitelist data", true, Level.INFO);
+                        debug("(MySQL) attempting to insert whitelist data", plugin.getDebug(), Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
                             ps.execute();
                         }
@@ -384,7 +435,7 @@ public class Manager {
                     }
                     break;
                 default:
-                    debug("No correct database was selected.", true, Level.INFO);
+                    debug("No correct database was selected.", plugin.getDebug(), Level.INFO);
                     break;
             }
         } catch (SQLException throwables) {
@@ -424,7 +475,7 @@ public class Manager {
                     debug("Failed to set tables!: " + e.getMessage(), false, Level.WARNING);
                 }
             } else {
-                plugin.getLogger().log(Level.WARNING, "Failed to use MYSQL, is it configured correctly?");
+                debug("Failed to use MYSQL, is it configured correctly?", true, Level.WARNING);
             }
         }
     }
@@ -655,52 +706,6 @@ public class Manager {
     }
 
     /**
-     * Debugs string, if settings.debug is false nothing is shown to console but are still saved in /logs/debug.log
-     *
-     * @param str the str
-     * @param log should this be outputed to console?
-     */
-    public void debug(String str, boolean log, Level level) {
-        String message = prepare(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.debug")).replaceAll("(?i)\\{message}|(?i)%message%", str));
-        if (log) {
-            if (plugin.getConfig().getBoolean("settings.debug")) {
-                send(Bukkit.getConsoleSender(), message);
-            }
-        }
-        StackTraceElement st = Thread.currentThread().getStackTrace()[2];
-        Logger debug = Logger.getLogger(st.getClassName() + ":" + st.getLineNumber() + " " + Thread.currentThread().getStackTrace()[2].getMethodName());
-        for (Handler handler : debug.getHandlers()) {
-            debug.removeHandler(handler);
-        }
-        try {
-            fileHandler.setFormatter(new SimpleFormatter() {
-                final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%n";
-
-                public String format(LogRecord record) {
-                    ZonedDateTime zdt = ZonedDateTime.ofInstant(
-                            Instant.ofEpochMilli(record.getMillis()), ZoneId.systemDefault());
-                    String source;
-                    source = record.getLoggerName();
-                    String message = formatMessage(record);
-                    return String.format(format,
-                            zdt,
-                            source,
-                            record.getLoggerName(),
-                            record.getLevel().getLocalizedName(),
-                            message);
-                }
-            });
-
-            debug.addHandler(fileHandler);
-            debug.setUseParentHandlers(false);
-
-            debug.log(level, str + "\n");
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Reload the current patterns for Global, Swears and whitelist.
      */
     public Pattern reloadPattern(Types.Filters type) {
@@ -709,7 +714,7 @@ public class Manager {
         if (type == RELOAD)
             plugin.localSizes.clear();
         if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
-            debug("Whitelist doesn't equal local parameters, filling variables.", true, Level.INFO);
+            debug("Whitelist doesn't equal local parameters, filling variables.", plugin.getDebug(), Level.INFO);
             List<String> whitelist = local.getStringList("whitelist");
             whitelist.add("text");
             whitelist.add("color");
@@ -721,14 +726,14 @@ public class Manager {
             setLocalWhitelist(whitelist);
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
             if (plugin.getLocal("swears") != 0 || plugin.getLocal("global") != 0) {
-                debug("Forcefully updating swear data & global data to prevent false positives", true, Level.INFO);
+                debug("Forcefully updating swear data & global data to prevent false positives", plugin.getDebug(), Level.INFO);
                 plugin.setLocal("swears", 0);
                 plugin.setLocal("global", 0);
             }
         }
         local = Manager.FileManager.getFile(plugin, "data/global");
         if ((local.getStringList("global").size() != plugin.getLocal("global")) || (getGlobalRegex().isEmpty() && !local.getStringList("global").isEmpty())) {
-            debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.", true, Level.INFO);
+            debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.", plugin.getDebug(), Level.INFO);
             List<String> s = local.getStringList("global");
             setGlobalSwears(s);
             List<String> duh = generateRegex(s);
@@ -742,7 +747,7 @@ public class Manager {
         }
         local = Manager.FileManager.getFile(plugin, "data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || (getRegex().isEmpty() && !local.getStringList("swears").isEmpty())) {
-            debug("localSwears doesn't equal config parameters or regex is empty, filling variables.", true, Level.INFO);
+            debug("localSwears doesn't equal config parameters or regex is empty, filling variables.", plugin.getDebug(), Level.INFO);
             List<String> s = local.getStringList("swears");
             local.set("swears", s);
             Manager.FileManager.saveFile(plugin, local, "data/swears");
@@ -761,7 +766,7 @@ public class Manager {
             setSwearPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         if (update) {
-            debug("Updating pattern for both regex!", true, Level.INFO);
+            debug("Updating pattern for both regex!", plugin.getDebug(), Level.INFO);
             List<String> patt = new ArrayList<>();
             patt.addAll(getGlobalRegex());
             patt.addAll(getRegex());

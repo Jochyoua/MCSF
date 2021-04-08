@@ -3,6 +3,9 @@ package io.github.jochyoua.mychristianswearfilter.shared;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 
 import java.util.Objects;
+import java.util.logging.Level;
+
+import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
 
 public class Types {
 
@@ -75,7 +78,7 @@ public class Types {
             try {
                 Languages.valueOf(lan);
             } catch (IllegalArgumentException | NullPointerException exception) {
-                plugin.getLogger().warning("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
+                debug("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml", true, Level.WARNING);
                 lan = "en_us";
             }
             return lan;

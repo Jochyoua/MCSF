@@ -48,9 +48,9 @@ public class JoinLeaveListener implements Listener {
                     user.create(player.getName(), plugin.getConfig().getBoolean("settings.filtering.default"));
             }
             if (!user.playerName().equalsIgnoreCase(player.getName())) {
-                manager.debug("There was an issue saving " + player.getName() + "'s name to the config.", true, Level.WARNING);
+                Manager.debug("There was an issue saving " + player.getName() + "'s name to the config.", true, Level.WARNING);
             } else {
-                manager.debug("Successfully added " + player.getName() + "'s name to the config.", true, Level.INFO);
+                Manager.debug("Successfully added " + player.getName() + "'s name to the config.", plugin.getDebug(), Level.INFO);
             }
             if (!plugin.getConfig().getBoolean("settings.filtering.force")) {
                 if (!user.exists())
@@ -80,7 +80,7 @@ public class JoinLeaveListener implements Listener {
                     }
                     user.set(result);
                 }
-                manager.debug("Player " + player.getName() + "'s swear filter is " + (user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), true, Level.INFO);
+                Manager.debug("Player " + player.getName() + "'s swear filter is " + (user.status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), plugin.getDebug(), Level.INFO);
             }
 
             if (plugin.getConfig().getBoolean("settings.updating.update notification ingame") && player.hasPermission("MCSF.update") && plugin.getNeedsUpdate()) {

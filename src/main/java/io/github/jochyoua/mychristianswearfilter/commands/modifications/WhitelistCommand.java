@@ -61,7 +61,7 @@ public class WhitelistCommand {
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
-                manager.debug(sender.getName() + " has removed `" + white + "` from the whitelist database", true, Level.INFO);
+                Manager.debug(sender.getName() + " has removed `" + white + "` from the whitelist database", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 if (!whitelist.contains(white))
@@ -77,17 +77,17 @@ public class WhitelistCommand {
                     }
                 }
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
-                manager.debug(sender.getName() + " has added `" + white + "` to the whitelist database", true, Level.INFO);
+                Manager.debug(sender.getName() + " has added `" + white + "` to the whitelist database", plugin.getDebug(), Level.INFO);
             }
         } else {
             if (whitelist.contains(white)) {
                 whitelist.remove(white);
-                manager.debug(sender.getName() + " has removed `" + white + "` from the whitelist config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has removed `" + white + "` from the whitelist config", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 if (!whitelist.contains(white))
                     whitelist.add(white);
-                manager.debug(sender.getName() + " has added `" + white + "` to the whitelist config", true, Level.INFO);
+                Manager.debug(sender.getName() + " has added `" + white + "` to the whitelist config", plugin.getDebug(), Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
             }
         }

@@ -62,7 +62,7 @@ public class ProtocolLib implements Listener {
                         setEnabled(false);
                         ex.printStackTrace();
                         manager.getPlugin().getLogger().warning("Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
-                        manager.debug("Failed to load ProtocolLib!: "+ex.getMessage(), false, Level.WARNING);
+                        Manager.debug("Failed to load ProtocolLib!: " + ex.getMessage(), false, Level.WARNING);
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }
                 }
