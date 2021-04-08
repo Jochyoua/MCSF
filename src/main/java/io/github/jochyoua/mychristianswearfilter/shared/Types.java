@@ -21,7 +21,8 @@ public class Types {
         DISCORD,
         GLOBAL,
         BOTH,
-        OTHER
+        OTHER,
+        RELOAD
     }
 
     /**
@@ -29,7 +30,7 @@ public class Types {
      */
     public enum Arguments {
         parse("MCSF.modify.parse"),
-        version("MCSF.version"),
+        version("MCSF.use.version"),
         reload("MCSF.modify.reload"),
         add("MCSF.modify.add"),
         whitelist("MCSF.modify.whitelist"),

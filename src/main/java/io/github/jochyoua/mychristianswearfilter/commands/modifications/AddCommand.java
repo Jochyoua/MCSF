@@ -13,7 +13,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class AddCommand {
     MCSF plugin;
@@ -37,7 +39,7 @@ public class AddCommand {
         if (word.startsWith("regex:")) {
             try {
                 Pattern.compile(word.replaceAll("regex:", ""));
-            } catch (Exception e) {
+            } catch (PatternSyntaxException e) {
                 throw new FailureException(plugin.getLanguage(), "The provided regex is invalid.");
             }
         }
@@ -78,10 +80,11 @@ public class AddCommand {
                 throwables.printStackTrace();
             }
             manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
+            manager.debug(sender.getName() + " has added `" + word + "` to the database", true, Level.INFO);
         } else {
             if (!swears.contains(word)) {
                 swears.add(word);
-                manager.debug(sender.getName() + " has added `" + word + "` to the config");
+                manager.debug(sender.getName() + " has added `" + word + "` to the config", true, Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
             } else {
                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.alreadyexists"));

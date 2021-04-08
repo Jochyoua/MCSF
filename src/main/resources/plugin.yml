@@ -7,7 +7,6 @@ softdepend:
   - ProtocolLib
   - DiscordSRV
   - PlaceholderAPI
-  - PerWorldChatPlus
 api-version: 1.13
 load: POSTWORLD
 commands:
@@ -30,7 +29,7 @@ permissions:
     description: Gives access to all MCSF commands
     children:
       MCSF.modify: true
-      MCSF.toggle: true
+      MCSF.use.toggle: true
       MCSF.update: true
   MCSF.modify:
     children:
@@ -45,10 +44,10 @@ permissions:
       MCSF.modify.others: true
     description: Gives the player the ability to modify the blacklist
     default: false
-  MCSF.toggle:
+  MCSF.use.toggle:
     description: Allows the player to enable/disable the swear filter
     default: true
-  MCSF.version:
+  MCSF.use.version:
     description: Permission for the version command
     default: true
   MCSF.update:

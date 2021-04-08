@@ -3,8 +3,7 @@ package io.github.jochyoua.mychristianswearfilter;
 import io.github.jochyoua.mychristianswearfilter.commands.McsfCommand;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.ConfigAPI;
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.Settings;
-import io.github.jochyoua.mychristianswearfilter.events.PlayerEvents;
-import io.github.jochyoua.mychristianswearfilter.events.PunishmentEvents;
+import io.github.jochyoua.mychristianswearfilter.listeners.*;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
@@ -29,7 +28,7 @@ import java.util.logging.Level;
 
 @Getter
 public class MCSF extends JavaPlugin {
-    private final HashMap<String, Integer> localSizes = new HashMap<>();
+    public final HashMap<String, Integer> localSizes = new HashMap<>();
     private HikariCP hikariCP;
     private DatabaseConnector connector;
     private YamlConfiguration language;
@@ -54,6 +53,7 @@ public class MCSF extends JavaPlugin {
         FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (this.getConfig().isSet("mysql")) {
             this.getLogger().info("(MYSQL) Setting mysql path into `data/sql.yml`");
+            manager.debug("Converting legacy sql", false, Level.INFO);
             for (String key : Objects.requireNonNull(this.getConfig().getConfigurationSection("mysql")).getKeys(false)) {
                 sql.set("mysql." + key, this.getConfig().get("mysql." + key));
             }
@@ -66,6 +66,7 @@ public class MCSF extends JavaPlugin {
         FileConfiguration local = Manager.FileManager.getFile(this, "data/swears");
         if (!this.getConfig().getStringList("swears").isEmpty()) {
             this.getLogger().info("(CONFIG) Setting path `swears` into `data/swears.yml`");
+            manager.debug("Converting legacy swears", false, Level.INFO);
             if (local.isSet("swears")) {
                 if (!local.getStringList("swears").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("swears"));
@@ -84,6 +85,7 @@ public class MCSF extends JavaPlugin {
         local = Manager.FileManager.getFile(this, "data/whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
             getLogger().info("(CONFIG) Setting path `whitelist` into `data/whitelist.yml`");
+            manager.debug("Converting legacy whitelist", false, Level.INFO);
             if (local.isSet("whitelist")) {
                 if (!local.getStringList("whitelist").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("whitelist"));
@@ -102,6 +104,7 @@ public class MCSF extends JavaPlugin {
         local = Manager.FileManager.getFile(this, "data/global");
         if (!this.getConfig().getStringList("global").isEmpty()) {
             this.getLogger().info("(CONFIG) Setting path `global` into `data/global.yml`");
+            manager.debug("Converting legacy global", false, Level.INFO);
             if (local.isSet("global")) {
                 if (!local.getStringList("global").isEmpty()) {
                     Set<String> local1 = new HashSet<>(local.getStringList("global"));
@@ -142,10 +145,13 @@ public class MCSF extends JavaPlugin {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
+        manager.debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH" : " !RELOAD!"), false, Level.INFO);
+
 
         // Relocates old pre-existing user data to the appropriate locations
         if (getConfig().isSet("users")) {
             getLogger().info("(CONFIG) Converting path `users` into `data/users.db`");
+            manager.debug("Converting legacy users", false, Level.INFO);
             for (String ID : Objects.requireNonNull(getConfig().getConfigurationSection("users")).getKeys(false)) {
                 User user = new User(manager, UUID.fromString(ID));
                 if (!user.exists()) {
@@ -172,25 +178,37 @@ public class MCSF extends JavaPlugin {
         // Loads the MCSF commands with aliases
         new McsfCommand(this);
 
-        // Loads all the player related events
-        new PlayerEvents(manager);
+        // Loads all the player related listeners
+        new ChatListener(this);
+
+        // This is used for book filtering
+        new InteractListener(this);
+
+        // Detects when the player leaves or joins the game
+        new JoinLeaveListener(this);
 
         // Punishes players if their messages, created signs or books contain swears
         if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
-            new PunishmentEvents(manager);
+            new PunishmentListener(manager);
 
         // Loading plugin hooks
         if (manager.supported("ProtocolLib")) {
             this.ProtocolLib = new ProtocolLib(this);
             this.ProtocolLib.register();
+            if (this.getProtocolLib().isEnabled())
+                manager.debug("ProtocolLib support successfully enabled", false, Level.INFO);
         }
         if (manager.supported("PlaceholderAPI")) {
             this.PlaceholderAPI = new PlaceholderAPI(this);
             this.PlaceholderAPI.register();
+            if (this.getPlaceholderAPI().isRegistered())
+                manager.debug("PlaceholderAPI support successfully enabled", false, Level.INFO);
         }
         if (manager.supported("DiscordSRV")) {
             this.DiscordSRV = new DiscordSRV(this);
             this.DiscordSRV.register();
+            if (this.getDiscordSRV().isEnabled())
+                manager.debug("DiscordSRV support successfully enabled", false, Level.INFO);
         }
 
         // Debugs and checks to make sure that strings are correctly being filtered
@@ -198,10 +216,10 @@ public class MCSF extends JavaPlugin {
             final List<String> swears = Manager.FileManager.getFile(this, "data/swears").getStringList("swears");
             if (!swears.isEmpty()) {
                 final String test = swears.get((new SecureRandom()).nextInt(swears.size()));
-                String clean = manager.clean(test, true, false, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DEBUG);
-                manager.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`");
+                String clean = manager.clean(test, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DEBUG);
+                manager.debug("Running filter test for `" + test + "`; returns as: `" + clean + "`", true, Level.INFO);
             } else {
-                manager.debug("Uh-oh! Swears seems to be empty.");
+                manager.debug("Uh-oh! Swears seems to be empty.", true, Level.WARNING);
             }
         });
 
@@ -223,13 +241,13 @@ public class MCSF extends JavaPlugin {
                     manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.no_new_version")));
                 }
             }
-            manager.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.");
+            manager.debug("Metrics is " + (metrics.isEnabled() ? "enabled; Disable" : "disabled; Enable") + " it through the global bStats config.", true, Level.INFO);
         }, 1L);
     }
 
     @Override
     public void onDisable() {
-        // Closes pre-existing mysql and sqlite connectionsman
+        // Closes pre-existing mysql and sqlite connections
         manager.shutDown();
 
         // Terminates all pre-existing tasks that are still running

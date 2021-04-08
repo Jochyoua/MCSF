@@ -13,7 +13,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class GlobalCommand {
     MCSF plugin;
@@ -35,7 +37,7 @@ public class GlobalCommand {
         if (glo.startsWith("regex:")) {
             try {
                 Pattern.compile(glo.replaceAll("regex:", ""));
-            } catch (Exception e) {
+            } catch (PatternSyntaxException e) {
                 manager.send(sender, new FailureException(plugin.getLanguage(), "The provided regex is invalid.").getMessage());
                 return;
             }
@@ -67,6 +69,7 @@ public class GlobalCommand {
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
+                manager.debug(sender.getName() + " has removed `" + glo + "` from the global database", true, Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 if (!global.contains(glo))
@@ -82,14 +85,17 @@ public class GlobalCommand {
                     }
                 }
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
+                manager.debug(sender.getName() + " has added `" + glo + "` to the global database", true, Level.INFO);
             }
         } else {
             if (global.contains(glo)) {
                 global.remove(glo);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
+                manager.debug(sender.getName() + " has removed `" + glo + "` from the global config", true, Level.INFO);
             } else {
                 if (!global.contains(glo))
                     global.add(glo);
+                manager.debug(sender.getName() + " has added `" + glo + "` to the global config", true, Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.added"))));
             }
         }

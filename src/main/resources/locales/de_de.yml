@@ -27,7 +27,7 @@ variables:
     - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&f Commands: &9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
     - "  {PERMISSION=MCSF.use.toggle}/{command} &9toggle&f - Schaltet den Chatfilter für sich selbst oder jemand anderes um"
     - "  {PERMISSION=MCSF.use.status}/{command} &9status&f - Zeigt den Status des Filters eines Ziels an"
-    - "  {PERMISSION=MCSF.version}/{command} &9version&f - Zeigt die Version dieses Plugins"
+    - "  {PERMISSION=MCSF.use.version}/{command} &9version&f - Zeigt die Version dieses Plugins"
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Ändert Chatfilter-Wörter"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Ändert Chatfilter-Wörter"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f -  Ändert die Whitelist"

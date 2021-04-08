@@ -1,4 +1,4 @@
-package io.github.jochyoua.mychristianswearfilter.events;
+package io.github.jochyoua.mychristianswearfilter.listeners;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
@@ -14,13 +14,14 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 
 import java.util.Objects;
+import java.util.logging.Level;
 
-public class PunishmentEvents implements Listener {
+public class PunishmentListener implements Listener {
     MCSF plugin;
     Manager manager;
 
 
-    public PunishmentEvents(Manager manager) {
+    public PunishmentListener(Manager manager) {
         this.plugin = manager.getPlugin();
         this.manager = manager;
         if (!plugin.getConfig().getBoolean("settings.filtering.punishments.punish players")) {
@@ -55,9 +56,9 @@ public class PunishmentEvents implements Listener {
                         String finalCommand = command;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             if (Objects.requireNonNull(executor).equalsIgnoreCase("CONSOLE")) {
-                                manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
+                                manager.debug((Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
                             } else {
-                                manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`");
+                                manager.debug((Bukkit.dispatchCommand(player, finalCommand) ? "successfully executed " : "failed to execute ") + " command `" + finalCommand + "`", false, Level.INFO);
                             }
                         });
                     }

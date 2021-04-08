@@ -49,6 +49,6 @@ public class ParseCommand {
             String arg = args[i] + " ";
             message.append(arg);
         }
-        manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.parse")).replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
+        manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.parse")).replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
     }
 }

@@ -164,7 +164,7 @@ public class McsfCommand implements CommandExecutor {
                         whitelistCommand.execute(sender, args);
                         break;
                     case "reload":
-                        reloadCommand.execute(sender, args);
+                        reloadCommand.execute(sender);
                         break;
                     case "global":
                         globalCommand.execute(sender, args);

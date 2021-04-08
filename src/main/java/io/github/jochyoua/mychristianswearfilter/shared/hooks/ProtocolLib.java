@@ -45,7 +45,7 @@ public class ProtocolLib implements Listener {
                         for (WrappedChatComponent component : chatComponents.getValues()) {
                             if (component != null) {
                                 if (!component.getJson().isEmpty()) {
-                                    String string = manager.clean(component.getJson(), false, true, user.status() ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.ALL);
+                                    String string = manager.clean(component.getJson(), false, user.status() ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.ALL);
                                     if (!string.trim().isEmpty()) {
                                         component.setJson(string);
                                         packet.getChatComponents().write(0, component);
@@ -62,6 +62,7 @@ public class ProtocolLib implements Listener {
                         setEnabled(false);
                         ex.printStackTrace();
                         manager.getPlugin().getLogger().warning("Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
+                        manager.debug("Failed to load ProtocolLib!: "+ex.getMessage(), false, Level.WARNING);
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }
                 }

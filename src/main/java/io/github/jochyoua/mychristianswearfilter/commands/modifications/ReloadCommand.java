@@ -17,7 +17,7 @@ public class ReloadCommand {
         this.manager = plugin.getManager();
     }
 
-    public void execute(CommandSender sender, String[] args) throws NoPermissionException, CommandDisabledException, FailureException {
+    public void execute(CommandSender sender) throws NoPermissionException, CommandDisabledException, FailureException {
         if (!sender.hasPermission("MCSF.modify.reload")) {
             throw new NoPermissionException(plugin.getLanguage());
         }
@@ -29,9 +29,9 @@ public class ReloadCommand {
             }
             sender.sendMessage("Successfully reloaded database information!");
         }
-        sender.sendMessage("Resetting Swears, Global swears and whitelist:");
+        sender.sendMessage("Reloading Swears, Global swears and whitelist:");
         try {
-            manager.reloadPattern(Types.Filters.OTHER);
+            manager.reloadPattern(Types.Filters.RELOAD);
             sender.sendMessage("Successfully reloaded swear, global swears and whitelist information!");
         } catch (Exception e) {
             sender.sendMessage("Failed to reload: " + e.getMessage());

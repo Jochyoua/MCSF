@@ -27,7 +27,7 @@ variables:
     - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&f Commands: &9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
     - "  {PERMISSION=MCSF.use.toggle}/{command} &9toggle&f - Toggles the swear filter"
     - "  {PERMISSION=MCSF.use.status}/{command} &9status&f - Views the status of a target's filter status"
-    - "  {PERMISSION=MCSF.version}/{command} &9version&f - Shows version of this plugin"
+    - "  {PERMISSION=MCSF.use.version}/{command} &9version&f - Shows version of this plugin"
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Adds word to swear list"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Removes word to swear list"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f - Modifies whitelist"

@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 public class RemoveCommand {
@@ -68,11 +69,12 @@ public class RemoveCommand {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
+            manager.debug(sender.getName() + " has removed `" + word + "` from database", true, Level.INFO);
             manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
         } else {
             boolean modified = swears.remove(word);
             if (modified) {
-                manager.debug(sender.getName() + " has removed `" + word + "` from config");
+                manager.debug(sender.getName() + " has removed `" + word + "` from config", true, Level.INFO);
                 manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.success")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(plugin.getLanguage().getString("variables.successful.removed"))));
             } else {
                 throw new FailureException(plugin.getLanguage(), plugin.getLanguage().getString("variables.error.doesntexist"));

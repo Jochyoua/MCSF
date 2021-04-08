@@ -27,7 +27,7 @@ variables:
     - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&f Commands: &9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
     - "  {PERMISSION=MCSF.use.toggle}/{command} &9toggle&f - Alterna el filtro de jurar para usted o para otra persona"
     - "  {PERMISSION=MCSF.use.status}/{command} &9status&f - Visualiza el estado del estado del filtro de un destino"
-    - "  {PERMISSION=MCSF.version}/{command} &9version&f - Muestra la versión de este plugin"
+    - "  {PERMISSION=MCSF.use.version}/{command} &9version&f - Muestra la versión de este plugin"
     - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Modifica lista de juramentación"
     - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Modifica lista de juramentación"
     - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f -  Modifica la lista blanca"

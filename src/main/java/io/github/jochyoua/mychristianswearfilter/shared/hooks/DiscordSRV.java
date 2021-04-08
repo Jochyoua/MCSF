@@ -7,6 +7,8 @@ import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.logging.Level;
+
 public class DiscordSRV {
     private final MCSF plugin;
     private Manager manager;
@@ -22,12 +24,12 @@ public class DiscordSRV {
         manager = plugin.getManager();
         if (manager.supported("DiscordSRV")) {
             try {
-                manager.debug("Registered DiscordSRV hook successfully!");
+                manager.debug("Registered DiscordSRV hook successfully!", true, Level.INFO);
                 github.scarsz.discordsrv.DiscordSRV.api.subscribe(this);
             } catch (Exception e) {
                 String message = e.getMessage();
                 setEnabled(false);
-                manager.debug("Registered DiscordSRV hook unsuccessfully: " + message);
+                manager.debug("Registered DiscordSRV hook unsuccessfully: " + message, true, Level.WARNING);
             }
         }
     }
@@ -35,6 +37,6 @@ public class DiscordSRV {
     @Subscribe
     public void DiscordGameMessage(
             final github.scarsz.discordsrv.api.events.GameChatMessagePostProcessEvent event) {
-        event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, false, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DISCORD));
+        event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DISCORD));
     }
 }

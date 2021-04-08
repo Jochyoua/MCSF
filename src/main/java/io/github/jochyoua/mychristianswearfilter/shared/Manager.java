@@ -20,21 +20,22 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.awt.*;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
+import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static io.github.jochyoua.mychristianswearfilter.shared.Types.Filters.RELOAD;
 
 
 @Setter
@@ -52,11 +53,10 @@ public class Manager {
     ExpiringMap<UUID, UUID> cooldowns;
     Connection connection;
     Connection userConnection;
-
-
     Pattern swearPattern;
     Pattern globalPattern;
     Pattern bothPattern;
+    private FileHandler fileHandler;
 
     /**
      * Instantiates a new Manager class
@@ -67,6 +67,13 @@ public class Manager {
     public Manager(MCSF plugin, DatabaseConnector connector) {
         this.plugin = plugin;
         this.connector = connector;
+
+        try {
+            fileHandler = new FileHandler(plugin.getDataFolder() + File.separator + "logs" + File.separator + "debug.log");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         sql = Manager.FileManager.getFile(plugin, "sql");
         reloadUserData();
         if (plugin.getHikariCP().isEnabled())
@@ -168,6 +175,7 @@ public class Manager {
     public void shutDown() {
         try {
             userConnection.close();
+            fileHandler.close();
             if (supported("mysql"))
                 connector.getConnection().close();
         } catch (SQLException ignored) {
@@ -216,9 +224,6 @@ public class Manager {
         switch (string.toLowerCase()) {
             case "hex":
                 statement = Integer.parseInt(Bukkit.getBukkitVersion().split("[.\\-]")[1]) >= 16;
-                break;
-            case "signcheck":
-                statement = Integer.parseInt(Bukkit.getBukkitVersion().split("[.\\-]")[1]) >= 9;
                 break;
             case "discordsrv":
                 statement = plugin.getConfig().getBoolean("settings.discordSRV.enabled") && (plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null);
@@ -274,7 +279,7 @@ public class Manager {
                         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/global");
                         List<String> s = local.getStringList("global");
                         if (s.isEmpty()) {
-                            debug("Cannot set global data because it is empty!");
+                            debug("Cannot set global data because it is empty!", true, Level.WARNING);
                             break;
                         }
                         StringBuilder query = new StringBuilder("INSERT INTO global(word) VALUES (?)");
@@ -291,7 +296,7 @@ public class Manager {
                     break;
                 case "users":
                     if (countRows("users") == 0) {
-                        debug("(MySQL) attempting to insert user data");
+                        debug("(MySQL) attempting to insert user data", true, Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.USERS.create)) {
                             ps.execute();
                         }
@@ -310,7 +315,7 @@ public class Manager {
                         }
                         rs.close();
                         if (user_list.isEmpty()) {
-                            debug("Cannot set user data because it is empty!");
+                            debug("Cannot set user data because it is empty!", true, Level.WARNING);
                             break;
                         }
                         PreparedStatement ps = connection.prepareStatement(query.toString().trim().substring(0, query.toString().trim().length() - 1));
@@ -323,7 +328,7 @@ public class Manager {
                     break;
                 case "swears":
                     if (countRows("swears") == 0) {
-                        debug("(MySQL) attempting to insert swear data");
+                        debug("(MySQL) attempting to insert swear data", true, Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.SWEARS.create)) {
                             ps.execute();
                         }
@@ -342,7 +347,7 @@ public class Manager {
                     break;
                 case "whitelist":
                     if (countRows("whitelist") == 0) {
-                        debug("(MySQL) attempting to insert whitelist data");
+                        debug("(MySQL) attempting to insert whitelist data", true, Level.INFO);
                         try (PreparedStatement ps = connection.prepareStatement(HikariCP.Query.WHITELIST.create)) {
                             ps.execute();
                         }
@@ -364,7 +369,7 @@ public class Manager {
                     }
                     break;
                 default:
-                    debug("No correct database was selected.");
+                    debug("No correct database was selected.", true, Level.INFO);
                     break;
             }
         } catch (SQLException throwables) {
@@ -401,6 +406,7 @@ public class Manager {
                             .replaceAll("(?i)\\{message}|(?i)%message%",
                                     Objects.requireNonNull(plugin.getLanguage().getString("variables.error.execute_failure"))
                                             .replaceAll("(?i)\\{feature}", "MYSQL tables")), e);
+                    debug("Failed to set tables!: " + e.getMessage(), false, Level.WARNING);
                 }
             } else {
                 plugin.getLogger().log(Level.WARNING, "Failed to use MYSQL, is it configured correctly?");
@@ -415,15 +421,14 @@ public class Manager {
      *
      * @param string  the string to be cleared
      * @param strip   if the string should be stripped of all chat color
-     * @param log     if this should count as a logged swear
      * @param pattern the pattern to filter by
      * @param type    the type of filter this is
      * @return the cleaned string
      */
-    public String clean(String string, boolean strip, boolean log, Pattern pattern, Types.Filters type) {
+    public String clean(String string, boolean strip, Pattern pattern, Types.Filters type) {
         if (plugin.getConfig().getBoolean("settings.filtering.double filtering") && type != Types.Filters.DISCORD)
-            return filter(filter(string, strip, false, pattern, type), strip, log, pattern, type);
-        return filter(string, strip, log, pattern, type);
+            return filter(filter(string, strip, pattern, type), strip, pattern, type);
+        return filter(string, strip, pattern, type);
     }
 
     /**
@@ -431,11 +436,10 @@ public class Manager {
      *
      * @param string the string to be cleared
      * @param strip  if the string should be stripped of all chat color
-     * @param log    if this should count as a logged swear
      * @param type   the type of filter this is
      * @return the cleaned string
      */
-    public String filter(String string, boolean strip, boolean log, Pattern pattern, Types.Filters type) {
+    public String filter(String string, boolean strip, Pattern pattern, Types.Filters type) {
         if (string == null) {
             return null;
         }
@@ -456,7 +460,7 @@ public class Manager {
                             (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
                 }
             } catch (Exception e) {
-                debug("Could not register replace_word_for_words: " + e.getMessage());
+                debug("Could not register replace_word_for_words: " + e.getMessage(), true, Level.WARNING);
             }
             if (replacement == null)
                 return string;
@@ -636,40 +640,49 @@ public class Manager {
     }
 
     /**
-     * Debugs string, if settings.debug is false nothing is shown to console but are still saved in /logs/debug.txt
+     * Debugs string, if settings.debug is false nothing is shown to console but are still saved in /logs/debug.log
      *
      * @param str the str
+     * @param log should this be outputed to console?
      */
-    public void debug(String str) {
+    public void debug(String str, boolean log, Level level) {
         String message = prepare(Bukkit.getConsoleSender(), Objects.requireNonNull(plugin.getLanguage().getString("variables.debug")).replaceAll("(?i)\\{message}|(?i)%message%", str));
-        if (plugin.getConfig().getBoolean("settings.debug")) {
-            send(Bukkit.getConsoleSender(), message);
+        if (log) {
+            if (plugin.getConfig().getBoolean("settings.debug")) {
+                send(Bukkit.getConsoleSender(), message);
+            }
         }
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            File file = new File(plugin.getDataFolder(), "/logs/debug.txt");
-            File dir = new File(plugin.getDataFolder(), "logs");
-            if (!dir.exists()) {
-                if (dir.mkdirs()) {
-                    plugin.getLogger().info("Failed to create directory " + dir.getParent());
+        StackTraceElement st = Thread.currentThread().getStackTrace()[2];
+        Logger debug = Logger.getLogger(st.getClassName() + ":" + st.getLineNumber() + " " + Thread.currentThread().getStackTrace()[2].getMethodName());
+        for (Handler handler : debug.getHandlers()) {
+            debug.removeHandler(handler);
+        }
+        try {
+            fileHandler.setFormatter(new SimpleFormatter() {
+                final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%n";
+
+                public String format(LogRecord record) {
+                    ZonedDateTime zdt = ZonedDateTime.ofInstant(
+                            Instant.ofEpochMilli(record.getMillis()), ZoneId.systemDefault());
+                    String source;
+                    source = record.getLoggerName();
+                    String message = formatMessage(record);
+                    return String.format(format,
+                            zdt,
+                            source,
+                            record.getLoggerName(),
+                            record.getLevel().getLocalizedName(),
+                            message);
                 }
-            }
-            if (!file.exists()) {
-                try {
-                    if (!file.createNewFile()) {
-                        plugin.getLogger().info("Failed to create file " + file.getName());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
-                bw.append("[").append(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date())).append("] ").append(ChatColor.stripColor(message)).append("\n");
-                bw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+            });
+
+            debug.addHandler(fileHandler);
+            debug.setUseParentHandlers(false);
+
+            debug.log(level, str + "\n");
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -678,8 +691,10 @@ public class Manager {
     public Pattern reloadPattern(Types.Filters type) {
         boolean update = false;
         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
+        if (type == RELOAD)
+            plugin.localSizes.clear();
         if ((local.getStringList("whitelist").size() != plugin.getLocal("whitelist"))) {
-            debug("Whitelist doesn't equal local parameters, filling variables.");
+            debug("Whitelist doesn't equal local parameters, filling variables.", true, Level.INFO);
             List<String> whitelist = local.getStringList("whitelist");
             whitelist.add("text");
             whitelist.add("color");
@@ -691,14 +706,14 @@ public class Manager {
             setLocalWhitelist(whitelist);
             plugin.setLocal("whitelist", local.getStringList("whitelist").size());
             if (plugin.getLocal("swears") != 0 || plugin.getLocal("global") != 0) {
-                debug("Forcefully updating swear data & global data to prevent false positives");
+                debug("Forcefully updating swear data & global data to prevent false positives", true, Level.INFO);
                 plugin.setLocal("swears", 0);
                 plugin.setLocal("global", 0);
             }
         }
         local = Manager.FileManager.getFile(plugin, "data/global");
         if ((local.getStringList("global").size() != plugin.getLocal("global")) || (getGlobalRegex().isEmpty() && !local.getStringList("global").isEmpty())) {
-            debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.");
+            debug("globalSwears doesn't equal config parameters or regex is empty, filling variables.", true, Level.INFO);
             List<String> s = local.getStringList("global");
             setGlobalSwears(s);
             List<String> duh = generateRegex(s);
@@ -712,7 +727,7 @@ public class Manager {
         }
         local = Manager.FileManager.getFile(plugin, "data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || (getRegex().isEmpty() && !local.getStringList("swears").isEmpty())) {
-            debug("localSwears doesn't equal config parameters or regex is empty, filling variables.");
+            debug("localSwears doesn't equal config parameters or regex is empty, filling variables.", true, Level.INFO);
             List<String> s = local.getStringList("swears");
             local.set("swears", s);
             Manager.FileManager.saveFile(plugin, local, "data/swears");
@@ -731,7 +746,7 @@ public class Manager {
             setSwearPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         if (update) {
-            debug("Updating pattern for both regex!");
+            debug("Updating pattern for both regex!", true, Level.INFO);
             List<String> patt = new ArrayList<>();
             patt.addAll(getGlobalRegex());
             patt.addAll(getRegex());
@@ -752,7 +767,7 @@ public class Manager {
                 try {
                     duh.add(Pattern.compile(str.replaceAll("regex:", "")).pattern());
                 } catch (Exception ignored) {
-                    debug("Pattern is invalid: " + str.replaceAll("regex:", ""));
+                    debug("Pattern is invalid: " + str.replaceAll("regex:", ""), true, Level.WARNING);
                 }
                 continue;
             }
