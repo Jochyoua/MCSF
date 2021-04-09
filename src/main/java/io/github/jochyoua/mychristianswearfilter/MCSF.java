@@ -7,8 +7,8 @@ import io.github.jochyoua.mychristianswearfilter.listeners.ChatListener;
 import io.github.jochyoua.mychristianswearfilter.listeners.InteractListener;
 import io.github.jochyoua.mychristianswearfilter.listeners.JoinLeaveListener;
 import io.github.jochyoua.mychristianswearfilter.listeners.PunishmentListener;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.DatabaseConnector;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
@@ -183,8 +183,8 @@ public class MCSF extends JavaPlugin {
         }
 
         // Loop through each language file that isn't the selected one and add it to /locales/ folder
-        for (Types.Languages language : Types.Languages.values()) {
-            if (!(new File(getDataFolder(), "locales/" + language.name() + ".yml").exists()) && !Types.Languages.getLanguage(this).equalsIgnoreCase(language.name())) {
+        for (Data.Languages language : Data.Languages.values()) {
+            if (!(new File(getDataFolder(), "locales/" + language.name() + ".yml").exists()) && !Data.Languages.getLanguage(this).equalsIgnoreCase(language.name())) {
                 Settings settings = new Settings();
                 settings.setSetting("reportMissingOptions", false);
                 ConfigAPI lang = new ConfigAPI("locales/" + language.name() + ".yml", settings, this);
@@ -209,7 +209,7 @@ public class MCSF extends JavaPlugin {
 
         // Punishes players if their messages, created signs or books contain swears
         if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
-            new PunishmentListener(manager);
+            new PunishmentListener(this);
 
         // Loading plugin hooks
         if (manager.supported("ProtocolLib")) {
@@ -236,7 +236,7 @@ public class MCSF extends JavaPlugin {
             final List<String> swears = Manager.FileManager.getFile(this, "data/swears").getStringList("swears");
             if (!swears.isEmpty()) {
                 final String test = swears.get((new SecureRandom()).nextInt(swears.size()));
-                String clean = manager.clean(test, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.DEBUG);
+                String clean = manager.clean(test, true, manager.reloadPattern(Data.Filters.BOTH), Data.Filters.DEBUG);
                 debug("Running filter test for `" + test + "`; returns as: `" + clean + "`", getDebug(), Level.INFO);
             } else {
                 debug("Uh-oh! Swears seems to be empty.", true, Level.WARNING);
@@ -245,7 +245,7 @@ public class MCSF extends JavaPlugin {
 
         // Basic metrics data, includes currently set language
         final Metrics metrics = new Metrics(this, 4345);
-        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Types.Languages.getLanguage(this)));
+        metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Data.Languages.getLanguage(this)));
 
         // This code notifies the server operator if an update is needed and if metrics is enabled
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {

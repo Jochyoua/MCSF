@@ -1,9 +1,8 @@
 package io.github.jochyoua.mychristianswearfilter.commands.modifications;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
-import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.IllegalArgumentException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
@@ -20,7 +19,16 @@ public class ParseCommand {
         this.manager = plugin.getManager();
     }
 
-    public void execute(CommandSender sender, String[] args) throws NoPermissionException, CommandDisabledException, FailureException, IllegalArgumentException {
+    /**
+     * This method parses the arguments as a singular string and runs it against the filter
+     *
+     * @param sender CommandSender
+     * @param args   Command args
+     * @throws IllegalArgumentException if the arguments are too short
+     * @throws FailureException         if the status of the parse is invalid
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.modify.parse' permission
+     */
+    public void execute(CommandSender sender, String[] args) throws NoPermissionException, FailureException, IllegalArgumentException {
         if (!sender.hasPermission("MCSF.modify.parse")) {
             throw new NoPermissionException(plugin.getLanguage());
         }
@@ -49,6 +57,6 @@ public class ParseCommand {
             String arg = args[i] + " ";
             message.append(arg);
         }
-        manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.parse")).replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, state ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.DEBUG)));
+        manager.send(sender, Objects.requireNonNull(plugin.getLanguage().getString("variables.parse")).replaceAll("(?i)\\{message}|(?i)%message%", manager.clean(message.toString(), false, state ? manager.reloadPattern(Data.Filters.BOTH) : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.DEBUG)));
     }
 }

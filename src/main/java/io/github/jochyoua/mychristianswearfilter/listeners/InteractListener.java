@@ -1,8 +1,8 @@
 package io.github.jochyoua.mychristianswearfilter.listeners;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
@@ -24,6 +24,12 @@ public class InteractListener implements Listener {
     private final MCSF plugin;
     private final Manager manager;
 
+    /**
+     * This Listener listens for when the player interacts with a book
+     * if the book contains blacklisted strings, the book is filtered against them
+     *
+     * @param plugin MCSF JavaPlugin instance
+     */
     public InteractListener(MCSF plugin) {
         this.plugin = plugin;
         this.manager = plugin.getManager();
@@ -64,9 +70,9 @@ public class InteractListener implements Listener {
                 for (String page : meta.getPages()) {
                     // Colors of the replacement string are being stripped before filtering because it causes issues for pre-formatted books that have any text modifiers in them.
                     if (new User(manager, player.getUniqueId()).status())
-                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Types.Filters.BOTH)) ? page : manager.clean(page, true, manager.reloadPattern(Types.Filters.BOTH), Types.Filters.BOOKS));
+                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Data.Filters.BOTH)) ? page : manager.clean(page, true, manager.reloadPattern(Data.Filters.BOTH), Data.Filters.BOOKS));
                     else
-                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Types.Filters.GLOBAL)) ? page : manager.clean(page, true, manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.BOOKS));
+                        newmeta.addPage(manager.isclean(page, manager.reloadPattern(Data.Filters.GLOBAL)) ? page : manager.clean(page, true, manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.BOOKS));
                 }
                 newmeta.setAuthor(meta.getAuthor());
                 newmeta.setTitle(meta.getTitle());

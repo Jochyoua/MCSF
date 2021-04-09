@@ -1,8 +1,8 @@
 package io.github.jochyoua.mychristianswearfilter.commands.modifications;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
@@ -17,6 +17,13 @@ public class ReloadCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * This method reloads the configuration files and database forcefully
+     *
+     * @param sender CommandSender
+     * @throws FailureException      if a reload fails
+     * @throws NoPermissionException if the CommandSender lacks the `MCSF.modify.reload' permission
+     */
     public void execute(CommandSender sender) throws NoPermissionException, CommandDisabledException, FailureException {
         if (!sender.hasPermission("MCSF.modify.reload")) {
             throw new NoPermissionException(plugin.getLanguage());
@@ -31,7 +38,7 @@ public class ReloadCommand {
         }
         sender.sendMessage("Reloading Swears, Global swears and whitelist:");
         try {
-            manager.reloadPattern(Types.Filters.RELOAD);
+            manager.reloadPattern(Data.Filters.RELOAD);
             sender.sendMessage("Successfully reloaded swear, global swears and whitelist information!");
         } catch (Exception e) {
             sender.sendMessage("Failed to reload: " + e.getMessage());

@@ -18,6 +18,14 @@ public class ResetCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * This method resets the mysql database
+     *
+     * @param sender CommandSender
+     * @param args   Command args
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.modify.add' permission
+     * @throws CommandDisabledException if MySQL isn't in use
+     */
     public void execute(CommandSender sender, String[] args) throws NoPermissionException, CommandDisabledException {
         if (!sender.hasPermission("MCSF.modify.reset")) {
             throw new NoPermissionException(plugin.getLanguage());

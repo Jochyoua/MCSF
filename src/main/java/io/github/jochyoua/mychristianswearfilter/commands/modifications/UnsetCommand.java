@@ -3,7 +3,6 @@ package io.github.jochyoua.mychristianswearfilter.commands.modifications;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
-import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.IllegalArgumentException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
@@ -24,7 +23,16 @@ public class UnsetCommand {
         this.manager = plugin.getManager();
     }
 
-    public void execute(CommandSender sender, String[] args) throws NoPermissionException, CommandDisabledException, FailureException, IllegalArgumentException {
+    /**
+     * This method removes a user from the database
+     *
+     * @param sender CommandSender
+     * @param args   Command args
+     * @throws IllegalArgumentException if the arguments are too short
+     * @throws FailureException         if the user doesn't exist
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.modify.unset' permission
+     */
+    public void execute(CommandSender sender, String[] args) throws NoPermissionException, FailureException, IllegalArgumentException {
         if (!sender.hasPermission("MCSF.modify.unset")) {
             throw new NoPermissionException(plugin.getLanguage());
         }

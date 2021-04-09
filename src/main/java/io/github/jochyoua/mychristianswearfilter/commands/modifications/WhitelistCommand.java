@@ -25,6 +25,15 @@ public class WhitelistCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * This method adds or removes a word from the current whitelist database or configuration file
+     *
+     * @param sender CommandSender
+     * @param args   Command args
+     * @throws IllegalArgumentException if the arguments are too short
+     * @throws FailureException         if the word already exists in database or configuration files
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.modify.whitelist' permission
+     */
     public void execute(CommandSender sender, String[] args) throws NoPermissionException, IllegalArgumentException, FailureException, CommandDisabledException {
         if (!sender.hasPermission("MCSF.modify.whitelist")) {
             throw new NoPermissionException(plugin.getLanguage());

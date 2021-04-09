@@ -7,9 +7,9 @@ import java.util.logging.Level;
 
 import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
 
-public class Types {
+public class Data {
 
-    public Types() {
+    public Data() {
         throw new AssertionError();
     }
 
@@ -70,7 +70,7 @@ public class Types {
         /**
          * Returns the current language string,
          *
-         * @param plugin the providing plugin
+         * @param plugin MCSF JavaPlugin instance
          * @return the current language string
          */
         public static String getLanguage(MCSF plugin) {

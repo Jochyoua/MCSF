@@ -22,6 +22,12 @@ public class JoinLeaveListener implements Listener {
     private final Manager manager;
     Connection connection;
 
+    /**
+     * This Listener listens for Join and Leave events
+     * The plugin retrieves existing user information and creates user information if needed
+     *
+     * @param plugin MCSF JavaPlugin instance
+     */
     public JoinLeaveListener(MCSF plugin) {
         this.plugin = plugin;
         this.manager = plugin.getManager();

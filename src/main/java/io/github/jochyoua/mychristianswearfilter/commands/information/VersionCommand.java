@@ -14,6 +14,12 @@ public class VersionCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * Shows version information of MCSF
+     *
+     * @param sender CommandSender
+     * @throws NoPermissionException if the CommandSender lacks the `MCSF.use.version' permission
+     */
     public void execute(CommandSender sender) throws NoPermissionException {
         if (sender.hasPermission("MCSF.use.version")) {
             StringBuilder version = new StringBuilder();

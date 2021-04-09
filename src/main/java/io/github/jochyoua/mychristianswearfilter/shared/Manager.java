@@ -50,7 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.jochyoua.mychristianswearfilter.shared.Types.Filters.RELOAD;
+import static io.github.jochyoua.mychristianswearfilter.shared.Data.Filters.RELOAD;
 
 
 @Setter
@@ -98,7 +98,7 @@ public class Manager {
     /**
      * Instantiates a new Manager class
      *
-     * @param plugin    the providing plugin
+     * @param plugin    MCSF JavaPlugin instance
      * @param connector the mysql connector
      */
     public Manager(MCSF plugin, DatabaseConnector connector) {
@@ -119,7 +119,7 @@ public class Manager {
     }
 
     /**
-     * Gets the current version according to Github
+     * Gets the current version according to Github and then Spigot if rate-limited
      *
      * @return the version
      */
@@ -177,7 +177,7 @@ public class Manager {
      *
      * @param str           the string to be debugged
      * @param consoleOutput should the output be shown to console?
-     * @param level         what level should this debug be? > Only applies to file debugging
+     * @param level         what level should this debug be?
      */
     public static void debug(String str, boolean consoleOutput, Level level) {
         StackTraceElement st = Thread.currentThread().getStackTrace()[2];
@@ -495,7 +495,7 @@ public class Manager {
     /**
      * Filtering but filters twice if server operator wishes for it.
      * <p>
-     * This function is essentially a forward for filter(String string, boolean strip, boolean log, List<String> array, Types.Filters type)
+     * This function is essentially a forward for filter(String string, boolean strip, boolean log, List<String> array, Data.Filters type)
      *
      * @param string  the string to be cleared
      * @param strip   if the string should be stripped of all chat color
@@ -503,8 +503,8 @@ public class Manager {
      * @param type    the type of filter this is
      * @return the cleaned string
      */
-    public String clean(String string, boolean strip, Pattern pattern, Types.Filters type) {
-        if (plugin.getConfig().getBoolean("settings.filtering.double filtering") && type != Types.Filters.DISCORD)
+    public String clean(String string, boolean strip, Pattern pattern, Data.Filters type) {
+        if (plugin.getConfig().getBoolean("settings.filtering.double filtering") && type != Data.Filters.DISCORD)
             return filter(filter(string, strip, pattern, type), strip, pattern, type);
         return filter(string, strip, pattern, type);
     }
@@ -517,7 +517,7 @@ public class Manager {
      * @param type   the type of filter this is
      * @return the cleaned string
      */
-    public String filter(String string, boolean strip, Pattern pattern, Types.Filters type) {
+    public String filter(String string, boolean strip, Pattern pattern, Data.Filters type) {
         if (string == null) {
             return null;
         }
@@ -547,7 +547,7 @@ public class Manager {
                 replacement = ChatColor.stripColor(replacement);
             }
             String r = plugin.getConfig().getBoolean("settings.filtering.replace word for word") ? replacement : matcher.group(0).trim().replaceAll("(?s).", replacement);
-            if (type.equals(Types.Filters.DISCORD) && plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled")) {
+            if (type.equals(Data.Filters.DISCORD) && plugin.getConfig().getBoolean("settings.discordSRV.spoilers.enabled")) {
                 if (plugin.getConfig().getBoolean("settings.discordSRV.escape special chars.escape entire message", false)) {
                     string = string.replaceAll("\\*", "\\\\*")
                             .replaceAll("_", "\\_")
@@ -714,13 +714,13 @@ public class Manager {
             Manager.FileManager.saveFile(plugin, local, "data/global");
             setGlobalSwears(global);
         }
-        reloadPattern(Types.Filters.OTHER);
+        reloadPattern(Data.Filters.OTHER);
     }
 
     /**
      * Reload the current patterns for Global, Swears and whitelist.
      */
-    public Pattern reloadPattern(Types.Filters type) {
+    public Pattern reloadPattern(Data.Filters type) {
         boolean update = false;
         FileConfiguration local = Manager.FileManager.getFile(plugin, "data/whitelist");
         if (type == RELOAD)
@@ -784,9 +784,9 @@ public class Manager {
             patt.addAll(getRegex());
             setBothPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", patt), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
-        if (type == Types.Filters.BOTH) {
+        if (type == Data.Filters.BOTH) {
             return getBothPattern();
-        } else if (type == Types.Filters.GLOBAL) {
+        } else if (type == Data.Filters.GLOBAL) {
             return getGlobalPattern();
         }
         return getSwearPattern();
@@ -898,8 +898,15 @@ public class Manager {
     }
 
     public static class FileManager {
+
+        /**
+         * Prepares language locale values
+         *
+         * @param plugin MCSF JavaPlugin instance
+         * @return YamlConfiguration with locale variables based on language
+         */
         public static YamlConfiguration getLanguage(MCSF plugin) {
-            String language = Types.Languages.getLanguage(plugin);
+            String language = Data.Languages.getLanguage(plugin);
             Settings settings = new Settings();
             settings.setSetting("reportMissingOptions", false);
             ConfigAPI lang = new ConfigAPI("locales/" + language + ".yml", settings, plugin);
@@ -914,6 +921,13 @@ public class Manager {
             return conf;
         }
 
+        /**
+         * Gets file based on location inside of MCSF's resources
+         *
+         * @param plugin   MCSF plugin instance
+         * @param fileName Name of the file without .yml
+         * @return YamlConfiguration of requested file
+         */
         public static YamlConfiguration getFile(MCSF plugin, String fileName) {
             ConfigAPI config;
             Settings settings = new Settings();
@@ -923,6 +937,13 @@ public class Manager {
             return config.getLiveConfiguration();
         }
 
+        /**
+         * Saves file based on the FileConfiguration provided
+         *
+         * @param plugin   MCSF plugin instance
+         * @param file     Configuration to save to file
+         * @param fileName Name of file to be saved without .yml
+         */
         public static void saveFile(MCSF plugin, FileConfiguration file, String fileName) {
             try {
                 file.save(new File(plugin.getDataFolder(), fileName + ".yml"));

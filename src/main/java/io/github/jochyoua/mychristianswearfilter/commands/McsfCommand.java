@@ -13,8 +13,8 @@ import io.github.jochyoua.mychristianswearfilter.commands.modifications.RemoveCo
 import io.github.jochyoua.mychristianswearfilter.commands.modifications.ResetCommand;
 import io.github.jochyoua.mychristianswearfilter.commands.modifications.UnsetCommand;
 import io.github.jochyoua.mychristianswearfilter.commands.modifications.WhitelistCommand;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.IllegalArgumentException;
@@ -65,13 +65,13 @@ public class McsfCommand implements CommandExecutor {
             cmd.setTabCompleter((sender, command, s, args) -> {
                 final List<String> completions = new ArrayList<>();
                 if (args.length == 1) {
-                    List<Types.Arguments> arguments = new ArrayList<>();
-                    for (Types.Arguments a : Types.Arguments.values()) {
+                    List<Data.Arguments> arguments = new ArrayList<>();
+                    for (Data.Arguments a : Data.Arguments.values()) {
                         if (sender.hasPermission(a.getPermission())) {
                             arguments.add(a);
                         }
                     }
-                    StringUtil.copyPartialMatches(args[0], Stream.of(arguments.toArray(new Types.Arguments[0]))
+                    StringUtil.copyPartialMatches(args[0], Stream.of(arguments.toArray(new Data.Arguments[0]))
                             .map(Enum::name)
                             .collect(Collectors.toList()), completions);
                 }
@@ -135,7 +135,7 @@ public class McsfCommand implements CommandExecutor {
                     }
                 }
                 try {
-                    if (!sender.hasPermission(Types.Arguments.valueOf(arg).getPermission()))
+                    if (!sender.hasPermission(Data.Arguments.valueOf(arg).getPermission()))
                         throw new NoPermissionException(plugin.getLanguage());
                 } catch (java.lang.IllegalArgumentException | NullPointerException ignored) {
                 }

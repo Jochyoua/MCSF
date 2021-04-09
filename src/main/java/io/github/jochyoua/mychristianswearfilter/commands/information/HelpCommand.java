@@ -17,6 +17,12 @@ public class HelpCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * Shows the help command to the CommandSender
+     *
+     * @param sender CommandSender
+     * @throws NoPermissionException if the CommandSender lacks the `MCSF.use.help` permission
+     */
     public void execute(CommandSender sender) throws NoPermissionException {
         if (!sender.hasPermission("MCSF.use.help")) {
             throw new NoPermissionException(plugin.getLanguage());

@@ -26,6 +26,15 @@ public class GlobalCommand {
         this.manager = plugin.getManager();
     }
 
+    /**
+     * This method adds or removes a word from the current global database or configuration file
+     *
+     * @param sender CommandSender
+     * @param args   Command args
+     * @throws IllegalArgumentException if the arguments are too short
+     * @throws FailureException         if the word already exists in database or configuration files or invalid regex
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.modify.global' permission
+     */
     public void execute(CommandSender sender, String[] args) throws NoPermissionException, IllegalArgumentException, FailureException {
         if (!sender.hasPermission("MCSF.modify.global")) {
             throw new NoPermissionException(plugin.getLanguage());

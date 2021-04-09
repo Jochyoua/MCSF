@@ -10,8 +10,8 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,7 +45,7 @@ public class ProtocolLib implements Listener {
                         for (WrappedChatComponent component : chatComponents.getValues()) {
                             if (component != null) {
                                 if (!component.getJson().isEmpty()) {
-                                    String string = manager.clean(component.getJson(), false, user.status() ? manager.reloadPattern(Types.Filters.BOTH) : manager.reloadPattern(Types.Filters.GLOBAL), Types.Filters.ALL);
+                                    String string = manager.clean(component.getJson(), false, user.status() ? manager.reloadPattern(Data.Filters.BOTH) : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.ALL);
                                     if (!string.trim().isEmpty()) {
                                         component.setJson(string);
                                         packet.getChatComponents().write(0, component);

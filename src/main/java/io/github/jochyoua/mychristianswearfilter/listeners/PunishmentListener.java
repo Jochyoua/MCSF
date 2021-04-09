@@ -1,8 +1,8 @@
 package io.github.jochyoua.mychristianswearfilter.listeners;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Data;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
-import io.github.jochyoua.mychristianswearfilter.shared.Types;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -21,9 +21,15 @@ public class PunishmentListener implements Listener {
     Manager manager;
 
 
-    public PunishmentListener(Manager manager) {
-        this.plugin = manager.getPlugin();
-        this.manager = manager;
+    /**
+     * This Listener listens for Sign, Book and Chat modifications and checks them for blacklisted strings.
+     * if a blacklisted string is located, the player is punished based on the configurations set
+     *
+     * @param plugin MCSF JavaPlugin instance
+     */
+    public PunishmentListener(MCSF plugin) {
+        this.plugin = plugin;
+        this.manager = plugin.getManager();
         if (!plugin.getConfig().getBoolean("settings.filtering.punishments.punish players")) {
             return;
         }
@@ -32,7 +38,7 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void signEdit(SignChangeEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getLines()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Data.Filters.GLOBAL) : manager.reloadPattern(Data.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.signs")) {
             return;
         }
         punishPlayers(event.getPlayer());
@@ -79,14 +85,14 @@ public class PunishmentListener implements Listener {
     public void playerChat(AsyncPlayerChatEvent event) {
         String message = event.getMessage();
         Player player = event.getPlayer();
-        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
+        if (!player.hasPermission("MCSF.bypass") && !manager.isclean(message, plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Data.Filters.GLOBAL) : manager.reloadPattern(Data.Filters.BOTH)) && plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.chat")) {
             punishPlayers(event.getPlayer());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void bookEdit(PlayerEditBookEvent event) {
-        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Types.Filters.GLOBAL) : manager.reloadPattern(Types.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
+        if (event.getPlayer().hasPermission("MCSF.bypass") || manager.isclean(String.join("", event.getNewBookMeta().getPages()), plugin.getConfig().getBoolean("settings.filtering.punishments.only global") ? manager.reloadPattern(Data.Filters.GLOBAL) : manager.reloadPattern(Data.Filters.BOTH)) || !plugin.getConfig().getBoolean("settings.filtering.punishments.punish check.books")) {
             return;
         }
         punishPlayers(event.getPlayer());

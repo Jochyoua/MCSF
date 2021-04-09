@@ -3,7 +3,6 @@ package io.github.jochyoua.mychristianswearfilter.commands.information;
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.Manager;
 import io.github.jochyoua.mychristianswearfilter.shared.User;
-import io.github.jochyoua.mychristianswearfilter.shared.exceptions.CommandDisabledException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.FailureException;
 import io.github.jochyoua.mychristianswearfilter.shared.exceptions.NoPermissionException;
 import org.bukkit.command.CommandSender;
@@ -21,7 +20,15 @@ public class StatusCommand {
         this.manager = plugin.getManager();
     }
 
-    public void execute(CommandSender sender, String[] args) throws NoPermissionException, CommandDisabledException, FailureException {
+    /**
+     * Shows the status of self or other users to the CommandSender
+     *
+     * @param sender CommandSender
+     * @param args   command arguments
+     * @throws NoPermissionException if the CommandSender lacks the `MCSF.use.status' or 'MCSF.modify.others' permission
+     * @throws FailureException      if the target doesn't exist
+     */
+    public void execute(CommandSender sender, String[] args) throws NoPermissionException, FailureException {
         boolean value;
         UUID targetid;
         if (!sender.hasPermission("MCSF.use.status")) {

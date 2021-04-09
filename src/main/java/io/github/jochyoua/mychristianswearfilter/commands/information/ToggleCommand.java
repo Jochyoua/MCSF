@@ -23,7 +23,16 @@ public class ToggleCommand {
         this.manager = plugin.getManager();
     }
 
-    public void execute(CommandSender sender, String[] args) throws CommandDisabledException, NoPermissionException, FailureException {
+    /**
+     * Toggles the CommandSender's filter status or target
+     *
+     * @param sender CommandSender
+     * @param args   Command arguments
+     * @throws NoPermissionException    if the CommandSender lacks the `MCSF.use.toggle' or 'MCSF.modify.others' permission
+     * @throws FailureException         if the target doesn't exist
+     * @throws CommandDisabledException if the filtering is forcefully enabled
+     */
+    public void execute(CommandSender sender, String[] args) throws NoPermissionException, FailureException, CommandDisabledException {
         boolean value;
         UUID targetid = null;
         if (args.length == 1 && (sender instanceof Player)) {
