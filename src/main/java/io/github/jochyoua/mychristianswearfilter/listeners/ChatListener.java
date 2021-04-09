@@ -33,7 +33,7 @@ public class ChatListener implements Listener {
         try {
             if (!use && !plugin.getProtocolLib().isEnabled())
                 use = true;
-        } catch (NoClassDefFoundError ignored) {
+        } catch (NoClassDefFoundError | NullPointerException ignored) {
             use = true;
             // ProtocolLib wasn't found!!
         }

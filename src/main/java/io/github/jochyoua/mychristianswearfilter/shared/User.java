@@ -165,14 +165,14 @@ public class User {
                     ps.setBoolean(1, bool);
                     ps.setString(2, playername);
                 }
-                Manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
-                        (status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
                 ps.execute();
                 ps.close();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
         });
+        Manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
+                (status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
     }
 
     /**

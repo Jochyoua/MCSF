@@ -60,6 +60,18 @@ public class Manager {
 
     static {
         try {
+            File file = new File(MCSF.getInstance().getDataFolder(), "/logs/debug.log");
+            File dir = new File(MCSF.getInstance().getDataFolder(), "logs");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             fileHandler = new FileHandler(MCSF.getInstance().getDataFolder()
                     + File.separator + "logs" + File.separator + "debug.log");
         } catch (IOException e) {
