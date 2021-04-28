@@ -43,9 +43,9 @@ public class HelpCommand {
                     str = str.replaceAll("(?i)\\{PERMISSION=(.*?)}|(?i)<%PERMISSION=(.*?)%>", "");
                 }
             }
-            if (length <= 0) { // length is the end
+            if (length <= 0) {
                 message.append(str);
-            } else { // length is not the end
+            } else {
                 message.append(str).append("\n");
             }
         }

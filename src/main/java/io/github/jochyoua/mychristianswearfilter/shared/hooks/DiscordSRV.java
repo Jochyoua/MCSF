@@ -38,7 +38,6 @@ public class DiscordSRV {
     @Subscribe
     public void DiscordGameMessage(
             final GameChatMessagePostProcessEvent event) {
-        // Filters messages from MC to Discord
         event.setProcessedMessage(manager.clean(event.getProcessedMessage(), true, manager.reloadPattern(Data.Filters.BOTH), Data.Filters.DISCORD));
     }
 }

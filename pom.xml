@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.jochyoua.MCSF</groupId>
+    <groupId>io.github.jochyoua.mychristianswearfilter</groupId>
     <artifactId>MCSF</artifactId>
     <version>5.1</version>
 
@@ -13,6 +13,7 @@
         <maven.compiler.source>13</maven.compiler.source>
         <maven.compiler.target>13</maven.compiler.target>
     </properties>
+
     <build>
         <defaultGoal>clean package</defaultGoal>
         <finalName>${project.name}</finalName>
@@ -189,6 +190,12 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.11</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

@@ -17,6 +17,7 @@ public class ChatListener implements Listener {
     private final MCSF plugin;
     private final Manager manager;
 
+
     /**
      * This listener listens for whenever the Player chats and filters messages if needed
      *
@@ -29,41 +30,40 @@ public class ChatListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void PlayerChatEvent(AsyncPlayerChatEvent e) {
+    public void PlayerChatEvent(AsyncPlayerChatEvent event) {
         boolean use = plugin.getConfig().getBoolean("settings.only filter players.enabled");
-        String old_message = e.getMessage();
-        String new_message = e.getMessage();
-        // Message saving / global filtering
+        String old_message = event.getMessage();
+        String new_message = event.getMessage();
         manager.setTable("global");
         try {
             if (!use && !plugin.getProtocolLib().isEnabled())
                 use = true;
         } catch (NoClassDefFoundError | NullPointerException ignored) {
             use = true;
-            // ProtocolLib wasn't found!!
         }
         if (plugin.getConfig().getBoolean("settings.only filter players.remove message on swear"))
-            e.setCancelled(true);
+            event.setCancelled(true);
         if (plugin.getConfig().getBoolean("settings.only filter players.only remove global swears"))
             if (!manager.isclean(old_message, manager.reloadPattern(Data.Filters.GLOBAL)))
-                e.setCancelled(true);
-        if (e.isCancelled())
+                event.setCancelled(true);
+        if (event.isCancelled())
             return;
         if (use || !manager.supported("ProtocolLib")) {
             if (!manager.getGlobalSwears().isEmpty()) {
                 if (plugin.getConfig().getBoolean("settings.filtering.global blacklist.enabled")) {
                     new_message = manager.clean(old_message, false, manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.PLAYERS);
-                    e.setMessage(new_message);
+                    event.setMessage(new_message);
                 }
             }
             Set<Player> remove = new HashSet<>();
-            for (Player player : e.getRecipients()) {
+            for (Player player : event.getRecipients()) {
                 if (new User(manager, player.getUniqueId()).status() || plugin.getConfig().getBoolean("settings.filtering.force")) {
-                    player.sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), manager.clean(new_message, false, manager.reloadPattern(Data.Filters.BOTH), Data.Filters.PLAYERS)));
+                    player.sendMessage(String.format(event.getFormat(), event.getPlayer().getDisplayName(), manager.clean(new_message, false, manager.reloadPattern(Data.Filters.BOTH), Data.Filters.PLAYERS)));
                     remove.add(player);
                 }
             }
-            e.getRecipients().removeAll(remove);
+
+            event.getRecipients().removeAll(remove);
         }
     }
 }

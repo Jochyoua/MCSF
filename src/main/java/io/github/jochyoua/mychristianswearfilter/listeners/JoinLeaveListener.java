@@ -42,8 +42,8 @@ public class JoinLeaveListener implements Listener {
     }
 
     @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-        Player player = e.getPlayer();
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
         User user = new User(manager, player.getUniqueId());
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -97,9 +97,9 @@ public class JoinLeaveListener implements Listener {
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent e) {
+    public void onQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            User user = new User(manager, e.getPlayer().getUniqueId());
+            User user = new User(manager, event.getPlayer().getUniqueId());
             user.setFlags(0);
         });
     }

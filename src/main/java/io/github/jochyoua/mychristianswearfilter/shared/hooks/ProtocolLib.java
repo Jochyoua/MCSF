@@ -3,7 +3,6 @@ package io.github.jochyoua.mychristianswearfilter.shared.hooks;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -20,6 +19,7 @@ import org.bukkit.event.Listener;
 
 import java.util.Objects;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 public class ProtocolLib implements Listener {
     private final MCSF plugin;
@@ -34,35 +34,37 @@ public class ProtocolLib implements Listener {
     public void register() {
         Manager manager = plugin.getManager();
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-        protocolManager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.MONITOR, PacketType.Play.Server.CHAT) {
+        protocolManager.addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.CHAT) {
             @Override
-            public void onPacketSending(PacketEvent e) {
+            public void onPacketSending(PacketEvent event) {
                 if (!plugin.getConfig().getBoolean("settings.only filter players.enabled")) {
                     try {
-                        User user = new User(manager, e.getPlayer().getUniqueId());
-                        PacketContainer packet = e.getPacket();
+                        User user = new User(manager, event.getPlayer().getUniqueId());
+                        PacketContainer packet = event.getPacket();
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
                             if (component != null) {
                                 if (!component.getJson().isEmpty()) {
-                                    String string = manager.clean(component.getJson(), false, user.status() ? manager.reloadPattern(Data.Filters.BOTH) : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.ALL);
-                                    if (!string.trim().isEmpty()) {
-                                        component.setJson(string);
-                                        packet.getChatComponents().write(0, component);
+                                    Pattern bothPattern = manager.reloadPattern(Data.Filters.BOTH);
+                                    if (!manager.isclean(component.getJson(), bothPattern)) {
+                                        String string = manager.clean(component.getJson(), false, user.status() ? bothPattern : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.ALL);
+                                        if (!string.trim().isEmpty() &&
+                                                !string.equalsIgnoreCase(component.getJson())) {
+                                            component.setJson(string);
+                                            chatComponents.writeSafely(0, component);
+                                        }
                                     }
                                 }
                             }
                         }
                     } catch (Exception ex) {
                         FileConfiguration language = manager.getPlugin().getLanguage();
-                        manager.getPlugin().getLogger().log(Level.SEVERE, "Failure: {message}"
-                                .replaceAll("(?i)\\{message}|(?i)%message%",
-                                        Objects.requireNonNull(language.getString("variables.error.execute_failure"))
-                                                .replaceAll("(?i)\\{feature}", "Chat Filtering (FULL CHAT)")), e);
+                        Manager.debug(Objects.requireNonNull(language.getString("variables.error.execute_failure"))
+                                .replaceAll("(?i)\\{feature}", "Chat Filtering (FULL CHAT)"), true, Level.WARNING);
                         setEnabled(false);
                         ex.printStackTrace();
                         manager.getPlugin().getLogger().warning("Failure: {message}".replaceAll("(?i)\\{message}", Objects.requireNonNull(language.getString("variables.error.execute_failure_link"))) + "\nonly filter players has been temporarily enabled.");
-                        Manager.debug("Failed to load ProtocolLib!: " + ex.getMessage(), false, Level.WARNING);
+
                         ProtocolLibrary.getProtocolManager().removePacketListener(this);
                     }
                 }

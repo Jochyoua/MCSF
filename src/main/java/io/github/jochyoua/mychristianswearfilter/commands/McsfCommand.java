@@ -153,8 +153,6 @@ public class McsfCommand implements CommandExecutor {
                     case "version":
                         versionCommand.execute(sender);
                         break;
-
-                    // Modify commands:
                     case "unset":
                         unsetCommand.execute(sender, args);
                         break;

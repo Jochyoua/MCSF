@@ -12,6 +12,7 @@ import lombok.Setter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.jodah.expiringmap.ExpiringMap;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -61,10 +62,6 @@ public class Manager {
     static {
         try {
             File file = new File(MCSF.getInstance().getDataFolder(), "/logs/debug.log");
-            File dir = new File(MCSF.getInstance().getDataFolder(), "logs");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
             if (!file.exists()) {
                 try {
                     file.createNewFile();
@@ -144,7 +141,7 @@ public class Manager {
      * @param message the message to be colored
      * @return the colored string
      */
-    public static String color(String message) {
+    public static String colorStringHex(String message) {
         StringBuffer rgbBuilder = new StringBuffer();
         Matcher rgbMatcher = Pattern.compile("(&)?&#([0-9a-fA-F]{6})").matcher(message);
         while (rgbMatcher.find()) {
@@ -211,7 +208,6 @@ public class Manager {
             debug.log(level, str + "\n");
 
             if (consoleOutput) {
-                // Output to console
                 Bukkit.getLogger().log(level, "[MCSF Debug] " + str);
             }
         } catch (SecurityException e) {
@@ -251,9 +247,9 @@ public class Manager {
      * Closes SQL connections, called when the plugin is disabled.
      */
     public void shutDown() {
+        fileHandler.close();
         try {
             userConnection.close();
-            fileHandler.close();
             if (supported("mysql"))
                 connector.getConnection().close();
         } catch (SQLException ignored) {
@@ -314,6 +310,7 @@ public class Manager {
                 break;
             case "placeholderapi":
                 statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
+                break;
         }
         return statement;
     }
@@ -504,6 +501,13 @@ public class Manager {
      * @return the cleaned string
      */
     public String clean(String string, boolean strip, Pattern pattern, Data.Filters type) {
+        if (plugin.getConfig().getBoolean("settings.filtering.strip accents"))
+            string = StringUtils.stripAccents(string);
+
+        if (string == null) {
+            return null;
+        }
+
         if (plugin.getConfig().getBoolean("settings.filtering.double filtering") && type != Data.Filters.DISCORD)
             return filter(filter(string, strip, pattern, type), strip, pattern, type);
         return filter(string, strip, pattern, type);
@@ -518,9 +522,6 @@ public class Manager {
      * @return the cleaned string
      */
     public String filter(String string, boolean strip, Pattern pattern, Data.Filters type) {
-        if (string == null) {
-            return null;
-        }
         String replacement = plugin.getConfig().getString("settings.filtering.replacement");
         Matcher matcher = pattern.matcher(string);
         StringBuffer out = new StringBuffer();
@@ -530,15 +531,16 @@ public class Manager {
             if (matcher.group(1) != null)
                 if (getLocalWhitelist().contains(matcher.group(1).trim().toLowerCase()))
                     continue;
-            try {
-                String[] arr = matcher.toMatchResult().toString().split("=");
-                String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
-                if (plugin.getConfig().getBoolean("settings.filtering.replace word for word")) {
+
+            if (plugin.getConfig().getBoolean("settings.filtering.replace word for word")) {
+                try {
+                    String[] arr = matcher.toMatchResult().toString().split("=");
+                    String str = arr[arr.length - 1].replaceAll("[^\\p{L}0-9 ]+", " ").trim();
                     replacement = (plugin.getConfig().isSet("replacements." + str) ? plugin.getConfig().getString("replacements." + str) :
                             (plugin.getConfig().isSet("replacements.all") ? plugin.getConfig().getString("replacements.all") : plugin.getConfig().getString("settings.filtering.replacement")));
+                } catch (Exception e) {
+                    debug("Could not register replace_word_for_words: " + e.getMessage(), true, Level.WARNING);
                 }
-            } catch (Exception e) {
-                debug("Could not register replace_word_for_words: " + e.getMessage(), true, Level.WARNING);
             }
             if (replacement == null)
                 return string;
@@ -562,23 +564,16 @@ public class Manager {
                         .replaceAll("~", "\\~")
                         .replaceAll("`", "\\\\`") : matcher.group(0).trim()));
             }
-            r = r.replaceAll("\\*", "\\\\*")
-                    .replaceAll("_", "\\_")
-                    .replaceAll("\\|", "\\\\|")
-                    .replaceAll("~", "\\~")
-                    .replaceAll("`", "\\\\`");
             matcher.appendReplacement(out, r);
         }
         matcher.appendTail(out);
-        string = out.toString();
-
-        return string;
+        return out.toString();
     }
 
     private String getWhitelistRegex() {
         List<String> whitelistRegex = new ArrayList<>();
         for (String str : getLocalWhitelist()) {
-            whitelistRegex.add("(?i)\\b" + str + "\\b");
+            whitelistRegex.add("\\b" + str + "\\b");
         }
         return String.join("|", whitelistRegex);
     }
@@ -605,6 +600,8 @@ public class Manager {
      */
     public boolean isclean(String string, Pattern pattern) {
         string = string.replaceAll("[^\\p{L}0-9 ]+", " ").trim();
+        if (plugin.getConfig().getBoolean("settings.filtering.strip accents"))
+            string = StringUtils.stripAccents(string);
         Matcher matcher = pattern.matcher(string);
         while (matcher.find()) {
             if (getLocalWhitelist().contains(matcher.group(0).trim().toLowerCase()))
@@ -755,7 +752,7 @@ public class Manager {
             Manager.FileManager.saveFile(plugin, local, "data/global");
             plugin.setLocal("global", s.size());
             update = true;
-            setGlobalPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
+            setGlobalPattern(Pattern.compile("((?i)" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         local = Manager.FileManager.getFile(plugin, "data/swears");
         if ((local.getStringList("swears").size() != plugin.getLocal("swears")) || (getRegex().isEmpty() && !local.getStringList("swears").isEmpty())) {
@@ -775,14 +772,14 @@ public class Manager {
                     .collect(Collectors.toList()));
             plugin.setLocal("swears", s.size());
             update = true;
-            setSwearPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
+            setSwearPattern(Pattern.compile("((?i)" + getWhitelistRegex() + ")|" + String.join("|", duh), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         if (update) {
             debug("Updating pattern for both regex!", plugin.getDebug(), Level.INFO);
             List<String> patt = new ArrayList<>();
             patt.addAll(getGlobalRegex());
             patt.addAll(getRegex());
-            setBothPattern(Pattern.compile("(" + getWhitelistRegex() + ")|" + String.join("|", patt), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
+            setBothPattern(Pattern.compile("((?i)" + getWhitelistRegex() + ")|" + String.join("|", patt), Pattern.MULTILINE | Pattern.CASE_INSENSITIVE | Pattern.COMMENTS));
         }
         if (type == Data.Filters.BOTH) {
             return getBothPattern();
@@ -807,7 +804,6 @@ public class Manager {
                 str = str.replaceAll("\\s+", "");
                 StringBuilder omg = new StringBuilder();
                 for (String str2 : str.split("")) {
-                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)
                     omg.append(str2).append("+\\s*");
                 }
                 duh.add(omg.substring(0, omg.toString().length() - 4) + "+");
@@ -825,13 +821,11 @@ public class Manager {
                 for (String str2 : str.split("")) {
                     length -= 1;
                     str2 = Pattern.quote(str2);
-                    //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)                                                                               = fuck
-                    //(f+\s*+|f+[!@#$%^&*()_+-"]+\s*+)(u+\s*+|[!@#$%^&*()_+-"]+u+\s*+)(c+\s*+|[!@#$%^&*()_+-"]+c+\s*+)(k+\s*+|[!@#$%^&*()_+-"]+k+\s*+)   = fuck with special chars
-                    if (length <= 0) { // length is the end
+                    if (length <= 0) {
                         omg.append("(").append(str2).append("+|([").append(quote).append("]|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str2).append(")");
-                    } else if (length == str.length() - 1) { // length is the beginning
+                    } else if (length == str.length() - 1) {
                         omg.append("(?i)(").append(str2).append("+\\s*+|").append(str2).append("+\\s*+([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+)");
-                    } else { // length is somewhere in between
+                    } else {
                         omg.append("(").append(str2).append("+\\s*+|([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str2).append("+\\s*+)");
                     }
                 }
@@ -844,13 +838,11 @@ public class Manager {
                     for (String str3 : str2.split("")) {
                         length2--;
                         str3 = Pattern.quote(str3);
-                        //(f+\s*+)(u+\s*+|-+u+\s*+)(c+\s*+|-+c+\s*+)(k+|-+k+)                                                                               = fuck
-                        //(f+\s*+|f+[!@#$%^&*()_+-"]+\s*+)(u+\s*+|[!@#$%^&*()_+-"]+u+\s*+)(c+\s*+|[!@#$%^&*()_+-"]+c+\s*+)(k+\s*+|[!@#$%^&*()_+-"]+k+\s*+)   = fuck with special chars
-                        if (length2 <= 0) { // length is the end
+                        if (length2 <= 0) {
                             omg2.append("(").append(str3).append("+|([").append(quote).append("]|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append(")");
-                        } else if (length2 == str2.length() - 1) { // length is the beginning
+                        } else if (length2 == str2.length() - 1) {
                             omg2.append("(?i)(").append(str3).append("+\\s*+|").append(str3).append("+\\s*+([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+)");
-                        } else { // length is somewhere in between
+                        } else {
                             omg2.append("(").append(str3).append("+\\s*+|([").append(quote).append("]+\\s*+|((§|&)[0-9A-FK-OR]|(§|&)))+\\s*+").append(str3).append("+\\s*+)");
                         }
                     }
@@ -878,7 +870,7 @@ public class Manager {
                 .replaceAll("(?i)\\{wordcount}|(?i)%wordcount%", Integer.toString(Manager.FileManager.getFile(plugin, "data/swears").getStringList("swears").size())));
         if (supported("PlaceholderAPI") && sender instanceof Player)
             message = PlaceholderAPI.setPlaceholders((Player) sender, message);
-        return supported("hex") ? color(message) : message;
+        return supported("hex") ? colorStringHex(message) : message;
     }
 
     /**

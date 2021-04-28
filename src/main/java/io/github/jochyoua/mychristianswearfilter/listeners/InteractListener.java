@@ -38,18 +38,18 @@ public class InteractListener implements Listener {
 
     @Deprecated
     @EventHandler
-    public void openBook(PlayerInteractEvent e) {
+    public void openBook(PlayerInteractEvent event) {
         if (plugin.getConfig().getBoolean("settings.filtering.filter checks.bookcheck")) {
-            Player player = e.getPlayer();
+            Player player = event.getPlayer();
             ItemStack hand;
             try {
                 hand = player.getInventory().getItemInMainHand();
             } catch (Exception ex) {
                 hand = player.getInventory().getItemInHand();
             }
-            if (hand.getType() == Material.WRITTEN_BOOK && (e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) {
-                if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-                    BlockState bs = Objects.requireNonNull(e.getClickedBlock()).getState();
+            if (hand.getType() == Material.WRITTEN_BOOK && (event.getAction().equals(Action.RIGHT_CLICK_AIR) || event.getAction().equals(Action.RIGHT_CLICK_BLOCK))) {
+                if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+                    BlockState bs = Objects.requireNonNull(event.getClickedBlock()).getState();
                     if (bs instanceof InventoryHolder) {
                         return;
                     }
@@ -57,7 +57,7 @@ public class InteractListener implements Listener {
                         return;
                     }
                 }
-                e.setCancelled(true);
+                event.setCancelled(true);
                 ItemStack book = player.getInventory().getItemInHand();
                 BookMeta meta = (BookMeta) book.getItemMeta();
                 int slot = player.getInventory().getHeldItemSlot();

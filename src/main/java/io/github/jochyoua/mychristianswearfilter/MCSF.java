@@ -59,19 +59,15 @@ public class MCSF extends JavaPlugin {
     public void onEnable() {
         plugin = this;
 
-        // Sets the default configuration
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
 
-        // Enables debugging
         debug = getConfig().getBoolean("settings.debug");
 
         debug("Loading MCSF v" + getDescription().getVersion() + " on " + getServer().getVersion() + (Bukkit.getOnlinePlayers().isEmpty() ? " FRESH RUN" : " RELOADED"), false, Level.INFO);
 
-        // Retrieves the currently set language
         language = Manager.FileManager.getLanguage(this);
 
-        // Removes old sql information from config.yml and sorts it into sql.yml
         FileConfiguration sql = Manager.FileManager.getFile(this, "sql");
         if (this.getConfig().isSet("mysql")) {
             debug("(MYSQL) Setting mysql path into `data/sql.yml`", true, Level.INFO);
@@ -84,7 +80,6 @@ public class MCSF extends JavaPlugin {
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
 
-        // Removes old swear information from config.yml and sorts it into data/swears.yml
         FileConfiguration local = Manager.FileManager.getFile(this, "data/swears");
         if (!this.getConfig().getStringList("swears").isEmpty()) {
             debug("(CONFIG) Setting path `swears` into `data/swears.yml`", true, Level.INFO);
@@ -103,7 +98,6 @@ public class MCSF extends JavaPlugin {
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
 
-        // Removes old whitelist information from config.yml and sorts it into data/whitelist.yml
         local = Manager.FileManager.getFile(this, "data/whitelist");
         if (!getConfig().getStringList("whitelist").isEmpty()) {
             debug("(CONFIG) Setting path `whitelist` into `data/whitelist.yml`", true, Level.INFO);
@@ -122,7 +116,6 @@ public class MCSF extends JavaPlugin {
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
 
-        // Removes old global information from config.yml and sorts it into data/global.yml
         local = Manager.FileManager.getFile(this, "data/global");
         if (!this.getConfig().getStringList("global").isEmpty()) {
             debug("(CONFIG) Setting path `global` into `data/global.yml`", true, Level.INFO);
@@ -141,7 +134,6 @@ public class MCSF extends JavaPlugin {
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
 
-        // Loads MySQL data if mysql is enabled
         hikariCP = new HikariCP(this, connector);
         if (sql.getBoolean("mysql.enabled")) {
             boolean load = false;
@@ -160,7 +152,6 @@ public class MCSF extends JavaPlugin {
         }
         manager = new Manager(this, connector);
 
-        // Sets the correct data for tables
         if (getHikariCP().isEnabled())
             try {
                 manager.createTable(false);
@@ -168,7 +159,6 @@ public class MCSF extends JavaPlugin {
                 throwables.printStackTrace();
             }
 
-        // Relocates old pre-existing user data to the appropriate locations
         if (getConfig().isSet("users")) {
             debug("(CONFIG) Converting path `users` into `data/users.db`", true, Level.INFO);
             debug("Converting legacy users", false, Level.INFO);
@@ -182,7 +172,6 @@ public class MCSF extends JavaPlugin {
             Manager.FileManager.saveFile(this, getConfig(), "config");
         }
 
-        // Loop through each language file that isn't the selected one and add it to /locales/ folder
         for (Data.Languages language : Data.Languages.values()) {
             if (!(new File(getDataFolder(), "locales/" + language.name() + ".yml").exists()) && !Data.Languages.getLanguage(this).equalsIgnoreCase(language.name())) {
                 Settings settings = new Settings();
@@ -192,26 +181,20 @@ public class MCSF extends JavaPlugin {
             }
         }
 
-        // Retrieves data from MySQL and sets it accordingly
+
         manager.reload();
 
-        // Loads the MCSF commands with aliases
         new McsfCommand(this);
 
-        // Loads all the player related listeners
         new ChatListener(this);
 
-        // This is used for book filtering
         new InteractListener(this);
 
-        // Detects when the player leaves or joins the game
         new JoinLeaveListener(this);
 
-        // Punishes players if their messages, created signs or books contain swears
         if (getConfig().getBoolean("settings.filtering.punishments.punish players"))
             new PunishmentListener(this);
 
-        // Loading plugin hooks
         if (manager.supported("ProtocolLib")) {
             this.ProtocolLib = new ProtocolLib(this);
             this.ProtocolLib.register();
@@ -231,7 +214,6 @@ public class MCSF extends JavaPlugin {
                 debug("DiscordSRV support successfully enabled", false, Level.INFO);
         }
 
-        // Debugs and checks to make sure that strings are correctly being filtered
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             final List<String> swears = Manager.FileManager.getFile(this, "data/swears").getStringList("swears");
             if (!swears.isEmpty()) {
@@ -243,14 +225,11 @@ public class MCSF extends JavaPlugin {
             }
         });
 
-        // Basic metrics data, includes currently set language
         final Metrics metrics = new Metrics(this, 4345);
         metrics.addCustomChart(new Metrics.SimplePie("used_language", () -> Data.Languages.getLanguage(this)));
 
-        // This code notifies the server operator if an update is needed and if metrics is enabled
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
 
-            // Verifies this is the latest version of MCSF
             if (getConfig().getBoolean("settings.updating.check for updates")) {
                 manager.send(Bukkit.getConsoleSender(), Objects.requireNonNull(getLanguage().getString("variables.updatecheck.checking")));
                 if (Manager.getVersion() != 0.0 && Manager.getVersion() > Double.parseDouble(getDescription().getVersion())) {
@@ -265,14 +244,11 @@ public class MCSF extends JavaPlugin {
         }, 1L);
     }
 
-    /* Setters and getters */
 
     @Override
     public void onDisable() {
-        // Closes pre-existing mysql and sqlite connections
         manager.shutDown();
 
-        // Terminates all pre-existing tasks that are still running
         Bukkit.getScheduler().cancelTasks(this);
     }
 
