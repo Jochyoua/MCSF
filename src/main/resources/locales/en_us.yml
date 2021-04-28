@@ -10,7 +10,7 @@ variables:
   success: "{prefix} &aSuccess: {message}" ## Messages for successful responses, messages can be seen under variables.successful
   activated: "enabled"
   deactivated: "disabled"
-  debug: "{prefix} &d&lDEBUG > &f{message}"
+
   parse: "{prefix} &d&lPARSE > &f{message}"
   reset: "{prefix} Are you sure you want to reset the database? This is irreversible. To confirm, please type /{command} reset confirm"
   cooldown: "{prefix} You need to wait &c{duration}s&f to use this command!"
@@ -24,25 +24,18 @@ variables:
     update_available: "{prefix} A new version (v{version}) is out! You are still running v{current}"
     update_link: "{prefix} Download the latest version here: https://www.spigotmc.org/resources/54115/" ## Update link for updating the plugin with latest release
   help:
-    - "&6-------------------------"
-    - "{prefix}"
-    - "&6Command - Description"
-    - "&6([] = Optional / <> = Required)"
-    - "{PERMISSION=MCSF.toggle}&6> /{command} toggle [player] - Toggles the swear filter for yourself or someone else"
-    - "&6> /{command} status [player] - Views the status of a target's filter status"
-    - "{PERMISSION=MCSF.version}&6> /{command} version - Shows version of this plugin"
-    - "{PERMISSION=MCSF.modify}&6> /{command} <add/remove> <word> -  Modifies swearlist"
-    - "{PERMISSION=MCSF.modify}&6> /{command} whitelist <word> -  Modifies whitelist"
-    - "{PERMISSION=MCSF.modify}&6> /{command} reload"
-    - "{PERMISSION=MCSF.modify}&6> /{command} unset </player/uuid> - Modifies users"
-    - "{PERMISSION=MCSF.modify}&6> /{command} reset <confirm> - Resets database to config data"
-    - "&6-------------------------"
-  console motd:
-    - "&dMCSF (My Christian Swear Filter) v{current} by Jochyoua"
-    - "&dServer version:&f {serverversion}"
-    - "&dPlugin version:&f {current}"
-    - "&dSwear count:&f {wordcount}"
-    - "&dWords blocked:&f {swearcount}"
+    - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&f Commands: &9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
+    - "  {PERMISSION=MCSF.use.toggle}/{command} &9toggle&f - Toggles the swear filter"
+    - "  {PERMISSION=MCSF.use.status}/{command} &9status&f - Views the status of a target's filter status"
+    - "  {PERMISSION=MCSF.use.version}/{command} &9version&f - Shows version of this plugin"
+    - "  {PERMISSION=MCSF.modify.add}/{command} &9add <word>&f - Adds word to swear list"
+    - "  {PERMISSION=MCSF.modify.remove}/{command} &9remove <word>&f - Removes word to swear list"
+    - "  {PERMISSION=MCSF.modify.whitelist}/{command} &9whitelist <word>&f - Modifies whitelist"
+    - "  {PERMISSION=MCSF.modify.global}/{command} &9global <word>&f - Modifies global list"
+    - "  {PERMISSION=MCSF.modify.reload}/{command} &9reload&f - Reloads data"
+    - "  {PERMISSION=MCSF.modify.unset}/{command} &9unset&f - Modifies users"
+    - "  {PERMISSION=MCSF.modify.reset}/{command} &9reset&f - Resets database to config data"
+    - "&9&m᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄᠄&r"
   successful:
     added: "Word has been added." ## Word has been added message
     removed: "Word has been removed." ## Word has been removed message

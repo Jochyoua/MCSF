@@ -9,7 +9,7 @@ public class Settings {
 
     // This class is used to store the settings of ConfigAPI
 
-    private Map<String, Boolean> settings;  // This Map will contain all settings of ConfigAPI
+    private final Map<String, Boolean> settings;  // This Map will contain all settings of ConfigAPI
 
     /**
      * This constructor will initialize the default values
@@ -27,7 +27,7 @@ public class Settings {
      */
     public Settings() {
 
-        settings = new HashMap<String, Boolean>();
+        settings = new HashMap<>();
 
         // Logging settings
         settings.put("dodebuglogging", false);          // Allows debugging messages to be sent to troubleshoot a config file and the API usage. This is meant as a developer tool and logs a message when an issue occurs
@@ -108,6 +108,26 @@ public class Settings {
         }
     }
 
+    /**
+     * Gets all current settings. All options are shown below
+     * <p>
+     * |------------------------| -----
+     * | Setting name           | Description
+     * | ---------------------- | -----
+     * | doDebugLogging         | Allows debugging messages to be sent to troubleshoot a config file and the API usage. This is meant as a developer tool and logs a message when an issue occurs
+     * | reportMissingOptions   | On each config file reload, report missing options to the console (useful for server owners)
+     * | reportRedundantOptions | On each config file reload, Report options which are in the live config but not in the default config
+     * | reportNewConfig        | On each config file reload, report the action of copying a new config file
+     * | useColors              | Choose whether console output should be coloured
+     * | autoLoadValues         | Choose to load all config contents upon creating an instance. Setting this to false will be slightly more performant if other settings need to be set first.
+     * | loadDefaults           | Load default values (from the default config) where live config values are missing
+     * |------------------------| -----
+     *
+     * @return A Map where the key is the setting's name and the value is its setting (true, false)
+     */
+    public Map<String, Boolean> getSettings() {
+        return settings;
+    }
 
     /**
      * Update multiple settings at once. This saves some programming work when working with multiple configuration files which need the same settings
@@ -133,28 +153,14 @@ public class Settings {
         }
     }
 
-
     /**
-     * Gets all current settings. All options are shown below
-     * <p>
-     * |------------------------| -----
-     * | Setting name           | Description
-     * | ---------------------- | -----
-     * | doDebugLogging         | Allows debugging messages to be sent to troubleshoot a config file and the API usage. This is meant as a developer tool and logs a message when an issue occurs
-     * | reportMissingOptions   | On each config file reload, report missing options to the console (useful for server owners)
-     * | reportRedundantOptions | On each config file reload, Report options which are in the live config but not in the default config
-     * | reportNewConfig        | On each config file reload, report the action of copying a new config file
-     * | useColors              | Choose whether console output should be coloured
-     * | autoLoadValues         | Choose to load all config contents upon creating an instance. Setting this to false will be slightly more performant if other settings need to be set first.
-     * | loadDefaults           | Load default values (from the default config) where live config values are missing
-     * |------------------------| -----
+     * Get whether debug logging is enabled
      *
-     * @return A Map where the key is the setting's name and the value is its setting (true, false)
+     * @return boolean of the debugging state
      */
-    public Map<String, Boolean> getSettings() {
-        return settings;
+    public boolean getDoDebugLogging() {
+        return getSetting("doDebugLogging");
     }
-
 
     /**
      * This should only be enabled if debugging is required during development
@@ -167,16 +173,14 @@ public class Settings {
         setSetting("doDebugLogging", setting);
     }
 
-
     /**
-     * Get whether debug logging is enabled
+     * Get whether missing options are being reported to the console
      *
-     * @return boolean of the debugging state
+     * @return boolean of the setting
      */
-    public boolean getDoDebugLogging() {
-        return getSetting("doDebugLogging");
+    public boolean getReportMissingOptions() {
+        return getSetting("reportMissingOptions");
     }
-
 
     /**
      * When enabled, missing options will be reported to the console on each reload
@@ -188,16 +192,14 @@ public class Settings {
         setSetting("reportMissingOptions", setting);
     }
 
-
     /**
-     * Get whether missing options are being reported to the console
+     * Get wheter redundant options are being reported to the console
      *
-     * @return boolean of the setting
+     * @return boolean of this setting
      */
-    public boolean getReportMissingOptions() {
-        return getSetting("reportMissingOptions");
+    public boolean getReportRedundantOptions() {
+        return getSetting("reportRedundantOptions");
     }
-
 
     /**
      * Choose whether redundant options should be reported to the console
@@ -209,16 +211,14 @@ public class Settings {
         setSetting("reportRedundantOptions", setting);
     }
 
-
     /**
-     * Get wheter redundant options are being reported to the console
+     * Get whether or not creating a new config is being reported to the console
      *
-     * @return boolean of this setting
+     * @return a boolean of this setting
      */
-    public boolean getReportRedundantOptions() {
-        return getSetting("reportRedundantOptions");
+    public boolean getReportNewConfig() {
+        return getSetting("reportNewConfig");
     }
-
 
     /**
      * Set whether or not the console should be notified if the default config is copied to the live config
@@ -230,16 +230,15 @@ public class Settings {
         setSetting("reportNewConfig", setting);
     }
 
-
     /**
-     * Get whether or not creating a new config is being reported to the console
+     * This setting determines if output should be coloured
+     * Positive messages would be green while negative messages would be red
      *
-     * @return a boolean of this setting
+     * @return A boolean. True: colored. False: default text (white)
      */
-    public boolean getReportNewConfig() {
-        return getSetting("reportNewConfig");
+    public boolean getUseColors() {
+        return getSetting("useColors");
     }
-
 
     /**
      * This setting determines if output should be coloured
@@ -251,17 +250,14 @@ public class Settings {
         setSetting("useColors", setting);
     }
 
-
     /**
-     * This setting determines if output should be coloured
-     * Positive messages would be green while negative messages would be red
+     * Get whether the config contents are loaded on object creation
      *
-     * @return A boolean. True: colored. False: default text (white)
+     * @return a boolean of this setting
      */
-    public boolean getUseColors() {
-        return getSetting("useColors");
+    public boolean getAutoLoadValues() {
+        return getSetting("autoLoadValues");
     }
-
 
     /**
      * This option allows for config files to be loaded automatically upon instance creation
@@ -276,14 +272,13 @@ public class Settings {
         setSetting("autoLoadValues", setting);
     }
 
-
     /**
-     * Get whether the config contents are loaded on object creation
+     * Get whether the default values are being used for missing options in the live config
      *
      * @return a boolean of this setting
      */
-    public boolean getAutoLoadValues() {
-        return getSetting("autoLoadValues");
+    public boolean getLoadDefaults() {
+        return getSetting("loadDefaults");
     }
 
     /**
@@ -294,17 +289,6 @@ public class Settings {
     public void setLoadDefaults(boolean setting) {
         setSetting("loadDefaults", setting);
     }
-
-
-    /**
-     * Get whether the default values are being used for missing options in the live config
-     *
-     * @return a boolean of this setting
-     */
-    public boolean getLoadDefaults() {
-        return getSetting("loadDefaults");
-    }
-
 
     /**
      * This method will print all settings to the console
@@ -318,17 +302,17 @@ public class Settings {
 
         for (Map.Entry<String, Boolean> setting : settings.entrySet()) {
             String name = setting.getKey();
-            String logString = "| " + name;
+            StringBuilder logString = new StringBuilder("| " + name);
 
             for (int i = name.length(); i < 23; i++) {
-                logString += " ";
+                logString.append(" ");
             }
 
             boolean value = setting.getValue();
-            logString += "| " + value;
-            logString += value ? "  |" : " |";
+            logString.append("| ").append(value);
+            logString.append(value ? "  |" : " |");
 
-            Logger.log(logString);
+            Logger.log(logString.toString());
         }
 
         Logger.log("|------------------------|-------|");

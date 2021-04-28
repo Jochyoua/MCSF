@@ -1,18 +1,80 @@
 package io.github.jochyoua.mychristianswearfilter.shared.hikaricp;
 
-import java.sql.SQLException;
+import io.github.jochyoua.mychristianswearfilter.MCSF;
+import io.github.jochyoua.mychristianswearfilter.shared.Manager;
+import lombok.Getter;
+import lombok.Setter;
+import org.bukkit.configuration.file.FileConfiguration;
+
+import java.util.Objects;
+import java.util.logging.Level;
+
+import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
 
 public class HikariCP {
+    private final MCSF plugin;
+    @Getter
+    @Setter
+    private boolean enabled = false;
+    private DatabaseConnector connector;
 
-    public HikariCP(Connector connector) throws SQLException {
-        connector.execute(Query.SWEARS.create);
-
-        connector.execute(Query.WHITELIST.create);
-
-        connector.execute(Query.GLOBAL.create);
-
-        connector.execute(Query.USERS.create);
+    public HikariCP(MCSF plugin, DatabaseConnector connector) {
+        this.plugin = plugin;
+        this.connector = connector;
+        reload();
     }
+
+    public DatabaseConnector getConnector() {
+        return this.connector;
+    }
+
+    public void reload() {
+        FileConfiguration sql = Manager.FileManager.getFile(plugin, "sql");
+        if (sql.getBoolean("mysql.enabled")) {
+            if (connector == null)
+                connector = new DatabaseConnector(plugin);
+            if (!connector.isWorking()) {
+                debug("(MYSQL) Loading database info....", true, Level.INFO);
+                try {
+                    String driverClass = sql.getString("mysql.driverClass");
+                    String url = Objects.requireNonNull(sql.getString("mysql.connection", "jdbc:mysql://{host}:{port}/{database}?useUnicode={unicode}&characterEncoding=utf8&autoReconnect=true&useSSL={ssl}"))
+                            .replaceAll("(?i)\\{host}|(?i)%host%", Objects.requireNonNull(sql.getString("mysql.host")))
+                            .replaceAll("(?i)\\{port}|(?i)%port%", Objects.requireNonNull(sql.getString("mysql.port", "3306")))
+                            .replaceAll("(?i)\\{database}|(?i)%database%", Objects.requireNonNull(sql.getString("mysql.database", "MCSF")))
+                            .replaceAll("(?i)\\{unicode}|(?i)%unicode%", String.valueOf(sql.getBoolean("mysql.use_unicode")))
+                            .replaceAll("(?i)\\{ssl}|(?i)%ssl%", String.valueOf(sql.getBoolean("mysql.ssl")));
+                    String username = sql.getString("mysql.username");
+                    String password = sql.getString("mysql.password");
+                    int maxPoolSize = sql.getInt("mysql.maxPoolSize");
+                    debug("(MYSQL) Using URL: " + url, true, Level.INFO);
+                    connector.setInfo(
+                            new DatabaseConnector.Info(
+                                    driverClass,
+                                    url,
+                                    username,
+                                    password,
+                                    maxPoolSize
+                            )
+                    );
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                    setEnabled(false);
+                }
+                debug("(MYSQL) Trying a database connection....", true, Level.INFO);
+                try {
+                    connector.tryFirstConnection();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    setEnabled(false);
+                }
+                debug("(MYSQL) The connection has been established!", true, Level.INFO);
+                setEnabled(true);
+            }
+        } else {
+            setEnabled(false);
+        }
+    }
+
 
     public enum Query {
         SWEARS("swears", "CREATE TABLE IF NOT EXISTS {table} (" +

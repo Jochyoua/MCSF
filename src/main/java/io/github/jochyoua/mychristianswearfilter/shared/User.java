@@ -2,19 +2,23 @@ package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 import io.github.jochyoua.mychristianswearfilter.shared.hikaricp.HikariCP;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
+import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class User {
-    UUID id;
-    MCSF plugin;
-    Connection connection;
-    Connection userConnection;
-    Manager manager;
+    private final UUID id;
+    private final MCSF plugin;
+    private final Connection connection;
+    private final Connection userConnection;
+    private final Manager manager;
 
     /**
      * Instantiates a new User.
@@ -24,8 +28,8 @@ public class User {
      */
     public User(Manager manager, UUID id) {
         this.id = id;
-        this.plugin = manager.getProvider();
         this.manager = manager;
+        this.plugin = manager.getPlugin();
         this.connection = manager.getConnection();
         this.userConnection = manager.getUserConnection();
     }
@@ -76,13 +80,13 @@ public class User {
                         result = rs.getBoolean("status");
                     }
                     ps.close();
+                    rs.close();
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                     result = plugin.getConfig().getBoolean("settings.filtering.default");
                 }
                 value = !result;
-                try (
-                        PreparedStatement ps = connection.prepareStatement("UPDATE users SET status=? WHERE uuid=?")) {
+                try (PreparedStatement ps = connection.prepareStatement("UPDATE users SET status=? WHERE uuid=?")) {
                     ps.setBoolean(1, value);
                     ps.setString(2, String.valueOf(id));
                     ps.execute();
@@ -100,13 +104,15 @@ public class User {
             value = !value;
         }
         this.set(value);
+        Manager.debug(playerName() + "'s swear filter has been " +
+                (value ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
         return value;
     }
 
     /**
      * Gets the player's unique ID
      *
-     * @return the player's uniqueid
+     * @return the player's unique id
      */
     public UUID getId() {
         return this.id;
@@ -118,23 +124,25 @@ public class User {
      * @param bool the status to be set
      */
     public void set(boolean bool) {
-        try {
-            PreparedStatement ps;
-            if (exists()) {
-                ps = userConnection.prepareStatement("UPDATE users SET status=? WHERE uuid=?");
-                ps.setBoolean(1, bool);
-                ps.setString(2, String.valueOf(id));
-            } else {
-                ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
-                ps.setString(1, id.toString());
-                ps.setString(2, playerName());
-                ps.setBoolean(3, bool);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                PreparedStatement ps;
+                if (exists()) {
+                    ps = userConnection.prepareStatement("UPDATE users SET status=? WHERE uuid=?");
+                    ps.setBoolean(1, bool);
+                    ps.setString(2, String.valueOf(id));
+                } else {
+                    ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
+                    ps.setString(1, id.toString());
+                    ps.setString(2, playerName());
+                    ps.setBoolean(3, bool);
+                }
+                ps.execute();
+                ps.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-            ps.execute();
-            ps.close();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+        });
     }
 
     /**
@@ -144,43 +152,46 @@ public class User {
      * @param bool       the status of the player's filter
      */
     public void create(String playername, boolean bool) {
-        try {
-            PreparedStatement ps;
-            if (!exists()) {
-                ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
-                ps.setString(1, id.toString());
-                ps.setString(2, playername);
-                ps.setBoolean(3, bool);
-            } else {
-                ps = userConnection.prepareStatement("UPDATE users SET status=?, playername=? WHERE uuid=?");
-                ps.setBoolean(1, bool);
-                ps.setString(2, playername);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                PreparedStatement ps;
+                if (!exists()) {
+                    ps = userConnection.prepareStatement("INSERT OR IGNORE INTO users VALUES (?, ?, ?)");
+                    ps.setString(1, id.toString());
+                    ps.setString(2, playername);
+                    ps.setBoolean(3, bool);
+                } else {
+                    ps = userConnection.prepareStatement("UPDATE users SET status=?, playername=? WHERE uuid=?");
+                    ps.setBoolean(1, bool);
+                    ps.setString(2, playername);
+                }
+                ps.execute();
+                ps.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-            ps.execute();
-            ps.close();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+        });
+        Manager.debug("User created (" + getId() + ")\nUsername: " + playerName() + "\nStatus: " +
+                (status() ? plugin.getLanguage().getString("variables.activated") : plugin.getLanguage().getString("variables.deactivated")), false, Level.INFO);
     }
 
     /**
      * Sets the playername
      *
      * @param string the string
-     * @return the string
      */
-    public String playerName(String string) {
-        String name = "";
-        try {
-            PreparedStatement ps = userConnection.prepareStatement("UPDATE users SET name=? WHERE uuid=?");
-            ps.setString(1, string);
-            ps.setString(2, String.valueOf(id));
-            ps.execute();
-            ps.close();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-        return name;
+    public void playerName(String string) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                PreparedStatement ps = userConnection.prepareStatement("UPDATE users SET name=? WHERE uuid=?");
+                ps.setString(1, string);
+                ps.setString(2, String.valueOf(id));
+                ps.execute();
+                ps.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -190,18 +201,34 @@ public class User {
      */
     public String playerName() {
         String name = "";
-        try {
-            PreparedStatement ps = userConnection.prepareStatement("SELECT name FROM users WHERE uuid = ?");
-            ps.setString(1, id.toString());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-                name = rs.getString("name");
-            ps.execute();
-            ps.close();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if (getPlayer() == null) {
+            try {
+                PreparedStatement ps = userConnection.prepareStatement("SELECT name FROM users WHERE uuid = ?");
+                ps.setString(1, id.toString());
+                ResultSet rs = ps.executeQuery();
+                while (rs.next())
+                    name = rs.getString("name");
+                ps.execute();
+                ps.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        } else {
+            name = getPlayer().getName();
         }
         return name;
+    }
+
+    /**
+     * Gets the player from UUID if they're online,
+     * otherwise returns null
+     *
+     * @return player
+     */
+
+    @Nullable
+    public Player getPlayer() {
+        return Bukkit.getPlayer(getId());
     }
 
     /**
@@ -233,6 +260,7 @@ public class User {
                     }
                 }
                 ps.close();
+                rs.close();
             } catch (SQLException ignored) {
             }
         }
@@ -261,7 +289,7 @@ public class User {
     }
 
     /**
-     * Gets the player's currenty flags
+     * Gets the player's current flags
      *
      * @return the flags
      */
@@ -277,8 +305,8 @@ public class User {
     public void setFlags(int i) {
         if (i == 0) {
             manager.userFlags.remove(id);
-            return;
+        } else {
+            manager.userFlags.put(id, i);
         }
-        manager.userFlags.put(id, i);
     }
 }

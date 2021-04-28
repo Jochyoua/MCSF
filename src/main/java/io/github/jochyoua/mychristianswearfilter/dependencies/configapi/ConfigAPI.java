@@ -1,7 +1,8 @@
 package io.github.jochyoua.mychristianswearfilter.dependencies.configapi;
 
 import io.github.jochyoua.mychristianswearfilter.dependencies.configapi.utility.Logger;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +14,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class ConfigAPI {
@@ -73,7 +75,7 @@ public class ConfigAPI {
         this.plugin = plugin;           // Keep track of an instance of this plugin
         this.fileName = fileName;       // Store the filename of this config file
 
-        contents = new HashMap<String, Object>();       // Create a Map that will contain all paths and values
+        contents = new HashMap<>();       // Create a Map that will contain all paths and values
 
         if (settings.getAutoLoadValues())             // Check if auto loading is enabled
         {
@@ -293,10 +295,8 @@ public class ConfigAPI {
 
         Reader defaultStream;
         try {
-            defaultStream = new InputStreamReader(plugin.getResource(fileName), StandardCharsets.UTF_8);
-            if (defaultStream != null) {
-                fileConfig = YamlConfiguration.loadConfiguration(defaultStream);
-            }
+            defaultStream = new InputStreamReader(Objects.requireNonNull(plugin.getResource(fileName)), StandardCharsets.UTF_8);
+            fileConfig = YamlConfiguration.loadConfiguration(defaultStream);
         } catch (Exception ex) {
             if (settings.getDoDebugLogging()) {
                 Logger.log("An error occurred while loading the default config values (see below)");
@@ -352,7 +352,7 @@ public class ConfigAPI {
 
         // Empty the contents
 
-        contents = new HashMap<String, Object>();
+        contents = new HashMap<>();
 
         // Load the new contents
 
@@ -377,7 +377,7 @@ public class ConfigAPI {
     private void loadFromConfigurations(YamlConfiguration liveConfig) {
 
         // Reset contents
-        contents = new HashMap<String, Object>();
+        contents = new HashMap<>();
 
         // Load new contents
         for (String path : liveConfig.getKeys(true)) {
@@ -400,7 +400,7 @@ public class ConfigAPI {
         copyDefConfigIfNeeded();        // Copy a new config if none exists yet
 
         YamlConfiguration liveConfiguration;        // Live config values
-        YamlConfiguration defConfiguration = null;  // Default config values
+        YamlConfiguration defConfiguration;  // Default config values
 
         // Get the live config
         liveConfiguration = getLiveConfiguration();
@@ -490,7 +490,7 @@ public class ConfigAPI {
      * @return a Map<String, Object> containing all missing options and
      */
     public Map<String, Object> getMissingOptions(YamlConfiguration liveConfig, YamlConfiguration defaultConfig) {
-        Map<String, Object> missingOptions = new HashMap<String, Object>();
+        Map<String, Object> missingOptions = new HashMap<>();
 
         // Get the current config on the server if none was provided
 
@@ -563,7 +563,7 @@ public class ConfigAPI {
             YamlConfiguration defaultConfig = getDefaultConfiguration();
 
             for (Map.Entry<String, Object> entry : options.entrySet()) {
-                String path = entry.getKey();
+                StringBuilder path = new StringBuilder(entry.getKey());
 
                 // Handle value
                 Object value = entry.getValue();
@@ -574,15 +574,15 @@ public class ConfigAPI {
 
 
                 // Handle path
-                String[] sections = path.split("\\.");  // Split the path in its sections
-                path = "";                                     // Reset the path variable
+                String[] sections = path.toString().split("\\.");  // Split the path in its sections
+                path = new StringBuilder();                                     // Reset the path variable
 
                 for (int i = sections.length - 1; i > 0; i--)    // Loop each subsection in reversed order
                 {
                     String part = sections[i];
-                    path += "'" + part + "'" + " in section ";             // Print each section in reversed order
+                    path.append("'").append(part).append("'").append(" in section ");             // Print each section in reversed order
                 }
-                path += "'" + sections[0] + "'";                           // Add the actual setting name
+                path.append("'").append(sections[0]).append("'");                           // Add the actual setting name
 
                 // Send message
                 if (isMissing)

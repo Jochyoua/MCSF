@@ -2,7 +2,9 @@ package io.github.jochyoua.mychristianswearfilter.shared.exceptions;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
-public class IllegalArgumentException extends  Exception {
+import java.util.Objects;
+
+public class IllegalArgumentException extends Exception {
     YamlConfiguration language;
 
     /**
@@ -16,6 +18,6 @@ public class IllegalArgumentException extends  Exception {
 
     @Override
     public String getMessage() {
-        return language.getString("variables.failure").replaceAll("(?i)\\{message}|(?i)%message%", language.getString("variables.error.incorrectargs"));
+        return Objects.requireNonNull(language.getString("variables.failure")).replaceAll("(?i)\\{message}|(?i)%message%", Objects.requireNonNull(language.getString("variables.error.incorrectargs")));
     }
 }

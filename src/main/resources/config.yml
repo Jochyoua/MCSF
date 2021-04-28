@@ -1,3 +1,9 @@
+# MCSF (My Christian Swear Filter) by Jochyoua
+# This is a toggleable swear filter for your players
+# Resource: https://www.spigotmc.org/resources/54115/
+# Github: https://www.github.com/Jochyoua/MCSF/
+# Wiki: https://github.com/Jochyoua/MCSF/wiki (WIP)
+
 settings:
   # What language would you like to be used?
   # Acceptable languages are
@@ -5,11 +11,8 @@ settings:
   language: en_us
 
   # Would you like extra information to be shown on console?
-  # Despite the value, all debug messages are saved in /data/debug.txt
+  # Despite the value, all debug messages are saved in /logs/debug.log
   debug: false
-
-  # Would you like some information on enable? It shows swear count, plugin/server version, etc
-  console motd: true
 
   # Cool down for all MCSF commands, ignored if the player has the Permission MCSF.bypass
   # Default value is 5, to disable set to 0 (Integer)
@@ -47,9 +50,6 @@ settings:
     # Should filter changes be logged into console?
     log filter changes: true
 
-    # Enable the above if you plan on whitelisting words
-    whitelist words: false
-
     # Enable this if you plan on replacing words with another word, see replacements
     replace word for word: false
 
@@ -63,15 +63,17 @@ settings:
     # If this is disabled, the string f_u_c_k will not be filtered.
     ignore special characters:
       enabled: true
-      characters to ignore: "!@#$%^&*()_+-"
+      characters to ignore: "!@#$%^&*()_+-."
 
     # Punishments for being flagged by the filter
     # Only player actions can flag this, such as chatting or writing in books and having any word contain something that's filtered.
     punishments:
       punish players: false
+      only global: false
       punish check:
         books: true
         chat: true
+        signs: true
       flags:
         reset every interval at: 10
       commands:
@@ -101,6 +103,7 @@ settings:
     enabled: false
     log chat messages: true
     remove message on swear: false
+    only remove global swears: false
 
   # This enables discordSRV functionality
   # enabled: enables this feature
@@ -135,9 +138,8 @@ settings:
     unset: true
 
 # Custom replacement messages
-# all: default value, if no word is here the message will be replaced with *
+# all: default value, if no word is here the message will be replaced with "I made a nasty swear ):"
 # fuck: default value, if fuck is a flagged word in a message, it will be replaced with "&cReally bad word!"
 replacements:
-  all: "&c*&f"
+  all: "I made a nasty swear ):"
   fuck: "&cReally bad word!"
-swearcount: 0

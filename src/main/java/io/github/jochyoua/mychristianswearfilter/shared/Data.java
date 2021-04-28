@@ -2,7 +2,16 @@ package io.github.jochyoua.mychristianswearfilter.shared;
 
 import io.github.jochyoua.mychristianswearfilter.MCSF;
 
-public class Types {
+import java.util.Objects;
+import java.util.logging.Level;
+
+import static io.github.jochyoua.mychristianswearfilter.shared.Manager.debug;
+
+public class Data {
+
+    public Data() {
+        throw new AssertionError();
+    }
 
     /**
      * Successful filtering types
@@ -13,25 +22,29 @@ public class Types {
         ALL,
         DEBUG,
         DISCORD,
-        CUSTOM
+        GLOBAL,
+        BOTH,
+        OTHER,
+        RELOAD
     }
 
     /**
      * Arguments manager, used for comparing permissions and current supported arguments
      */
     public enum Arguments {
-        parse("MCSF.modify"),
-        version("MCSF.version"),
-        reload("MCSF.modify"),
-        add("MCSF.modify"),
-        whitelist("MCSF.modify"),
-        status("MCSF.use"),
-        remove("MCSF.modify"),
-        reset("MCSF.modify"),
-        help("MCSF.use"),
-        toggle("MCSF.toggle"),
-        unset("MCSF.modify"),
-        global("MCSF.modify");
+        parse("MCSF.modify.parse"),
+        version("MCSF.use.version"),
+        reload("MCSF.modify.reload"),
+        add("MCSF.modify.add"),
+        whitelist("MCSF.modify.whitelist"),
+        status("MCSF.use.status"),
+        remove("MCSF.modify.remove"),
+        reset("MCSF.modify.reset"),
+        help("MCSF.use.help"),
+        toggle("MCSF.use.toggle"),
+        unset("MCSF.modify.unset"),
+        global("MCSF.modify.global");
+
         String permission;
 
         Arguments(String s) {
@@ -57,17 +70,15 @@ public class Types {
         /**
          * Returns the current language string,
          *
-         * @param plugin the providing plugin
+         * @param plugin MCSF JavaPlugin instance
          * @return the current language string
          */
         public static String getLanguage(MCSF plugin) {
-            String lan = plugin.getConfig().getString("settings.language").replaceAll(".yml", "");
+            String lan = Objects.requireNonNull(plugin.getConfig().getString("settings.language")).replaceAll(".yml", "");
             try {
                 Languages.valueOf(lan);
             } catch (IllegalArgumentException | NullPointerException exception) {
-                plugin.getLogger().warning("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml");
-                plugin.getConfig().set("settings.language", "en_us");
-                plugin.saveConfig();
+                debug("Sorry but Language (" + lan + ") doesn't exist! Using default en_us.yml", true, Level.WARNING);
                 lan = "en_us";
             }
             return lan;

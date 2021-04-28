@@ -1,13 +1,12 @@
 name: MCSF
 main: io.github.jochyoua.mychristianswearfilter.MCSF
-version: 5.1
+version: ${project.version}
 description: simple toggleable swear filter
-authors: [Jochyoua]
+authors: [ Jochyoua ]
 softdepend:
   - ProtocolLib
   - DiscordSRV
   - PlaceholderAPI
-  - PerWorldChatPlus
 api-version: 1.13
 load: POSTWORLD
 commands:
@@ -21,19 +20,34 @@ permissions:
   MCSF.use:
     description: Should user be able to use MCSF commands?
     default: true
+    children:
+      MCSF.use.status: true
+      MCSF.use.toggle: true
+      MCSF.use.help: true
+      MCSF.use.version: true
   MCSF.*:
     description: Gives access to all MCSF commands
     children:
       MCSF.modify: true
-      MCSF.toggle: true
+      MCSF.use: true
       MCSF.update: true
   MCSF.modify:
+    children:
+      MCSF.modify.add: true
+      MCSF.modify.remove: true
+      MCSF.modify.parse: true
+      MCSF.modify.whitelist: true
+      MCSF.modify.global: true
+      MCSF.modify.unset: true
+      MCSF.modify.reset: true
+      MCSF.modify.reload: true
+      MCSF.modify.others: true
     description: Gives the player the ability to modify the blacklist
     default: false
-  MCSF.toggle:
+  MCSF.use.toggle:
     description: Allows the player to enable/disable the swear filter
     default: true
-  MCSF.version:
+  MCSF.use.version:
     description: Permission for the version command
     default: true
   MCSF.update:
