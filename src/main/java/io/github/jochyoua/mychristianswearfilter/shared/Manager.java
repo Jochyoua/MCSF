@@ -19,6 +19,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import java.awt.Color;
 import java.io.File;
@@ -303,16 +304,25 @@ public class Manager {
                 statement = Integer.parseInt(Bukkit.getBukkitVersion().split("[.\\-]")[1]) >= 16;
                 break;
             case "discordsrv":
-                statement = plugin.getConfig().getBoolean("settings.discordSRV.enabled") && (plugin.getServer().getPluginManager().getPlugin("DiscordSRV") != null);
+                Plugin discordSrv = plugin.getServer().getPluginManager().getPlugin("DiscordSRV");
+                if (plugin.getConfig().getBoolean("settings.discordSRV.enabled") && discordSrv != null) {
+                    statement = discordSrv.isEnabled();
+                }
                 break;
             case "protocollib":
-                statement = plugin.getServer().getPluginManager().getPlugin("ProtocolLib") != null;
+                Plugin protocolLib = plugin.getServer().getPluginManager().getPlugin("ProtocolLib");
+                if (protocolLib != null) {
+                    statement = protocolLib.isEnabled();
+                }
                 break;
             case "mysql":
                 statement = Manager.FileManager.getFile(plugin, "sql").getBoolean("mysql.enabled") && plugin.getHikariCP().isEnabled();
                 break;
             case "placeholderapi":
-                statement = (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) && plugin.getConfig().getBoolean("settings.enable placeholder api");
+                Plugin placeholderAPI = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI");
+                if (plugin.getConfig().getBoolean("settings.enable placeholder api") && placeholderAPI != null) {
+                    statement = placeholderAPI.isEnabled();
+                }
                 break;
         }
         return statement;
