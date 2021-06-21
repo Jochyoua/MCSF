@@ -32,8 +32,8 @@
             <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>README.md</include>
-                    <include>LICENSE.md</include>
+                    <include>README*</include>
+                    <include>LICENSE*</include>
                 </includes>
                 <filtering>true</filtering>
             </resource>

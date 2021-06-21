@@ -62,6 +62,10 @@ public class Manager {
     static {
         try {
             File file = new File(MCSF.getInstance().getDataFolder(), "/logs/debug.log");
+            File dir = new File(MCSF.getInstance().getDataFolder(), "logs");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
             if (!file.exists()) {
                 try {
                     file.createNewFile();
@@ -69,8 +73,7 @@ public class Manager {
                     e.printStackTrace();
                 }
             }
-            fileHandler = new FileHandler(MCSF.getInstance().getDataFolder()
-                    + File.separator + "logs" + File.separator + "debug.log");
+            fileHandler = new FileHandler(MCSF.getInstance().getDataFolder() + "/logs/debug.log");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -206,12 +209,12 @@ public class Manager {
             debug.setLevel(level);
 
             debug.log(level, str + "\n");
-
-            if (consoleOutput) {
-                Bukkit.getLogger().log(level, "[MCSF Debug] " + str);
-            }
         } catch (SecurityException e) {
             e.printStackTrace();
+        }
+
+        if (consoleOutput) {
+            Bukkit.getLogger().log(level, "[MCSF Debug] " + str);
         }
     }
 

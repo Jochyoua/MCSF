@@ -3,6 +3,7 @@ package io.github.jochyoua.mychristianswearfilter.shared.hooks;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -34,7 +35,7 @@ public class ProtocolLib implements Listener {
     public void register() {
         Manager manager = plugin.getManager();
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-        protocolManager.addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.CHAT) {
+        protocolManager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.HIGHEST, PacketType.Play.Server.CHAT) {
             @Override
             public void onPacketSending(PacketEvent event) {
                 if (!plugin.getConfig().getBoolean("settings.only filter players.enabled")) {
@@ -43,16 +44,13 @@ public class ProtocolLib implements Listener {
                         PacketContainer packet = event.getPacket();
                         StructureModifier<WrappedChatComponent> chatComponents = packet.getChatComponents();
                         for (WrappedChatComponent component : chatComponents.getValues()) {
-                            if (component != null) {
-                                if (!component.getJson().isEmpty()) {
-                                    Pattern bothPattern = manager.reloadPattern(Data.Filters.BOTH);
-                                    if (!manager.isclean(component.getJson(), bothPattern)) {
-                                        String string = manager.clean(component.getJson(), false, user.status() ? bothPattern : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.ALL);
-                                        if (!string.trim().isEmpty() &&
-                                                !string.equalsIgnoreCase(component.getJson())) {
-                                            component.setJson(string);
-                                            chatComponents.writeSafely(0, component);
-                                        }
+                            if (component != null && component.getJson().isEmpty()) {
+                                Pattern bothPattern = manager.reloadPattern(Data.Filters.BOTH);
+                                if (!manager.isclean(component.getJson(), bothPattern)) {
+                                    String string = manager.clean(component.getJson(), false, user.status() ? bothPattern : manager.reloadPattern(Data.Filters.GLOBAL), Data.Filters.ALL);
+                                    if (!string.trim().isEmpty()) {
+                                        component.setJson(string);
+                                        chatComponents.writeSafely(0, component);
                                     }
                                 }
                             }

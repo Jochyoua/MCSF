@@ -63,7 +63,7 @@ settings:
     # If this is disabled, the string f_u_c_k will not be filtered.
     ignore special characters:
       enabled: true
-      characters to ignore: "!@#$%^&*()_+-."
+      characters to ignore: "!@#$%^&*()_+-"
 
     # Punishments for being flagged by the filter
     # Only player actions can flag this, such as chatting or writing in books and having any word contain something that's filtered.

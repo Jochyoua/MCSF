@@ -161,9 +161,10 @@ public class User {
                     ps.setString(2, playername);
                     ps.setBoolean(3, bool);
                 } else {
-                    ps = userConnection.prepareStatement("UPDATE users SET status=?, playername=? WHERE uuid=?");
+                    ps = userConnection.prepareStatement("UPDATE users SET status=?, name=? WHERE uuid=?");
                     ps.setBoolean(1, bool);
                     ps.setString(2, playername);
+                    ps.setString(3, id.toString());
                 }
                 ps.execute();
                 ps.close();
